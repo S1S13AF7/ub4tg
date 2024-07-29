@@ -27,21 +27,22 @@ cur.execute('''CREATE TABLE IF NOT EXISTS users	(
 	user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
 	f_name	VARCHAR NOT NULL DEFAULT 'хз',
 	reg_int	INTEGER NOT NULL DEFAULT 0,
-	use_int	INTEGER NOT NULL DEFAULT 0,
-	lang_code	VARCHAR NOT NULL DEFAULT 0,
-	last_cmd	VARCHAR NOT NULL DEFAULT 0,
-	user_url	VARCHAR NOT NULL DEFAULT 0
+	lng_code	VARCHAR NOT NULL DEFAULT 0
 )''');
 
 async def reg_user(message: types.Message):
 		print(message)
 		msg = "🖖"
-		user_id = message["from"]["id"]
-		user_fn = message["from"]["first_name"]
-		lngcode = message["from"]["language_code"]
+		user_id = int(message["from"]["id"])
+		user_fn = 'хз'
+		lngcode = 'хз'
+		if message["from"]["first_name"]:
+			user_fn = message["from"]["first_name"]
+		if message["from"]["language_code"]:
+			lngcode = message["from"]["language_code"]
 		whenint = int(datetime.timestamp(message.date))
 		try:
-			cur.execute("INSERT INTO users(user_id,reg_int,use_int,f_name,lang_code) VALUES (?,?,?,?,?)", (int(user_id),int(whenint),int(whenint),user_fn,lngcode)); con.commit()
+			cur.execute("INSERT INTO users(user_id,reg_int,f_name,lng_code) VALUES (?,?,?,?)", (int(user_id),int(whenint),user_fn,lngcode)); con.commit()
 			msg="✅ ok"
 			if lngcode=='uk':
 				msg = f"✅ {user_fn} успішно зареєструвавсь(лась)"
@@ -52,8 +53,8 @@ async def reg_user(message: types.Message):
 			if lngcode=='en':
 				msg = f"✅ successfully registered"
 			print (msg)
-		except Exception as Err:
-			print(Err)
+		except:
+			pass
 		return msg
 
 bot = Bot(token=TOKEN)
