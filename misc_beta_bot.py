@@ -24,15 +24,14 @@ con = sqlite3.connect("db4tg.sqlite")
 cur = con.cursor()
 
 cur.execute('''CREATE TABLE IF NOT EXISTS users	(
- user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
- when_int	INTEGER NOT NULL DEFAULT 0,
- c_dice	INTEGER NOT NULL DEFAULT 0,
- coffee	INTEGER NOT NULL DEFAULT 0,
- c_tea	INTEGER NOT NULL DEFAULT 0,
- f_name	VARCHAR NOT NULL DEFAULT 0,
- lang_code	VARCHAR NOT NULL DEFAULT 0,
- last_cmd	VARCHAR NOT NULL DEFAULT 0,
- user_url	VARCHAR NOT NULL DEFAULT 0)''');
+	user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
+	f_name	VARCHAR NOT NULL DEFAULT 'хз',
+	reg_int	INTEGER NOT NULL DEFAULT 0,
+	use_int	INTEGER NOT NULL DEFAULT 0,
+	lang_code	VARCHAR NOT NULL DEFAULT 0,
+	last_cmd	VARCHAR NOT NULL DEFAULT 0,
+	user_url	VARCHAR NOT NULL DEFAULT 0
+)''');
 
 async def reg_user(message: types.Message):
 		print(message)
@@ -42,7 +41,7 @@ async def reg_user(message: types.Message):
 		lngcode = message["from"]["language_code"]
 		whenint = int(datetime.timestamp(message.date))
 		try:
-			cur.execute("INSERT INTO users(user_id,when_int,f_name,lang_code) VALUES (?, ?, ?, ?)", (int(user_id),int(whenint),user_fn,lngcode)); con.commit()
+			cur.execute("INSERT INTO users(user_id,reg_int,use_int,f_name,lang_code) VALUES (?,?,?,?,?)", (int(user_id),int(whenint),int(whenint),user_fn,lngcode)); con.commit()
 			msg="✅ ok"
 			if lngcode=='uk':
 				msg = f"✅ {user_fn} успішно зареєструвавсь(лась)"
