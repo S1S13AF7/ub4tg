@@ -16,7 +16,7 @@ print('Bot started')
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
 	#print(message)
-	await message.answer(emoji="🖖")
+	await message.answer("🖖")
 
 @dp.message_handler(commands=['help'])
 async def process_help_command(message: types.Message):
