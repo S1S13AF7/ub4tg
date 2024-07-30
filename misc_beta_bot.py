@@ -31,7 +31,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS users (
 		reg_int	INTEGER NOT NULL DEFAULT 0,
 		f_name	VARCHAR NOT NULL DEFAULT 'хз',
 		mcoins	INTEGER NOT NULL DEFAULT 1024,
-		rng_kd	INTEGER NOT NULL DEFAULT 0,
+		rnd_kd	INTEGER NOT NULL DEFAULT 0,
 		lng_code	VARCHAR NOT NULL DEFAULT ''
 		)''');
 
@@ -100,7 +100,7 @@ async def cmd_farm (message: types.Message):
 	bal = 0
 	rkd = 0
 	try:
-		cur.execute("SELECT mcoins,rng_kd FROM users WHERE user_id = %d" % int(user_id)); 
+		cur.execute("SELECT mcoins,rnd_kd FROM users WHERE user_id = %d" % int(user_id)); 
 		rd = cur.fetchone();
 		if rd is None:
 			msg = "ERROR"			
@@ -126,7 +126,7 @@ async def cmd_farm (message: types.Message):
 				msg=f"{msg}\n🤑 бл:	{bal} \n⌚️	кд: {rkd} сек"
 				rkd+=when_int
 				try:
-					cur.execute("UPDATE users SET mcoins = :bal, rng_kd = :rkd WHERE user_id = :uid;", 
+					cur.execute("UPDATE users SET mcoins = :bal, rnd_kd = :rkd WHERE user_id = :uid;", 
 					{"rkd":int(rkd),"bal":int(bal),"uid":int(user_id)}); con.commit()
 				except Exception as Err:
 					msg = Err
