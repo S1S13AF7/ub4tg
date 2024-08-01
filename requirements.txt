@@ -2,4 +2,5 @@
 
 aiogram==2.19
 #aiosqlite
+pymysql
 emoji
