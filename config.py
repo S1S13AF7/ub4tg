@@ -1,6 +1,1 @@
 TOKEN = 'BOT:own_private_secure-Bot_token'
-dbhost= 'localhost'
-dbname= 'db'
-dbuser= 'root'
-dbpass= 'V3rY$tR0Ng'
-#dbcharset='utf8mb4'
