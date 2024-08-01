@@ -253,7 +253,6 @@ async def cmd_dice(message: types.Message):
 async def cmd_chats(message: types.Message):
 	await message.answer('''
 •	☕ @misc_chat
-•	🦠 @misc_flood
 •	🦠 @misc_games
 •	🗃 @misc_files_v2
 ''')
