@@ -54,7 +54,7 @@ if db_pymysql:
 	`lng_code` varchar(8) NOT NULL DEFAULT '',
 	PRIMARY KEY (`user_id`)
 	);''');
-	dbc.commit()
+	ldb.commit()
 
 async def reg_user(message: types.Message):
 	print(message)
