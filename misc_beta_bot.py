@@ -34,16 +34,27 @@ if db_sqlite3:
 	rnd_kd	INTEGER NOT NULL DEFAULT 0,
 	lng_code	VARCHAR NOT NULL DEFAULT ''
 	)''');
+	con.commit()
 
 if db_pymysql:
 	ldb=pymysql.connect(
 	host='localhost',
 	user='root',
-	password='V3rY$tR0Ng',
+	password='V3rY$tR0NgPaS$Sw0Rd',
 	db='db',
 	charset='utf8mb4',
 	cursorclass=pymysql.cursors.DictCursor)
 	dbc = ldb.cursor()
+	dbc.execute('''CREATE TABLE IF NOT EXISTS `tg_bot_users` (
+	`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+	`reg_int` int(11) unsigned NOT NULL DEFAULT '0',
+	`f_name` text NOT NULL,
+	`mcoins` bigint(20) unsigned NOT NULL DEFAULT '1024',
+	`rnd_kd` int(11) unsigned NOT NULL DEFAULT '0',
+	`lng_code` varchar(8) NOT NULL DEFAULT '',
+	PRIMARY KEY (`user_id`)
+	);''');
+	dbc.commit()
 
 async def reg_user(message: types.Message):
 	print(message)
