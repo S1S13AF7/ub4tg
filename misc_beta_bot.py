@@ -136,7 +136,8 @@ async def reg_user(message: types.Message):
 	
 	return reg_date
 
-bot = Bot(token=TOKEN)
+#bot = Bot(token=TOKEN)
+bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML) #see: https://mastergroosha.github.io/aiogram-2-guide/messages/
 dp = Dispatcher(bot)   
 
 print('Bot started') 
@@ -242,6 +243,41 @@ async def cmd_farm (message: types.Message):
 		rnd = random.randint(-32,100)
 		msg = rnd
 	await message.answer(msg)
+
+@dp.message_handler(commands=['myzh','myz','mz','мж','мз'])
+async def cmd_myzh (message: types.Message):
+	msg="🤷"
+	user_id = int(message.from_user.id)
+	user_fn = message.from_user.first_name or ''
+	lng_code = message.from_user.language_code or ''
+	when_int = int(datetime.timestamp(message.date))
+	rd=int(await reg_user(message))#create or date
+	if db_pymysql:
+		try:
+			#зберігалка: https://github.com/S1S13AF7/misc_beta_bot/blob/main/ubot.py (адреса може змінитись)
+			dbc.execute("SELECT user_id,bio_str,expr_str FROM `tg_iris_zarazy` WHERE who_id = %d ORDER BY when_int DESC LIMIT 10;" % int(user_id));
+			bz_info = dbc.fetchmany(10)#получить
+			all_sicknes=[]#інфа
+			count=len(bz_info)
+			for row in bz_info:
+				print(row)
+				id_user=row["user_id"]
+				bio_str=row["bio_str"]
+				u_link =f'tg://openmessage?user_id={id_user}'	#fix для любителів мінять його
+				expr_str=re.sub(r'.20', r'.',row["expr_str"]) #.2024->.24
+				#all_sicknes.append(f"➕{bio_str} @{id_user}#{expr_str}\n")#слать текстом //old v.
+				#a_href = f'<a href="{u_link}">@{id_user}</a>'#Або можна поставить лінки на users
+				a_href = f'<a href="{u_link}"><code>@{id_user}</code></a>'#або копіпабельні @{id}
+				all_sicknes.append(f"➕{bio_str}	{a_href}#{expr_str}\n")
+			if len(all_sicknes)!=0:
+				all_sicknes=f'{"".join(all_sicknes)}'
+			else:
+				all_sicknes='🤷 інфа нема.'
+			msg=all_sicknes
+		except Exception as Err:
+			msg = Err
+			print(f"localhost SELECT:{Err}")
+	await message.answer(msg, parse_mode=types.ParseMode.HTML)
 
 @dp.message_handler(commands=['help'])
 async def process_help_command(message: types.Message):
