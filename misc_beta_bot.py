@@ -55,6 +55,20 @@ if db_pymysql:
 	PRIMARY KEY (`user_id`)
 	);''');
 	ldb.commit()
+	#bot users.
+	dbc.execute('''CREATE TABLE IF NOT EXISTS `tg_iris_zarazy` (
+	`when_int` int(11) unsigned NOT NULL DEFAULT '0',
+	`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+	`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+	`u_link` varchar(500) NOT NULL DEFAULT '',
+	`bio_str` varchar(11) NOT NULL DEFAULT '1',
+	`bio_int` int(11) unsigned NOT NULL DEFAULT '1',
+	`expr_int` int(11) unsigned NOT NULL DEFAULT '0',
+	`expr_str` varchar(11) NOT NULL DEFAULT '0',
+	UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
+	);''');
+	#зберігалка: https://github.com/S1S13AF7/ub4tg
+	ldb.commit()
 
 async def reg_user(message: types.Message):
 	print(message)
@@ -254,7 +268,7 @@ async def cmd_myzh (message: types.Message):
 	rd=int(await reg_user(message))#create or date
 	if db_pymysql:
 		try:
-			#зберігалка: https://github.com/S1S13AF7/misc_beta_bot/blob/main/ubot.py (адреса може змінитись)
+			#зберігалка: https://github.com/S1S13AF7/ub4tg (адреса може змінитись)
 			dbc.execute("SELECT user_id,bio_str,expr_str FROM `tg_iris_zarazy` WHERE who_id = %d ORDER BY when_int DESC LIMIT 10;" % int(user_id));
 			bz_info = dbc.fetchmany(10)#получить
 			all_sicknes=[]#інфа
@@ -286,6 +300,7 @@ async def process_help_command(message: types.Message):
 •	💬 /chats
 •	🎲 /dice
 •	🤑 /rnd
+•	➕ /mz
 ''')
 
 @dp.message_handler(commands=['ping'])
@@ -295,6 +310,15 @@ async def process_ping_command(message: types.Message):
 @dp.message_handler(commands=['dice','кубик'])
 async def cmd_dice(message: types.Message):
 	await message.answer_dice(emoji="🎲")
+
+@dp.message_handler(commands=['code','код'])
+async def cmd_code(message: types.Message):
+	text='''
+	<code>https://github.com/S1S13AF7/misc_beta_bot</code> – код бота @misc_beta_bot
+	<code>https://github.com/S1S13AF7/ub4tg</code> – юб. Зберігалка хто кого заразив
+	(ви можете встановить собі юб і/або <i>диспетчер</i> (не юб. просто /mz і /ping)
+	'''
+	await message.answer(text,parse_mode=types.ParseMode.HTML)
 
 @dp.message_handler(commands=['chats','чати','чаты','чаті'])
 async def cmd_chats(message: types.Message):
