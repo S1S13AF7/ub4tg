@@ -258,7 +258,7 @@ async def cmd_farm (message: types.Message):
 		msg = rnd
 	await message.answer(msg)
 
-@dp.message_handler(commands=['myzh','myz','mz','мж','мз'])
+@dp.message_handler(commands=['mz','мж','мз'])
 async def cmd_myzh (message: types.Message):
 	msg="🤷"
 	user_id = int(message.from_user.id)
@@ -273,6 +273,7 @@ async def cmd_myzh (message: types.Message):
 			bz_info = dbc.fetchmany(10)#получить
 			all_sicknes=[]#інфа
 			count=len(bz_info)
+			who=f"🦠 {user_fn}:"
 			for row in bz_info:
 				print(row)
 				id_user=row["user_id"]
@@ -284,7 +285,7 @@ async def cmd_myzh (message: types.Message):
 				a_href = f'<a href="{u_link}"><code>@{id_user}</code></a>'#або копіпабельні @{id}
 				all_sicknes.append(f"➕{bio_str}	{a_href}#{expr_str}\n")
 			if len(all_sicknes)!=0:
-				all_sicknes=f'{"".join(all_sicknes)}'
+				all_sicknes=f'{who}\n{"".join(all_sicknes)}'
 			else:
 				all_sicknes='🤷 інфа нема.'
 			msg=all_sicknes
@@ -300,7 +301,7 @@ async def process_help_command(message: types.Message):
 •	💬 /chats
 •	🎲 /dice
 •	🤑 /rnd
-•	➕ /mz
+•	🦠 /mz
 ''')
 
 @dp.message_handler(commands=['ping'])
@@ -316,7 +317,6 @@ async def cmd_code(message: types.Message):
 	text='''
 	<code>https://github.com/S1S13AF7/misc_beta_bot</code> – код бота @misc_beta_bot
 	<code>https://github.com/S1S13AF7/ub4tg</code> – юб. Зберігалка хто кого заразив
-	(ви можете встановить собі юб і/або <i>диспетчер</i> (не юб. просто /mz і /ping)
 	'''
 	await message.answer(text,parse_mode=types.ParseMode.HTML)
 
