@@ -150,7 +150,6 @@ async def reg_user(message: types.Message):
 	
 	return reg_date
 
-#bot = Bot(token=TOKEN)
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML) #see: https://mastergroosha.github.io/aiogram-2-guide/messages/
 dp = Dispatcher(bot)   
 
@@ -184,8 +183,8 @@ async def cmd_reg(message: types.Message):
 		snd_msg = time.strftime('%d.%m.%Y', time.localtime(rd))
 	await message.answer(snd_msg)
 
-@dp.message_handler(commands=['farm','ферма','random','rand','rnd'])
-async def cmd_farm (message: types.Message):
+@dp.message_handler(commands=['random','rand','rnd'])
+async def cmd_rand (message: types.Message):
 	user_id = int(message.from_user.id)
 	when_int = int(datetime.timestamp(message.date))
 	rd=await reg_user(message)#register_user#+sync
@@ -280,9 +279,7 @@ async def cmd_myzh (message: types.Message):
 				bio_str=row["bio_str"]
 				u_link =f'tg://openmessage?user_id={id_user}'	#fix для любителів мінять його
 				expr_str=re.sub(r'.20', r'.',row["expr_str"]) #.2024->.24
-				#all_sicknes.append(f"➕{bio_str} @{id_user}#{expr_str}\n")#слать текстом //old v.
-				#a_href = f'<a href="{u_link}">@{id_user}</a>'#Або можна поставить лінки на users
-				a_href = f'<a href="{u_link}"><code>@{id_user}</code></a>'#або копіпабельні @{id}
+				a_href = f'<a href="{u_link}"><code>@{id_user}</code></a>'
 				all_sicknes.append(f"➕{bio_str}	{a_href}#{expr_str}\n")
 			if len(all_sicknes)!=0:
 				all_sicknes=f'{who}\n{"".join(all_sicknes)}'
@@ -315,8 +312,8 @@ async def cmd_dice(message: types.Message):
 @dp.message_handler(commands=['code','код'])
 async def cmd_code(message: types.Message):
 	text='''
-	<code>https://github.com/S1S13AF7/misc_beta_bot</code> – код бота @misc_beta_bot
-	<code>https://github.com/S1S13AF7/ub4tg</code> – юб. Зберігалка хто кого заразив
+<code>https://github.com/S1S13AF7/misc_beta_bot</code> – код бота @misc_beta_bot
+<code>https://github.com/S1S13AF7/ub4tg</code> – юб. Зберігалка хто кого заразив
 	'''
 	await message.answer(text,parse_mode=types.ParseMode.HTML)
 
