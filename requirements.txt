@@ -1,8 +1,8 @@
 # requirements.txt
 
 aiogram==2.19
+#Telethon-Mod
 #aiosqlite
 asyncio
-telethon
 pymysql
 emoji
