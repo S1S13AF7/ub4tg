@@ -302,7 +302,7 @@ async def cmd_ends (message: types.Message):
 	if db_pymysql:
 		try:
 			#зберігалка: https://github.com/S1S13AF7/ub4tg (адреса може змінитись)
-			dbc.execute(f"SELECT user_id,bio_str,expr_str FROM `tg_iris_zarazy` WHERE who_id = {user_id} AND expr_int < {when_int} ORDER BY `bio_int` DESC LIMIT 10;")# % int(user_id),int(when_int));
+			dbc.execute(f"SELECT user_id,bio_str,expr_str FROM `tg_iris_zarazy` WHERE who_id = {user_id} AND expr_int < {when_int} ORDER BY `bio_int` DESC, `when_int` DESC LIMIT 10;")
 			bz_info = dbc.fetchmany(10)#получить
 			all_sicknes=[]#інфа
 			count=len(bz_info)
