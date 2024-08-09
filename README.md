@@ -1,2 +1,16 @@
-# misc_beta_bot
-my 1st bot in telegram
+# ub4tg – юзербот для телеграма.
+покищо лише пінґ-понґ
+і збереження хто кого заразив 
+<br/>
+
+БД може бути sqlite і/або MySQL (та хоч дві зразу) <br/>
+переключається прямо в файлах ботів: <br/>
+
+db_pymysql = True#set True or False <br/>
+db_sqlite3 = True#set True or False <br/>
+
+У базу sqlite3 зберігає лише кого заразив сам<br/>
+У базу MySQL намагаємось зберігать все підряд<br/>
+
+Якщо у вас ще нема MySQL і/або нехочете зберігать чужих, тоді просто поставте <br/>
+db_pymysql = False
