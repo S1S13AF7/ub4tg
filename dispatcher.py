@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# from misc_beta_bot
+########################################################################
 # "диспетчер" це звичайний бот (не юб)
 # Використовувати "диспетчер" є сенс, якщо: 
 #
@@ -10,6 +10,14 @@
 # тому у випадку з кількома юзерами у кожного своя sqlite база {id}.slite
 # а от MySQL в свою чергу може бути спільна для всіх ботів і юзерботів.
 # тобто якщо юзаєте лише sqlite то і "диспетчер" вам нафіг нетреба.
+#
+# якщо говорити про пк/ноут можу порадить XAMPP (юзаю для всього)*
+# якщо юб запускається з телефона то хз чи є сенс ще і MySQL. 
+#*XAMPP дає можливість встановить Apache, MySQL, ітд. 
+# юзаю для локального сайта ну і базу ще і для ботів. 
+# у кого свій сервер там вже якось самі розбирайтесь.
+########################################################################
+
 from datetime import datetime, timedelta
 
 from aiogram import Bot, types
@@ -142,17 +150,6 @@ async def process_help_command(message: types.Message):
 @dp.message_handler(commands=['ping'])
 async def process_ping_command(message: types.Message):
 	await message.reply("PONG!")
-
-@dp.message_handler(commands=['dice','кубик'])
-async def cmd_dice(message: types.Message):
-	await message.answer_dice(emoji="🎲")
-
-@dp.message_handler(commands=['code','код'])
-async def cmd_code(message: types.Message):
-	text='''
-<code>https://github.com/S1S13AF7/ub4tg</code> – юб. Зберігалка хто кого заразив
-	'''
-	await message.answer(text,parse_mode=types.ParseMode.HTML)
 
 if __name__ == '__main__':
 	executor.start_polling(dp)
