@@ -8,8 +8,8 @@
 #
 # спільне використання однієї бд sqlite кількома ботами створює проблему db is locked
 # тому у випадку з кількома юзерами у кожного своя sqlite база {id}.slite
-# а от MySQL може бути для всіх спільна для всіх ботів і юзерботів.
-# тобто якщо юзаєте лише sqlite то і "дисперчер" вам нафіг нетреба.
+# а от MySQL в свою чергу може бути спільна для всіх ботів і юзерботів.
+# тобто якщо юзаєте лише sqlite то і "диспетчер" вам нафіг нетреба.
 from datetime import datetime, timedelta
 
 from aiogram import Bot, types
@@ -40,17 +40,6 @@ if db_pymysql:
 	charset='utf8mb4',
 	cursorclass=pymysql.cursors.DictCursor)
 	dbc = ldb.cursor()
-	dbc.execute('''CREATE TABLE IF NOT EXISTS `tg_bot_users` (
-	`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-	`reg_int` int(11) unsigned NOT NULL DEFAULT '0',
-	`f_name` text NOT NULL,
-	`mcoins` bigint(20) unsigned NOT NULL DEFAULT '1024',
-	`rnd_kd` int(11) unsigned NOT NULL DEFAULT '0',
-	`lng_code` varchar(8) NOT NULL DEFAULT '',
-	PRIMARY KEY (`user_id`)
-	);''');
-	ldb.commit()
-	#bot users.
 	dbc.execute('''CREATE TABLE IF NOT EXISTS `tg_iris_zarazy` (
 	`when_int` int(11) unsigned NOT NULL DEFAULT '0',
 	`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
