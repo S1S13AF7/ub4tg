@@ -1,7 +1,7 @@
 # requirements.txt
 
 aiogram==2.19
-#Telethon-Mod
+Telethon-Mod
 #aiosqlite
 asyncio
 pymysql
