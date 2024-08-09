@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 # from misc_beta_bot
-
+# "диспетчер" це звичайний бот (не юб)
+# Використовувати "диспетчер" є сенс, якщо: 
+#
+# > у вас є база MySQL на http://localhost/
+# > у вас кілька акків підключено до 1 бд
+#
+# спільне використання однієї бд sqlite кількома ботами створює проблему db is locked
+# тому у випадку з кількома юзерами у кожного своя sqlite база {id}.slite
+# а от MySQL може бути для всіх спільна для всіх ботів і юзерботів.
+# тобто якщо юзаєте лише sqlite то і "дисперчер" вам нафіг нетреба.
 from datetime import datetime, timedelta
 
 from aiogram import Bot, types
@@ -19,14 +28,14 @@ import pymysql.cursors
 
 import sqlite3
 
-db_pymysql = True#set True or False
-db_sqlite3 = False#set True or False
+db_pymysql = True#set True
+db_sqlite3 = False#set False
 
 if db_pymysql:
 	ldb=pymysql.connect(
 	host='localhost',
 	user='root',
-	password='V3rY$tR0NgPaS$Sw0Rd',
+	password='напишіть_сюда_ваш_пароль_від_локальної_бд',
 	db='db',
 	charset='utf8mb4',
 	cursorclass=pymysql.cursors.DictCursor)
