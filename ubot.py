@@ -303,9 +303,19 @@ async def main():
 									c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {"wh":int(when),"xp":str(experience),"xpi":int(exp_int),"end":int(datetime.timestamp(a)),"do":str(a.strftime("%d.%m.%y")),"z":int(u2id)}); conn.commit()
 								except Exception as Err:
 									print(f'err: {Err} avocado')
-
+						if db_pymysql:
+							try:
+								#from_infect 	who_id 	user_id 	profit 	until_infect 	until_str
+								d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `from_infect`, `profit`, `until_infect`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE from_infect=VALUES (from_infect),profit=VALUES (profit),until_infect=VALUES (until_infect),until_str = VALUES (until_str);", (int(u1id),int(u2id),int(when),str(experience), int(datetime.timestamp(a)),str(a.strftime("%d.%m.%y")))); con.commit()
+								print(f"\nINSERT INTO .... ON DUPLICATE KEY UPDATE # [@{u1id}] => [@{u2id}]\n")
+							except Exception as Err:
+								print(f'err: {Err} /localhost')
+								#pass
+						print(f'''{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}] +{experience}''')#показать
+		
 		
 		####################################################################
+		
 		
 		@client.on(events.NewMessage(outgoing=True, pattern='.l2f'))
 		async def cmd_l2f(event):			#Local->file/{id}.sqlite
