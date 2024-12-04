@@ -67,6 +67,13 @@ async def main():
 			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
 			);''');
 			con.commit()
+			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_users` (
+			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
+			`profit` int(11) unsigned NOT NULL DEFAULT '1',
+			UNIQUE KEY `user_id` (`user_id`)
+			);''');
+			con.commit()
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_users_url` (
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
@@ -309,7 +316,13 @@ async def main():
 								d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `from_infect`, `profit`, `until_infect`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE from_infect=VALUES (from_infect),profit=VALUES (profit),until_infect=VALUES (until_infect),until_str = VALUES (until_str);", (int(u1id),int(u2id),int(when),str(experience), int(datetime.timestamp(a)),str(a.strftime("%d.%m.%y")))); con.commit()
 								print(f"\nINSERT INTO .... ON DUPLICATE KEY UPDATE # [@{u1id}] => [@{u2id}]\n")
 							except Exception as Err:
-								print(f'err: {Err} /localhost')
+								print(f'err: {Err} (tg_bio_attack)')
+								#pass
+							try:
+								#user_id 	when 	profit
+								d.execute("INSERT INTO `tg_bio_users` (`user_id`, `when_int`, `profit`) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE when_int=VALUES (when_int),profit=VALUES (profit);", (int(u2id),int(when),str(experience))); con.commit()
+							except Exception as Err:
+								print(f'err: {Err} (tg_bio_users)')
 								#pass
 						print(f'''{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}] +{experience}''')#показать
 		
