@@ -330,6 +330,32 @@ async def main():
 		####################################################################
 		
 		
+		@client.on(events.NewMessage(outgoing=True, pattern='.biofuck'))
+		async def cmd_bf(event):			#крч акуратно з цим,вдруг шо я нічо
+			m = event.message
+			when=int(datetime.timestamp(m.date))
+			msg='🤷' # якщо нема кого то жри рандом.
+			c.execute(f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC"); 
+			e_info=c.fetchall()
+			count = len(e_info)
+			if count < 2:
+				nema=f'🤷 рандом хавай.'
+				await event.edit(nema) #ред
+				print(nema)
+			else:
+				pong='✅ погнали...'
+				await event.edit(pong) #ред
+				print(f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
+				for row in e_info:
+					rs = float(random.uniform(11,99)) #скільки спим: random
+					eb = f'Биоеб {row[0]}' #повідомлення.
+					m=await event.reply(eb)
+					await asyncio.sleep(rs)
+				
+		
+		####################################################################
+		
+		
 		@client.on(events.NewMessage(outgoing=True, pattern='.l2f'))
 		async def cmd_l2f(event):			#Local->file/{id}.sqlite
 			msg='для успішного виконання повинно бути обидві бази True'
