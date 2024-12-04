@@ -57,6 +57,16 @@ async def main():
 			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
 			);''');
 			con.commit()
+			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_attack` (
+			`from_infect` int(11) unsigned NOT NULL DEFAULT '0',
+			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+			`profit` int(11) unsigned NOT NULL DEFAULT '1',
+			`until_infect` int(11) unsigned NOT NULL DEFAULT '0',
+			`until_str` varchar(11) NOT NULL DEFAULT '0',
+			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
+			);''');
+			con.commit()
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_users_url` (
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
@@ -238,7 +248,6 @@ async def main():
 						if db_sqlite3 and u1id==my_id:
 							try:
 								c.execute("INSERT INTO zarazy(user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?, ?)", (int(u2id),int(when),str(experience),int(exp_int),int(datetime.timestamp(a)),str(a.strftime("%d.%m.%y")))); conn.commit()
-								print('add/db.sqlite')
 							except:
 								try:
 									c.execute("UPDATE zarazy SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {"wh":int(when),"xp":str(experience),"xpi":int(exp_int),"end":int(datetime.timestamp(a)),"do":str(a.strftime("%d.%m.%y")),"z":int(u2id)}); conn.commit()
@@ -289,7 +298,6 @@ async def main():
 						if db_sqlite3 and u1id==my_id:
 							try:
 								c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?, ?)", (int(u2id),int(when),str(experience),int(exp_int),int(datetime.timestamp(a)),str(a.strftime("%d.%m.%y")))); conn.commit()
-								print('add/db.sqlite')
 							except:
 								try:
 									c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {"wh":int(when),"xp":str(experience),"xpi":int(exp_int),"end":int(datetime.timestamp(a)),"do":str(a.strftime("%d.%m.%y")),"z":int(u2id)}); conn.commit()
