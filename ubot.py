@@ -80,6 +80,15 @@ async def main():
 			expr_str	VARCHAR NOT NULL DEFAULT 0
 			)''');
 			conn.commit()
+			c.execute('''CREATE TABLE IF NOT EXISTS avocado	(
+			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
+			when_int	INTEGER NOT NULL DEFAULT 0,
+			bio_str	VARCHAR NOT NULL DEFAULT 1,
+			bio_int	INTEGER NOT NULL DEFAULT 1,
+			expr_int	INTEGER NOT NULL DEFAULT 0,
+			expr_str	VARCHAR NOT NULL DEFAULT 0
+			)''');
+			conn.commit()
 		####################################################################
 		async def get_id(url):
 			user_id = 0
@@ -244,6 +253,51 @@ async def main():
 								#pass
 						print(f'''{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}] +{experience}''')#показать
 		
+		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(pattern='.*йобнув.*'))
+		async def podverg_a(event):
+			#хто там кого йобнув(ла)
+			m = event.message
+			t = m.raw_text
+			if m.sender_id !=6333102398:
+				pass
+			elif len(m.entities) > 1:
+				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)#HTML
+				r= re.findall(r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> йобнув.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
+				if r:
+					u1url=r[0][0]
+					u2url=r[0][1]
+					u1id = await get_id(u1url)
+					u2id = await get_id(u2url)
+					#print(f'{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}]')#показать
+					when=int(datetime.timestamp(m.date))
+					days=int(re.sub(r' ','',re.findall(r' на ([0-9\ ]+) д.*', t)[0]))
+					experience=re.findall(r"([0-9\.\,k]+) біо-ресурса", t)[0]
+					if ',' in experience:
+						experience=re.sub(r',', r'.',experience)
+					if 'k' in experience:
+						exp_int=int(float(re.sub('k', '',experience)) * 1000)
+					else:
+						exp_int=int(experience)
+					a=datetime.utcfromtimestamp(when)+timedelta(days=int(days), hours=3)
+					do_int=datetime.timestamp(a)
+					do_txt=str(a.strftime("%d.%m.%y"))
+					if u1id > 0 and u2id > 0:
+						if db_sqlite3 and u1id==my_id:
+							try:
+								c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?, ?)", (int(u2id),int(when),str(experience),int(exp_int),int(datetime.timestamp(a)),str(a.strftime("%d.%m.%y")))); conn.commit()
+								print('add/db.sqlite')
+							except:
+								try:
+									c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {"wh":int(when),"xp":str(experience),"xpi":int(exp_int),"end":int(datetime.timestamp(a)),"do":str(a.strftime("%d.%m.%y")),"z":int(u2id)}); conn.commit()
+								except Exception as Err:
+									print(f'err: {Err} avocado')
+
+		
+		####################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, pattern='.l2f'))
 		async def cmd_l2f(event):			#Local->file/{id}.sqlite
