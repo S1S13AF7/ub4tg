@@ -347,7 +347,7 @@ async def main():
 				await event.edit(pong) #ред
 				print(f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
 				for row in e_info:
-					rs = float(random.uniform(6,96)) #скільки спим: random
+					rs = float(random.uniform(6,66)) #скільки спим: random
 					eb = f'Биоеб {row[0]}' #повідомлення.
 					m=await event.reply(eb)
 					await asyncio.sleep(3.3)
