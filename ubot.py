@@ -28,6 +28,8 @@ timezone = "Europe/Kiev"
 db_pymysql = True#set True or False
 db_sqlite3 = True#set True or False
 
+a_h = False # set True or False
+
 async def main():
 	async with TelegramClient(sessdb,api_id,api_hash) as client:
 		client.parse_mode="HTML"
@@ -354,6 +356,24 @@ async def main():
 					await client.delete_messages(event.chat_id,m.id)
 					await asyncio.sleep(rs)
 				
+		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(pattern='🌡 У вас горячка вызванная'))
+		async def need_h(event):
+			m = event.message
+			if m.sender_id !=6333102398:
+				pass
+			elif a_h:
+				#нада хил
+				ah = await message_q( # отправляет сообщение боту
+				f"Хил",
+				6333102398,
+				mark_read=True,
+				delete=False,
+				)
+		
 		
 		####################################################################
 		
