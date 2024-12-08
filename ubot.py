@@ -277,6 +277,8 @@ async def main():
                     if r:
                         logger.debug(f'found theme {trying_theme_index}')
                         break
+                if r == []:
+                    logger.warning('theme not found, showing original message: ' + m.text)
                 logger.debug(str(r))
                 if r:
                     u1url = r[0][0]
