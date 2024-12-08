@@ -354,7 +354,7 @@ async def main():
 			m = event.message
 			if m.sender_id !=6333102398:
 				pass
-			elif a_h:
+			elif a_h and m.mentioned:
 				#нада хил
 				ah = await message_q( # отправляет сообщение боту
 				f"Хил",
