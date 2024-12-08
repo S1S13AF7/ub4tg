@@ -300,6 +300,12 @@ async def main():
 									c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {"wh":int(when),"xp":str(experience),"xpi":int(exp_int),"end":int(datetime.timestamp(a)),"do":str(a.strftime("%d.%m.%y")),"z":int(u2id)}); conn.commit()
 								except Exception as Err:
 									print(f'err: {Err} avocado')
+						elif db_sqlite3:
+							try:
+								c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (int(u2id),int(when),str(experience),int(exp_int),int(0))); conn.commit()#save not my pacients
+							except:
+								#user in db. not need update? ну а нафіга?
+								pass
 						if db_pymysql:
 							try:
 								#from_infect 	who_id 	user_id 	profit 	until_infect 	until_str
