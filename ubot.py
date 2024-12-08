@@ -320,13 +320,13 @@ async def main():
 		####################################################################
 		
 		
-		@client.on(events.NewMessage(outgoing=True, pattern='.biofuck'))
+		@client.on(events.NewMessage(outgoing=True, pattern='\.biofuck$'))
 		async def cmd_bf(event):			#крч акуратно з цим,вдруг шо я нічо
 			m = event.message
 			text = m.raw_text
 			when=int(datetime.timestamp(m.date))
 			msg='🤷' # якщо нема кого то жри рандом.
-			c.execute(f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC"); 
+			c.execute(f"SELECT * FROM `avocado` WHERE expr_int <= {when}"); 
 			e_info=c.fetchall()
 			count = len(e_info)
 			if count < 2:
