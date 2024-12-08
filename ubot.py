@@ -312,19 +312,26 @@ async def main():
                                 c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?, ?)", (int(
                                     u2id), int(when), str(experience), int(exp_int), int(datetime.timestamp(a)), str(a.strftime("%d.%m.%y"))))
                                 conn.commit()
+                                logger.debug('success writen my attack')
                             except:
                                 try:
                                     c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {
                                               "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "end": int(datetime.timestamp(a)), "do": str(a.strftime("%d.%m.%y")), "z": int(u2id)})
                                     conn.commit()
+                                    logger.debug('success updated my attack')
                                 except Exception as Err:
                                     logger.exception(f'err: {Err} avocado')
-                            logger.debug('success writen my attack')
                         if db_sqlite3 and u1id != my_id:
-                            c.execute("INSERT OR REPLACE INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (int(
-                                u2id), int(when), str(experience), int(exp_int), 0))
-                            conn.commit()
-                            logger.debug('success writen not my bio attack')
+                            try:
+                                c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (
+                                    int(u2id), int(when), str(experience), int(exp_int), 0))
+                                conn.commit()
+                                logger.debug('success writen not my new bio attack')
+                            except:
+                                c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end WHERE user_id = :z", {
+                                    "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "end": 0, "z": int(u2id)})
+                                conn.commit()
+                                logger.debug('success updated not my new bio attack')
                         if db_pymysql:
                             try:
                                 # from_infect 	who_id 	user_id 	profit 	until_infect 	until_str
