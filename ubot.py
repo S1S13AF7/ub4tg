@@ -206,6 +206,8 @@ async def main():
                 r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> подверг заморозке.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
                 # UA theme [via trust]
                 r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> за допомогою довіреності зазнала зараження.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                # RU theme [via trust]
+                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> при помощи доверенности подвергла заражению.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
                 # EN theme [via trust]
                 r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> by authorization infected.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
                 # idk what is theme [via trust]
@@ -226,6 +228,8 @@ async def main():
                 r"Прибыль: ([0-9\.\,k]+)",
                 # UA theme [via trust]
                 r"([0-9\.\,k]+) біо-ресурса",
+                # RU theme [via trust]
+                r"Прибыль: ([0-9\.\,k]+)",
                 # EN theme [via trust]
                 r"([0-9\.\,k]+) pcs\.",
                 # idk what is theme [via trust]
@@ -247,6 +251,8 @@ async def main():
                 default_infected_theme,
                 # UA theme [via trust]
                 default_infected_theme,
+                # RU theme [via trust]
+                default_infected_theme,
                 # EN theme [via trust]
                 default_infected_theme,
                 # idk what is theme [via trust]
@@ -257,6 +263,7 @@ async def main():
                 default_pathogen_theme,
                 default_pathogen_theme,
                 r'Remaining: ([0-9\ ]+)',
+                default_pathogen_theme,
                 default_pathogen_theme,
                 default_pathogen_theme,
                 default_pathogen_theme,
