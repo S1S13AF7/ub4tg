@@ -337,8 +337,8 @@ async def main():
                                 conn.commit()
                                 logger.debug('success writen not my new bio attack')
                             except:
-                                c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end WHERE user_id = :z", {
-                                    "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "end": 0, "z": int(u2id)})
+                                c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi WHERE user_id = :z", {
+                                    "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "z": int(u2id)})
                                 conn.commit()
                                 logger.debug('success updated not my new bio attack')
                         if db_pymysql:
