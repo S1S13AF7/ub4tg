@@ -415,7 +415,7 @@ async def main():
             m = event.message
             # reply = await client.get_messages(m.peer_id, ids=m.reply_to.reply_to_msg_id)
             # logger.debug(reply)
-            if m.sender_id != 6333102398 and m.mentioned is False:
+            if m.sender_id != 6333102398:
                 pass
             elif a_h and m.mentioned:
                 # нада хил
