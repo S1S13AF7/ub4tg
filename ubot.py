@@ -128,18 +128,6 @@ async def main():
 							print(f'{url} in db: @{user_id}')
 					except Exception as Err:
 							print(f'E:{Err}/S {url} у `tg_users_url`')
-					if user_id==0:
-						try:
-							d.execute("SELECT * FROM `tg_iris_zarazy` WHERE `u_link` = '%s' ORDER BY `when_int` DESC" % str(url));
-							user = d.fetchone();
-							if user is None:
-								#print(f'не знайшли {url} у `tg_iris_zarazy`')
-								pass
-							else:
-								user_id = int(user['user_id'])
-								print(f'{url} in db: @{user_id}')
-						except Exception as Err:
-							print(f'E:{Err}/S {url} у `tg_iris_zarazy`')
 				if user_id==0:
 					try:
 						user_entity = await client.get_entity(url)
@@ -335,6 +323,7 @@ async def main():
 		@client.on(events.NewMessage(outgoing=True, pattern='.biofuck'))
 		async def cmd_bf(event):			#крч акуратно з цим,вдруг шо я нічо
 			m = event.message
+			text = m.raw_text
 			when=int(datetime.timestamp(m.date))
 			msg='🤷' # якщо нема кого то жри рандом.
 			c.execute(f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC"); 
@@ -349,7 +338,7 @@ async def main():
 				await event.edit(pong) #ред
 				print(f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
 				for row in e_info:
-					rs = float(random.uniform(6,66)) #скільки спим: random
+					rs = float(random.uniform(11,99)) #скільки спим: random
 					eb = f'Биоеб {row[0]}' #повідомлення.
 					m=await event.reply(eb)
 					await asyncio.sleep(3.3)
