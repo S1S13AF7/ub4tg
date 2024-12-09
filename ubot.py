@@ -39,7 +39,17 @@ db_pymysql = config.db_pymysql  # set True or False
 db_sqlite3 = config.db_sqlite3  # set True or False
 a_h = config.a_h
 
-stats_medkit = 0
+
+class states:
+    auto_bioeb_sleep_interval = (6, 66)  # the default on (re)start
+    auto_bioeb_pathogen_threshold = 5  # these pathogens will be saved +- 1
+    auto_bioeb_min_interval = (0.666, 3.666)  # for fast leak pathogen
+    auto_bioeb_max_interval = (71, 121)  # waiting for more pathogen
+    # Default strategy mean: you have 4-5 pathogens when auto bioeb is enabled, pathogen overflow reduced
+    auto_bioeb_stop = False
+    stats_medkit = 0
+
+
 
 @logger.catch
 async def main():
@@ -50,16 +60,6 @@ async def main():
         my_id = int(me.id)
         my_fn = me.first_name
         logger.info(f'your id: {my_id}')
-        # Changeble in run-time
-        # FIXME: Make classes based variables maybe more useful way, because globals is mess
-        global auto_bioeb_sleep_interval, auto_bioeb_pathogen_threshold, auto_bioeb_min_interval, auto_bioeb_max_interval, auto_bioeb_stop
-        auto_bioeb_sleep_interval = (6, 66)  # the default on (re)start
-        auto_bioeb_pathogen_threshold = 5  # these pathogens will be saved +- 1
-        auto_bioeb_min_interval = (0.666, 3.666)  # for fast leak pathogen
-        auto_bioeb_max_interval = (71, 121)  # waiting for more pathogen
-        # Default strategy mean: you have 4-5 pathogens when auto bioeb is enabled, pathogen overflow reduced
-        auto_bioeb_stop = False
-
         if db_pymysql:
             con = pymysql.connect(host='localhost',
                                   user='root',
@@ -306,13 +306,12 @@ async def main():
                     else:
                         exp_int = int(experience)
                     pathogen_remaining = int(re.findall(bio_pathogen_theme[trying_theme_index], t)[0])
-                    global auto_bioeb_sleep_interval, auto_bioeb_pathogen_threshold, auto_bioeb_min_interval, auto_bioeb_max_interval, auto_bioeb_stop
-                    if pathogen_remaining <= auto_bioeb_pathogen_threshold and u1id == my_id:
-                        auto_bioeb_sleep_interval = auto_bioeb_max_interval
-                        logger.warning(f'Interval bioeb changed (slow down): {auto_bioeb_sleep_interval}')
+                    if pathogen_remaining <= states.auto_bioeb_pathogen_threshold and u1id == my_id:
+                        states.auto_bioeb_sleep_interval = states.auto_bioeb_max_interval
+                        logger.warning(f'Interval bioeb changed (slow down): {states.auto_bioeb_sleep_interval}')
                     elif u1id == my_id:
-                        auto_bioeb_sleep_interval = auto_bioeb_min_interval
-                        logger.debug(f'Interval bioeb changed (more fast): {auto_bioeb_sleep_interval}')
+                        states.auto_bioeb_sleep_interval = states.auto_bioeb_min_interval
+                        logger.debug(f'Interval bioeb changed (more fast): {states.auto_bioeb_sleep_interval}')
                     a = datetime.utcfromtimestamp(
                         when)+timedelta(days=int(days), hours=3)
                     do_int = datetime.timestamp(a)
@@ -390,16 +389,15 @@ async def main():
                 logger.warning(nema)
             else:
                 pong = '✅ погнали...'
-                global auto_bioeb_stop
-                auto_bioeb_stop = False
+                states.auto_bioeb_stop = False
                 await event.edit(pong)  # ред
                 logger.info(f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
                 for row in e_info:
-                    if auto_bioeb_stop:
+                    if states.auto_bioeb_stop:
                         logger.warning('auto bioeb stopped')
                         await event.reply('stopped')
                         break
-                    rs = float(random.uniform(auto_bioeb_sleep_interval[0], auto_bioeb_sleep_interval[1]))  # скільки спим: random
+                    rs = float(random.uniform(states.auto_bioeb_sleep_interval[0], states.auto_bioeb_sleep_interval[1]))  # скільки спим: random
                     eb = f'Биоеб {row[0]}'  # повідомлення.
                     m = await event.reply(eb)
                     await asyncio.sleep(3.3)
@@ -411,8 +409,7 @@ async def main():
 
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.biofuck stop$'))
         async def stop_bioeb(event):
-            global auto_bioeb_stop
-            auto_bioeb_stop = True
+            states.auto_bioeb_stop = True
             await event.edit('Trying stop...')  # ред
 
         @client.on(events.NewMessage(pattern='🌡 У вас горячка вызванная'))
@@ -430,14 +427,12 @@ async def main():
                     mark_read=True,
                     delete=False,
                 )
-                global stats_medkit
-                stats_medkit += 1
+                states.stats_medkit += 1
                 logger.debug(ah.text)
                 logger.warning('Used medkit')
             elif m.mentioned:
                 # alternative method: just waiting, this reduce bio-res usage
-                global auto_bioeb_sleep_interval
-                auto_bioeb_sleep_interval = (3600, 3600)
+                states.auto_bioeb_sleep_interval = (3600, 3600)
                 logger.warning('Waiting for infection release... [For skip just bioeb somebody]')
 
         ####################################################################
