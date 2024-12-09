@@ -194,7 +194,7 @@ async def main():
         @client.on(events.NewMessage(pattern='.*йобнув.*|.*подверг(ла)? заражению.*|.*infected.*|.*сикди.*|.*насрал.*|.*подверг заморозке.*|.*за допомогою довіреності зазнала зараження.*|.*by authorization infected.*|.*при помощи анонимуса атаковала.*'))
         @logger.catch
         async def podverg_a(event):
-            logger.debug('New bio attack detected')
+            logger.debug('bio attack detected')
             # хто там кого йобнув(ла)
             m = event.message
             t = m.raw_text
