@@ -474,56 +474,6 @@ async def main():
                 f"Medkit usage: {states.stats_medkit}"
             await event.edit(msg)
 
-        @client.on(events.NewMessage(outgoing=True, pattern='.l2f'))
-        async def cmd_l2f(event):  # Local->file/{id}.sqlite
-            msg = 'для успішного виконання повинно бути обидві бази True'
-            if db_pymysql:
-                try:
-                    d.execute(
-                        "SELECT * FROM `tg_iris_zarazy` WHERE who_id = %d ORDER BY when_int;" % int(my_id))
-                    bz_info = d.fetchall()  # получить
-                    count = len(bz_info)
-                    if count == 0:
-                        msg = '🤷 інфа нема.'
-                        print(msg)
-                    else:
-                        saved = 0
-                        for row in bz_info:
-                            print(row)
-                            id_user = int(row["user_id"])
-                            bio_int = int(row["bio_int"])
-                            bio_str = str(row["bio_str"])
-                            when_int = int(row["when_int"])
-                            expr_int = int(row["expr_int"])
-                            # .2024->.24
-                            expr_str = str(
-                                re.sub(r'.20', r'.', row["expr_str"]))
-                            # fix для любителів мінять його
-                            user_url = str(
-                                f'tg://openmessage?user_id={id_user}')
-                            if db_sqlite3:
-                                try:
-                                    c.execute("INSERT INTO zarazy (user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?, ?)", (int(
-                                        id_user), int(when_int), str(bio_str), int(bio_int), int(expr_int), str(expr_str)))
-                                    conn.commit()
-                                    saved += 1
-                                except:
-                                    try:
-                                        c.execute("UPDATE zarazy SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {
-                                                  "wh": int(when_int), "xp": str(bio_str), "xpi": int(bio_int), "end": int(expr_int), "do": str(expr_str), "z": int(id_user)})
-                                        conn.commit()
-                                    except Exception as Err:
-                                        print(f'err: {Err} zarazy')
-                                msg = f"{saved} із {count}"
-                            else:
-                                msg = 'для успішного виконання повинно бути обидві бази True'
-                except Exception as Err:
-                    logger.exception(f'err: {Err} zarazy localhost')
-                    msg = Err
-            m = await event.reply(msg)
-            await asyncio.sleep(5)
-            await client.delete_messages(event.chat_id, [event.id, m.id])
-
         @client.on(events.NewMessage(outgoing=True, pattern='.ping'))
         async def cmd_ping(event):
             # Say "pong!" whenever you send "!ping", then delete both messages
