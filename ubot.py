@@ -445,7 +445,7 @@ async def main():
         async def bio_stat(event):
             msg = "Session stats:\n" \
                 f"Medkit usage: {stats_medkit}"
-            event.edit(msg)
+            await event.edit(msg)
 
         @client.on(events.NewMessage(outgoing=True, pattern='.l2f'))
         async def cmd_l2f(event):  # Local->file/{id}.sqlite
