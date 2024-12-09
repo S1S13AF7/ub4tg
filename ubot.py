@@ -39,6 +39,7 @@ db_pymysql = config.db_pymysql  # set True or False
 db_sqlite3 = config.db_sqlite3  # set True or False
 a_h = config.a_h
 
+stats_medkit = 0
 
 @logger.catch
 async def main():
@@ -425,6 +426,8 @@ async def main():
                     mark_read=True,
                     delete=False,
                 )
+                global stats_medkit
+                stats_medkit += 1
                 logger.debug(ah.text)
                 logger.warning('Used medkit')
             elif m.mentioned:
@@ -434,6 +437,11 @@ async def main():
                 logger.warning('Waiting for infection release... [For skip just bioeb somebody]')
 
         ####################################################################
+        @client.on(events.NewMessage(outgoing=True, pattern=r'\.bstat$'))
+        async def bio_stat(event):
+            msg = "Session stats:\n" \
+                f"Medkit usage: {stats_medkit}"
+            event.edit(msg)
 
         @client.on(events.NewMessage(outgoing=True, pattern='.l2f'))
         async def cmd_l2f(event):  # Local->file/{id}.sqlite
