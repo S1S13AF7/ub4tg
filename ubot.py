@@ -362,11 +362,15 @@ async def main():
             m = event.message
             when = int(datetime.timestamp(m.date))
             msg = '🤷'  # якщо нема кого то жри рандом.
-            c.execute(
-                f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC")
-            e_info = list(c.fetchall())
+
+            def get_some_patients(limit=1000):
+                count = int(c.execute(f"SELECT COUNT(*) FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}").fetchone()[0])
+                c.execute(f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}")
+                return count, list(c.fetchall())
+
+            count, e_info = get_some_patients()
             random.shuffle(e_info)  # more random for random and reduce risk get very immun target after restart
-            count = len(e_info)
+            logger.debug(e_info)
             if count < 2:
                 nema = '🤷 рандом хавай.'
                 await event.edit(nema)  # ред
@@ -376,25 +380,37 @@ async def main():
                 states.auto_bioeb_stop = False
                 await event.edit(pong)  # ред
                 logger.info(f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
-                for row in e_info:
-                    if states.auto_bioeb_stop:
-                        logger.warning('auto bioeb stopped')
-                        await event.reply('stopped')
-                        break
+                while states.auto_bioeb_stop is False:
                     rs = float(random.uniform(states.auto_bioeb_sleep_interval[0], states.auto_bioeb_sleep_interval[1]))  # скільки спим: random
-                    eb = f'Биоеб {row[0]}'  # повідомлення.
+                    eb = f'Биоеб {e_info[0][0]}'  # повідомлення.
                     m = await event.reply(eb)
+                    e_info.pop(0)
+                    remaining_in_stack = len(e_info)
+                    logger.info(f'remaining patience in current stack: {remaining_in_stack}')
+                    random.shuffle(e_info)
                     states.last_sent_bioeb = time.time()
+                    if states.last_reply_bioeb_avocado == 0: # reduce negative ping -123456789 ms
+                        states.last_reply_bioeb_avocado = time.time()
                     await asyncio.sleep(3.3)
                     await client.delete_messages(event.chat_id, m.id)
                     delta_avocado = int((states.last_reply_bioeb_avocado - states.last_sent_bioeb) * 1000)
                     logger.debug(f'latency avocado reply: {delta_avocado} ms')
-                    if delta_avocado > states.avocado_reply_timeout and states.last_reply_bioeb_avocado > 0:
+                    if delta_avocado > states.avocado_reply_timeout:
                         logger.debug(f'bioeb sleep [increased, because avocado have lag]: {rs}s')
                         await asyncio.sleep(rs + random.uniform(34, 69))
                     else:
                         logger.debug(f'bioeb sleep: {rs}s')
                         await asyncio.sleep(rs)
+                    if len(e_info) <= 0:
+                        count, e_info = get_some_patients()
+                        if count < 2:
+                            event.reply('Закончились, рандом хавай')
+                            logger.warning('you are eaten all')
+                            break
+                        random.shuffle(e_info)
+                    
+                logger.warning('auto bioeb stopped')
+                await event.reply('stopped')
 
         ####################################################################
 
