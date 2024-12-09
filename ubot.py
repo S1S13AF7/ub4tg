@@ -468,7 +468,7 @@ async def main():
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.bstat$'))
         async def bio_stat(event):
             msg = "Session stats:\n" \
-                f"Medkit usage: {stats_medkit}"
+                f"Medkit usage: {states.stats_medkit}"
             await event.edit(msg)
 
         @client.on(events.NewMessage(outgoing=True, pattern='.l2f'))
