@@ -47,6 +47,9 @@ class states:
     auto_bioeb_max_interval = (71, 121)  # waiting for more pathogen
     # Default strategy mean: you have 4-5 pathogens when auto bioeb is enabled, pathogen overflow reduced
     auto_bioeb_stop = False
+    last_sent_bioeb = 0  # for measure time between reply avocado and bioeb
+    last_reply_bioeb_avocado = 0  # same as above
+    avocado_reply_timeout = 3000  # increase interval if lag more than this timeout in ms
     stats_medkit = 0
 
 
@@ -311,6 +314,7 @@ async def main():
                                     logger.debug('success updated my attack')
                                 except Exception as Err:
                                     logger.exception(f'err: {Err} avocado')
+                            states.last_reply_bioeb_avocado = time.time()
                         if db_sqlite3 and u1id != my_id:
                             try:
                                 c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (
@@ -380,10 +384,17 @@ async def main():
                     rs = float(random.uniform(states.auto_bioeb_sleep_interval[0], states.auto_bioeb_sleep_interval[1]))  # скільки спим: random
                     eb = f'Биоеб {row[0]}'  # повідомлення.
                     m = await event.reply(eb)
+                    states.last_sent_bioeb = time.time()
                     await asyncio.sleep(3.3)
                     await client.delete_messages(event.chat_id, m.id)
-                    logger.debug(f'bioeb sleep: {rs}s')
-                    await asyncio.sleep(rs)
+                    delta_avocado = int((states.last_reply_bioeb_avocado - states.last_sent_bioeb) * 1000)
+                    logger.debug(f'latency avocado reply: {delta_avocado} ms')
+                    if delta_avocado > states.avocado_reply_timeout and states.last_reply_bioeb_avocado > 0:
+                        logger.debug(f'bioeb sleep [increased, because avocado have lag]: {rs}s')
+                        await asyncio.sleep(rs + random.uniform(34, 69))
+                    else:
+                        logger.debug(f'bioeb sleep: {rs}s')
+                        await asyncio.sleep(rs)
 
         ####################################################################
 
@@ -408,11 +419,13 @@ async def main():
                     delete=False,
                 )
                 states.stats_medkit += 1
+                states.last_reply_bioeb_avocado = time.time()
                 logger.debug(ah.text)
                 logger.warning('Used medkit')
             elif m.mentioned:
                 # alternative method: just waiting, this reduce bio-res usage
                 states.auto_bioeb_sleep_interval = (3600, 3600)
+                states.last_reply_bioeb_avocado = time.time()
                 logger.warning('Waiting for infection release... [For skip just bioeb somebody]')
 
         ####################################################################
