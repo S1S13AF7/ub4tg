@@ -411,7 +411,8 @@ async def main():
                             logger.warning('you are eaten all')
                             break
                         random.shuffle(e_info)
-                        logger.success(f'stack refresh: {count} patiences')
+                        e_count = len(e_info)
+                        logger.success(f'db refresh: {count} patiences; in stack: {e_count}')
                     
                 logger.warning('auto bioeb stopped')
                 await event.reply('stopped')
