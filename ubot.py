@@ -193,85 +193,65 @@ async def main():
             # хто там кого йобнув(ла)
             m = event.message
             t = m.raw_text
+            # NOTE: theme hell... any ideas for improvment required
+            # but not use huge regular expression like|that|fuckin|way|a|aaaa|aaaaaaaa
+            # because it makes re.findall like mess...
+            default_bioexpr_theme = r"Прибыль: ([0-9\.\,k]+)"
+            default_infected_days_theme = r' на ([0-9\ ]+) д.*'
+            default_pathogen_remaining_theme = r'Осталось: ([0-9\ ]+)'
             bio_attack_themes = (  # I guess if too many themes it will be slow, but acceptable, because python slow as is.
+                # current order in theme:
+                # ('infected', 'bio_expr', 'infected days', 'pathogen remaining')
                 # UA theme
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> йобнув.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> йобнув.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 r"([0-9\.\,k]+) біо-ресурса",
+                 default_infected_days_theme,
+                 default_pathogen_remaining_theme),
                 # RU theme
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> подверг.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> подверг.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 default_bioexpr_theme,
+                 default_infected_days_theme,
+                 default_pathogen_remaining_theme),
                 # EN theme
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> infected.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> infected.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 r"([0-9\.\,k]+) pcs\.",
+                 r' for ([0-9\ ]+) d.*',
+                 r'Remaining: ([0-9\ ]+)'),
                 # AZ theme
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> сикди.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> сикди.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 r"верир: ([0-9\.\,k]+)",
+                 default_infected_days_theme,
+                 default_pathogen_remaining_theme),
                 # "ПК гик" theme
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> насрал.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> насрал.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 r"потеряет: ([0-9\.\,k]+)",
+                 default_infected_days_theme,
+                 default_pathogen_remaining_theme),
                 # "Новогодняя" theme
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> подверг заморозке.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> подверг заморозке.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 default_bioexpr_theme,
+                 default_infected_days_theme,
+                 default_pathogen_remaining_theme),
                 # UA theme [via trust]
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> за допомогою довіреності зазнала зараження.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> за допомогою довіреності зазнала зараження.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 r"([0-9\.\,k]+) біо-ресурса",
+                 default_infected_days_theme,
+                 default_pathogen_remaining_theme),
                 # RU theme [via trust]
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> при помощи доверенности подвергла заражению.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> при помощи доверенности подвергла заражению.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 default_bioexpr_theme,
+                 default_infected_days_theme,
+                 default_pathogen_remaining_theme),
                 # EN theme [via trust]
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> by authorization infected.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> by authorization infected.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 r"([0-9\.\,k]+) pcs\.",
+                 r' for ([0-9\ ]+) d.*',
+                 r'Remaining: ([0-9\ ]+)'),
                 # idk what is theme [via trust]
-                r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> при помощи анонимуса атаковала.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
-            )
-            bio_expr_themes = (
-                # UA theme
-                r"([0-9\.\,k]+) біо-ресурса",
-                # RU theme
-                r"Прибыль: ([0-9\.\,k]+)",
-                # EN theme
-                r"([0-9\.\,k]+) pcs\.",
-                # AZ theme
-                r"верир: ([0-9\.\,k]+)",
-                # "ПК гик" theme
-                r"потеряет: ([0-9\.\,k]+)",
-                # "Новогодняя" theme
-                r"Прибыль: ([0-9\.\,k]+)",
-                # UA theme [via trust]
-                r"([0-9\.\,k]+) біо-ресурса",
-                # RU theme [via trust]
-                r"Прибыль: ([0-9\.\,k]+)",
-                # EN theme [via trust]
-                r"([0-9\.\,k]+) pcs\.",
-                # idk what is theme [via trust]
-                r'приносит: ([0-9\.\,k]+)',
-            )
-            default_infected_theme = r' на ([0-9\ ]+) д.*'
-            bio_infected_themes = (
-                # UA theme
-                default_infected_theme,
-                # RU theme
-                default_infected_theme,
-                # EN theme
-                r' for ([0-9\ ]+) d.*',
-                # AZ theme
-                default_infected_theme,
-                # "ПК гик" theme
-                default_infected_theme,
-                # "Новогодняя" theme
-                default_infected_theme,
-                # UA theme [via trust]
-                default_infected_theme,
-                # RU theme [via trust]
-                default_infected_theme,
-                # EN theme [via trust]
-                default_infected_theme,
-                # idk what is theme [via trust]
-                default_infected_theme,
-            )
-            default_pathogen_theme = r'Осталось: ([0-9\ ]+)'
-            bio_pathogen_theme = (
-                default_pathogen_theme,
-                default_pathogen_theme,
-                r'Remaining: ([0-9\ ]+)',
-                default_pathogen_theme,
-                default_pathogen_theme,
-                default_pathogen_theme,
-                default_pathogen_theme,
-                default_pathogen_theme,
-                r'Remaining: ([0-9\ ]+)',
-                default_pathogen_theme,
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> при помощи анонимуса атаковала.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 r'приносит: ([0-9\.\,k]+)',
+                 default_infected_days_theme,
+                 default_pathogen_remaining_theme),
             )
 
             if m.sender_id != 6333102398:
@@ -282,7 +262,7 @@ async def main():
                 for theme in bio_attack_themes:
                     trying_theme_index = bio_attack_themes.index(theme)
                     logger.debug(f'trying theme {trying_theme_index}...')
-                    r = re.findall(theme, h)
+                    r = re.findall(theme[0], h)
                     if r:
                         logger.debug(f'found theme {trying_theme_index}')
                         break
@@ -296,8 +276,8 @@ async def main():
                     u2id = await get_id(u2url)
                     # print(f'{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}]')#показать
                     when = int(datetime.timestamp(m.date))
-                    days = int(re.findall(bio_infected_themes[trying_theme_index], t)[0].replace(' ', ''))
-                    experience = re.findall(bio_expr_themes[trying_theme_index], t)[0].strip()
+                    days = int(re.findall(bio_attack_themes[trying_theme_index][2], t)[0].replace(' ', ''))
+                    experience = re.findall(bio_attack_themes[trying_theme_index][1], t)[0].strip()
                     if ',' in experience:
                         experience = re.sub(r',', r'.', experience)
                     if 'k' in experience:
@@ -305,7 +285,7 @@ async def main():
                             float(re.sub('k', '', experience)) * 1000)
                     else:
                         exp_int = int(experience)
-                    pathogen_remaining = int(re.findall(bio_pathogen_theme[trying_theme_index], t)[0])
+                    pathogen_remaining = int(re.findall(bio_attack_themes[trying_theme_index][3], t)[0])
                     if pathogen_remaining <= states.auto_bioeb_pathogen_threshold and u1id == my_id:
                         states.auto_bioeb_sleep_interval = states.auto_bioeb_max_interval
                         logger.warning(f'Interval bioeb changed (slow down): {states.auto_bioeb_sleep_interval}')
