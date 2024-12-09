@@ -307,13 +307,13 @@ async def main():
                                 c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?, ?)", (int(
                                     u2id), int(when), str(experience), int(exp_int), int(datetime.timestamp(a)), str(a.strftime("%d.%m.%y"))))
                                 conn.commit()
-                                logger.debug('success writen my attack')
+                                logger.debug('[new] success writen my bio attack')
                             except:
                                 try:
                                     c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {
                                               "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "end": int(datetime.timestamp(a)), "do": str(a.strftime("%d.%m.%y")), "z": int(u2id)})
                                     conn.commit()
-                                    logger.debug('success updated my attack')
+                                    logger.debug('[upd] success updated my bio attack')
                                 except Exception as Err:
                                     logger.exception(f'err: {Err} avocado')
                             states.last_reply_bioeb_avocado = time.time()
@@ -322,7 +322,7 @@ async def main():
                                 c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (
                                     int(u2id), int(when), str(experience), int(exp_int), 0))
                                 conn.commit()
-                                logger.debug('success writen not my new bio attack')
+                                logger.debug('[new] success writen bio attack')
                             except:
                                 # NOTE: this maybe useful if you want sort database by bio-experience, but as S1S13AF7 said this
                                 # can be like: in database you have +10k today, tomorrow it changed to +1...
@@ -330,7 +330,7 @@ async def main():
                                 c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi WHERE user_id = :z", {
                                     "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "z": int(u2id)})
                                 conn.commit()
-                                logger.debug('success updated not my new bio attack')
+                                logger.debug('[upd] success updated bio attack')
                         if db_pymysql:
                             try:
                                 # from_infect 	who_id 	user_id 	profit 	until_infect 	until_str
@@ -352,7 +352,7 @@ async def main():
                                 # pass
                         if u1id == my_id:
                             logger.success(
-                                f'''{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}] +{experience}, d: {days}''')
+                                f'''me подверг(ла) {u2url} [@{u2id}] +{experience}, d: {days}''')
                         else:
                             logger.info(
                                 f'''{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}] +{experience}, d: {days}''')
