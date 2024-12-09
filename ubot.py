@@ -263,7 +263,7 @@ async def main():
 		####################################################################
 		
 		
-		@client.on(events.NewMessage(pattern='.*йобнув.*'))
+		@client.on(events.NewMessage(pattern='.*йобнув.*|.*подверг(ла)?.*|.*infected.*|.*сикди.*|.*насрал.*'))
 		async def podverg_a(event):
 			#хто там кого йобнув(ла)
 			m = event.message
@@ -272,16 +272,16 @@ async def main():
 				pass
 			elif len(m.entities) > 1:
 				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)#HTML
-				r= re.findall(r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> йобнув.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
+				r= re.findall(r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> (йобнув|подверг|infected|сикди|насрал|за допомогою|при помощи|by authorization).+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
 				if r:
 					u1url=r[0][0]
-					u2url=r[0][1]
+					u2url=r[0][2]
 					u1id = await get_id(u1url)
 					u2id = await get_id(u2url)
-					#print(f'{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}]')#показать
+					experience=1# fix if not preg match
 					when=int(datetime.timestamp(m.date))
-					days=int(re.sub(r' ','',re.findall(r' на ([0-9\ ]+) д.*', t)[0]))
-					experience=re.findall(r"([0-9\.\,k]+) біо-ресурса", t)[0]
+					days=int(re.sub(r' ','',re.findall(r' (на|for) ([0-9\ ]+) (д|d).*', t)[0][1]))
+					experience=re.findall(r"([☣️🧬]).+: ([0-9\.\,k]+).+ \|",t)[0][1]
 					if ',' in experience:
 						experience=re.sub(r',', r'.',experience)
 					if 'k' in experience:
