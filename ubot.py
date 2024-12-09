@@ -55,7 +55,6 @@ class states:
     stats_medkit = 0
 
 
-
 @logger.catch
 async def main():
     async with TelegramClient(sessdb, api_id, api_hash) as client:
@@ -197,6 +196,9 @@ async def main():
             logger.debug('bio attack detected')
             # хто там кого йобнув(ла)
             m = event.message
+            cinfo = await m.get_chat()
+            chat_name = cinfo.title
+            logger.debug(f"in chat '{chat_name}'")
             t = m.raw_text
             # NOTE: theme hell... any ideas for improvment required
             # but not use huge regular expression like|that|fuckin|way|a|aaaa|aaaaaaaa
