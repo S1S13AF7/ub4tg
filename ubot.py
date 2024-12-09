@@ -51,6 +51,7 @@ async def main():
         my_fn = me.first_name
         logger.info(f'your id: {my_id}')
         # Changeble in run-time
+        # FIXME: Make classes based variables maybe more useful way, because globals is mess
         global auto_bioeb_sleep_interval, auto_bioeb_pathogen_threshold, auto_bioeb_min_interval, auto_bioeb_max_interval, auto_bioeb_stop
         auto_bioeb_sleep_interval = (6, 66)  # the default on (re)start
         auto_bioeb_pathogen_threshold = 5  # these pathogens will be saved +- 1
@@ -338,6 +339,9 @@ async def main():
                                 conn.commit()
                                 logger.debug('success writen not my new bio attack')
                             except:
+                                # NOTE: this maybe useful if you want sort database by bio-experience, but as S1S13AF7 said this
+                                # can be like: in database you have +10k today, tomorrow it changed to +1...
+                                # so... idk what next...
                                 c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi WHERE user_id = :z", {
                                     "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "z": int(u2id)})
                                 conn.commit()
