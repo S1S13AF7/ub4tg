@@ -281,7 +281,7 @@ async def main():
 					experience=1# fix if not preg match
 					when=int(datetime.timestamp(m.date))
 					days=int(re.sub(r' ','',re.findall(r' (на|for) ([0-9\ ]+) (д|d).*', t)[0][1]))
-					experience=re.findall(r"([☣️🧬]).+: ([0-9\.\,k]+).+ \|",t)[0][1]
+					experience=re.findall(r"([☣️🧬🎄]).+: ([0-9\.\,k]+).+ \|",t)[0][1]
 					if ',' in experience:
 						experience=re.sub(r',', r'.',experience)
 					if 'k' in experience:
