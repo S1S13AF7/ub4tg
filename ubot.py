@@ -51,7 +51,7 @@ class states:
     auto_bioeb_stop = False
     last_sent_bioeb = 0  # for measure time between reply avocado and bioeb
     last_reply_bioeb_avocado = 0  # same as above
-    avocado_reply_timeout = 3000  # increase interval if lag more than this timeout in ms
+    avocado_reply_timeout = 3  # increase interval if lag more than this timeout in secs
     stats_medkit = 0
 
 
@@ -389,13 +389,15 @@ async def main():
                     remaining_in_stack = len(e_info)
                     logger.info(f'remaining patiences in current stack: {remaining_in_stack}')
                     random.shuffle(e_info)
-                    states.last_sent_bioeb = time.time()
-                    if states.last_reply_bioeb_avocado == 0: # reduce negative ping -123456789 ms
-                        states.last_reply_bioeb_avocado = time.time()
+                    states.last_sent_bioeb = int(datetime.timestamp(m.date))
+                    if states.last_reply_bioeb_avocado == 0:  # reduce negative ping
+                        states.last_reply_bioeb_avocado = int(datetime.timestamp(m.date))
                     await asyncio.sleep(3.3)
                     await client.delete_messages(event.chat_id, m.id)
-                    delta_avocado = int((states.last_reply_bioeb_avocado - states.last_sent_bioeb) * 1000)
-                    logger.debug(f'latency avocado reply: {delta_avocado} ms')
+                    delta_avocado = states.last_reply_bioeb_avocado - states.last_sent_bioeb
+                    if delta_avocado < 0:
+                        delta_avocado = delta_avocado * -1
+                    logger.debug(f'latency avocado reply: {delta_avocado} secs')
                     if delta_avocado > states.avocado_reply_timeout:
                         logger.debug(f'bioeb sleep [increased, because avocado have lag]: {rs}s')
                         await asyncio.sleep(rs + random.uniform(34, 69))
@@ -438,7 +440,6 @@ async def main():
                 if result.message:
                     logger.info(f'avocado says: {result.message}')
 
-
         @client.on(events.NewMessage(pattern='🌡 У вас горячка вызванная'))
         async def need_h(event):
             m = event.message
@@ -455,13 +456,13 @@ async def main():
                     delete=False,
                 )
                 states.stats_medkit += 1
-                states.last_reply_bioeb_avocado = time.time()
+                states.last_reply_bioeb_avocado = int(datetime.timestamp(event.date))
                 logger.debug(ah.text)
                 logger.warning('Used medkit')
             elif m.mentioned:
                 # alternative method: just waiting, this reduce bio-res usage
                 states.auto_bioeb_sleep_interval = (3600, 3600)
-                states.last_reply_bioeb_avocado = time.time()
+                states.last_reply_bioeb_avocado = int(datetime.timestamp(event.date))
                 logger.warning('Waiting for infection release... [For skip just bioeb somebody]')
 
         ####################################################################
