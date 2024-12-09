@@ -413,7 +413,8 @@ async def main():
                         random.shuffle(e_info)
                         e_count = len(e_info)
                         logger.success(f'db refresh: {count} patiences; in stack: {e_count}')
-                    
+
+                states.auto_bioeb_stop = True
                 logger.warning('auto bioeb stopped')
                 await event.reply('stopped')
 
