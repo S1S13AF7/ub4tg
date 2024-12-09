@@ -5,6 +5,7 @@ import asyncio
 from datetime import datetime, timedelta
 # from telethon.sync import TelegramClient
 from telethon import TelegramClient, events, utils
+from telethon import functions, types
 
 import sys
 import json
@@ -38,6 +39,7 @@ timezone = config.timezone
 db_pymysql = config.db_pymysql  # set True or False
 db_sqlite3 = config.db_sqlite3  # set True or False
 a_h = config.a_h
+a_404_patient = config.a_404_patient
 
 
 class states:
@@ -370,7 +372,6 @@ async def main():
 
             count, e_info = get_some_patients()
             random.shuffle(e_info)  # more random for random and reduce risk get very immun target after restart
-            logger.debug(e_info)
             if count < 2:
                 nema = '🤷 рандом хавай.'
                 await event.edit(nema)  # ред
@@ -386,7 +387,7 @@ async def main():
                     m = await event.reply(eb)
                     e_info.pop(0)
                     remaining_in_stack = len(e_info)
-                    logger.info(f'remaining patience in current stack: {remaining_in_stack}')
+                    logger.info(f'remaining patiences in current stack: {remaining_in_stack}')
                     random.shuffle(e_info)
                     states.last_sent_bioeb = time.time()
                     if states.last_reply_bioeb_avocado == 0: # reduce negative ping -123456789 ms
@@ -408,6 +409,7 @@ async def main():
                             logger.warning('you are eaten all')
                             break
                         random.shuffle(e_info)
+                        logger.success(f'stack refresh: {count} patiences')
                     
                 logger.warning('auto bioeb stopped')
                 await event.reply('stopped')
@@ -418,6 +420,24 @@ async def main():
         async def stop_bioeb(event):
             states.auto_bioeb_stop = True
             await event.edit('Trying stop...')  # ред
+
+        @client.on(events.NewMessage(pattern='🚫 Жертва не найдена'))
+        async def infection_not_found(event):
+            m = event.message
+            if m.sender_id != 6333102398:
+                pass
+            elif a_404_patient and m.mentioned:
+                await asyncio.sleep(random.uniform(1.0001, 2.22394))
+                result = await client(functions.messages.GetBotCallbackAnswerRequest(  # src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
+                    peer=m.peer_id,
+                    msg_id=m.id,
+                    game=False,  # idk why it works only when it false... 0_o
+                    data=m.reply_markup.rows[0].buttons[0].data
+                ))
+                logger.info('trying eat patient')
+                if result.message:
+                    logger.info(f'avocado says: {result.message}')
+
 
         @client.on(events.NewMessage(pattern='🌡 У вас горячка вызванная'))
         async def need_h(event):

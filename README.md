@@ -12,7 +12,8 @@ before start, create config.json file with this content:
   "timezone": "Europe/[Your_city]",
   "db_pymysql": false,
   "db_sqlite3": true,
-  "a_h": true
+  "a_h": true,
+  "a_404_patient": true
 }
 ```
 ___
