@@ -19,6 +19,7 @@ import pymysql.cursors
 
 import sqlite3
 from loguru import logger
+from collections import Counter
 logger.remove()
 logger.level("DEBUG", color='<magenta>')
 logger.add(sys.stderr, level="DEBUG")
@@ -53,6 +54,7 @@ class states:
     last_reply_bioeb_avocado = 0  # same as above
     avocado_reply_timeout = 3  # increase interval if lag more than this timeout in secs
     stats_medkit = 0
+    stats_most_infect_spam_chats = Counter()
 
 
 @logger.catch
@@ -199,6 +201,7 @@ async def main():
             cinfo = await m.get_chat()
             chat_name = cinfo.title
             logger.debug(f"in chat '{chat_name}'")
+            states.stats_most_infect_spam_chats[chat_name] += 1
             t = m.raw_text
             # NOTE: theme hell... any ideas for improvment required
             # but not use huge regular expression like|that|fuckin|way|a|aaaa|aaaaaaaa
@@ -472,8 +475,11 @@ async def main():
         ####################################################################
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.bstat$'))
         async def bio_stat(event):
+            stats_most_chats = states.stats_most_infect_spam_chats.most_common()
             msg = "Session stats:\n" \
-                f"Medkit usage: {states.stats_medkit}"
+                f"Medkit usage: {states.stats_medkit}\n" \
+                f"Most common chats:\n" \
+                f"{stats_most_chats}".replace(',', '\n')
             await event.edit(msg)
 
         @client.on(events.NewMessage(outgoing=True, pattern='.ping'))
