@@ -50,6 +50,7 @@ class states:
     auto_bioeb_max_interval = (71, 121)  # waiting for more pathogen
     # Default strategy mean: you have 4-5 pathogens when auto bioeb is enabled, pathogen overflow reduced
     auto_bioeb_stop = False
+    where_send_check_avocado = None
     last_sent_bioeb = 0  # for measure time between reply avocado and bioeb
     last_reply_bioeb_avocado = 0  # same as above
     avocado_reply_timeout = 3  # increase interval if lag more than this timeout in secs
@@ -75,42 +76,42 @@ async def main():
                                   cursorclass=pymysql.cursors.DictCursor)
             d = con.cursor()
             d.execute('''CREATE TABLE IF NOT EXISTS `tg_iris_zarazy` (
-			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`u_link` varchar(500) NOT NULL DEFAULT '',
-			`bio_str` varchar(11) NOT NULL DEFAULT '1',
-			`bio_int` int(11) unsigned NOT NULL DEFAULT '1',
-			`expr_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`expr_str` varchar(11) NOT NULL DEFAULT '0',
-			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
-			);''')
+                        `when_int` int(11) unsigned NOT NULL DEFAULT '0',
+                        `who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+                        `user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+                        `u_link` varchar(500) NOT NULL DEFAULT '',
+                        `bio_str` varchar(11) NOT NULL DEFAULT '1',
+                        `bio_int` int(11) unsigned NOT NULL DEFAULT '1',
+                        `expr_int` int(11) unsigned NOT NULL DEFAULT '0',
+                        `expr_str` varchar(11) NOT NULL DEFAULT '0',
+                        UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
+                        );''')
             con.commit()
             d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_attack` (
-			`from_infect` int(11) unsigned NOT NULL DEFAULT '0',
-			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`profit` int(11) unsigned NOT NULL DEFAULT '1',
-			`until_infect` int(11) unsigned NOT NULL DEFAULT '0',
-			`until_str` varchar(11) NOT NULL DEFAULT '0',
-			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
-			);''')
+                        `from_infect` int(11) unsigned NOT NULL DEFAULT '0',
+                        `who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+                        `user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+                        `profit` int(11) unsigned NOT NULL DEFAULT '1',
+                        `until_infect` int(11) unsigned NOT NULL DEFAULT '0',
+                        `until_str` varchar(11) NOT NULL DEFAULT '0',
+                        UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
+                        );''')
             con.commit()
             d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_users` (
-			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`profit` int(11) unsigned NOT NULL DEFAULT '1',
-			UNIQUE KEY `user_id` (`user_id`)
-			);''')
+                        `user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+                        `when_int` int(11) unsigned NOT NULL DEFAULT '0',
+                        `profit` int(11) unsigned NOT NULL DEFAULT '1',
+                        UNIQUE KEY `user_id` (`user_id`)
+                        );''')
             con.commit()
             d.execute('''CREATE TABLE IF NOT EXISTS `tg_users_url` (
-			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`u_link` varchar(64) NOT NULL DEFAULT '',
-			`f_name` text NOT NULL,
-			PRIMARY KEY (`user_id`),
-			UNIQUE KEY (`u_link`)
-			);''')
+                        `user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+                        `when_int` int(11) unsigned NOT NULL DEFAULT '0',
+                        `u_link` varchar(64) NOT NULL DEFAULT '',
+                        `f_name` text NOT NULL,
+                        PRIMARY KEY (`user_id`),
+                        UNIQUE KEY (`u_link`)
+                        );''')
             con.commit()
 
         if db_sqlite3:
@@ -118,22 +119,22 @@ async def main():
             # conn = sqlite3.connect(f"D:\\Misc\\projects\\Python\\ub4tg_db\\{my_id}.sqlite")#Або повністю
             c = conn.cursor()
             c.execute('''CREATE TABLE IF NOT EXISTS zarazy	(
-			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
-			when_int	INTEGER NOT NULL DEFAULT 0,
-			bio_str	VARCHAR NOT NULL DEFAULT 1,
-			bio_int	INTEGER NOT NULL DEFAULT 1,
-			expr_int	INTEGER NOT NULL DEFAULT 0,
-			expr_str	VARCHAR NOT NULL DEFAULT 0
-			)''')
+                        user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
+                        when_int	INTEGER NOT NULL DEFAULT 0,
+                        bio_str	VARCHAR NOT NULL DEFAULT 1,
+                        bio_int	INTEGER NOT NULL DEFAULT 1,
+                        expr_int	INTEGER NOT NULL DEFAULT 0,
+                        expr_str	VARCHAR NOT NULL DEFAULT 0
+                        )''')
             conn.commit()
             c.execute('''CREATE TABLE IF NOT EXISTS avocado	(
-			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
-			when_int	INTEGER NOT NULL DEFAULT 0,
-			bio_str	VARCHAR NOT NULL DEFAULT 1,
-			bio_int	INTEGER NOT NULL DEFAULT 1,
-			expr_int	INTEGER NOT NULL DEFAULT 0,
-			expr_str	VARCHAR NOT NULL DEFAULT 0
-			)''')
+                        user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
+                        when_int	INTEGER NOT NULL DEFAULT 0,
+                        bio_str	VARCHAR NOT NULL DEFAULT 1,
+                        bio_int	INTEGER NOT NULL DEFAULT 1,
+                        expr_int	INTEGER NOT NULL DEFAULT 0,
+                        expr_str	VARCHAR NOT NULL DEFAULT 0
+                        )''')
             conn.commit()
         ####################################################################
 
@@ -277,7 +278,8 @@ async def main():
                         logger.debug(f'found theme {trying_theme_index}')
                         break
                 if r == []:
-                    logger.warning('theme not found, showing original message: ' + m.text)
+                    logger.warning(
+                        'theme not found, showing original message: ' + m.text)
                 logger.debug(str(r))
                 if r:
                     u1url = r[0][0]
@@ -286,8 +288,10 @@ async def main():
                     u2id = await get_id(u2url)
                     # print(f'{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}]')#показать
                     when = int(datetime.timestamp(m.date))
-                    days = int(re.findall(bio_attack_themes[trying_theme_index][2], t)[0].replace(' ', ''))
-                    experience = re.findall(bio_attack_themes[trying_theme_index][1], t)[0].strip()
+                    days = int(re.findall(bio_attack_themes[trying_theme_index][2], t)[
+                               0].replace(' ', ''))
+                    experience = re.findall(
+                        bio_attack_themes[trying_theme_index][1], t)[0].strip()
                     if ',' in experience:
                         experience = re.sub(r',', r'.', experience)
                     if 'k' in experience:
@@ -295,13 +299,16 @@ async def main():
                             float(re.sub('k', '', experience)) * 1000)
                     else:
                         exp_int = int(experience)
-                    pathogen_remaining = int(re.findall(bio_attack_themes[trying_theme_index][3], t)[0])
+                    pathogen_remaining = int(re.findall(
+                        bio_attack_themes[trying_theme_index][3], t)[0])
                     if pathogen_remaining <= states.auto_bioeb_pathogen_threshold and u1id == my_id:
                         states.auto_bioeb_sleep_interval = states.auto_bioeb_max_interval
-                        logger.warning(f'Interval bioeb changed (slow down): {states.auto_bioeb_sleep_interval}')
+                        logger.warning(
+                            f'Interval bioeb changed (slow down): {states.auto_bioeb_sleep_interval}')
                     elif u1id == my_id:
                         states.auto_bioeb_sleep_interval = states.auto_bioeb_min_interval
-                        logger.debug(f'Interval bioeb changed (more fast): {states.auto_bioeb_sleep_interval}')
+                        logger.debug(
+                            f'Interval bioeb changed (more fast): {states.auto_bioeb_sleep_interval}')
                     a = datetime.utcfromtimestamp(
                         when)+timedelta(days=int(days), hours=3)
                     do_int = datetime.timestamp(a)
@@ -312,13 +319,15 @@ async def main():
                                 c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?, ?)", (int(
                                     u2id), int(when), str(experience), int(exp_int), int(datetime.timestamp(a)), str(a.strftime("%d.%m.%y"))))
                                 conn.commit()
-                                logger.debug('[new] success writen my bio attack')
+                                logger.debug(
+                                    '[new] success writen my bio attack')
                             except:
                                 try:
                                     c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {
                                               "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "end": int(datetime.timestamp(a)), "do": str(a.strftime("%d.%m.%y")), "z": int(u2id)})
                                     conn.commit()
-                                    logger.debug('[upd] success updated my bio attack')
+                                    logger.debug(
+                                        '[upd] success updated my bio attack')
                                 except Exception as Err:
                                     logger.exception(f'err: {Err} avocado')
                             states.last_reply_bioeb_avocado = time.time()
@@ -335,7 +344,8 @@ async def main():
                                 c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi WHERE user_id = :z", {
                                     "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "z": int(u2id)})
                                 conn.commit()
-                                logger.debug('[upd] success updated bio attack')
+                                logger.debug(
+                                    '[upd] success updated bio attack')
                         if db_pymysql:
                             try:
                                 # from_infect 	who_id 	user_id 	profit 	until_infect 	until_str
@@ -371,12 +381,15 @@ async def main():
             msg = '🤷'  # якщо нема кого то жри рандом.
 
             def get_some_patients(limit=1000):
-                count = int(c.execute(f"SELECT COUNT(*) FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}").fetchone()[0])
-                c.execute(f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}")
+                count = int(c.execute(
+                    f"SELECT COUNT(*) FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}").fetchone()[0])
+                c.execute(
+                    f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}")
                 return count, list(c.fetchall())
 
             count, e_info = get_some_patients()
-            random.shuffle(e_info)  # more random for random and reduce risk get very immun target after restart
+            # more random for random and reduce risk get very immun target after restart
+            random.shuffle(e_info)
             if count < 2:
                 nema = '🤷 рандом хавай.'
                 await event.edit(nema)  # ред
@@ -385,26 +398,33 @@ async def main():
                 pong = '✅ погнали...'
                 states.auto_bioeb_stop = False
                 await event.edit(pong)  # ред
-                logger.info(f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
+                logger.info(
+                    f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
                 while states.auto_bioeb_stop is False:
-                    rs = float(random.uniform(states.auto_bioeb_sleep_interval[0], states.auto_bioeb_sleep_interval[1]))  # скільки спим: random
+                    # скільки спим: random
+                    rs = float(random.uniform(
+                        states.auto_bioeb_sleep_interval[0], states.auto_bioeb_sleep_interval[1]))
                     eb = f'Биоеб {e_info[0][0]}'  # повідомлення.
                     m = await event.reply(eb)
                     e_info.pop(0)
                     remaining_in_stack = len(e_info)
-                    logger.info(f'remaining patiences in current stack: {remaining_in_stack}')
+                    logger.info(
+                        f'remaining patiences in current stack: {remaining_in_stack}')
                     random.shuffle(e_info)
                     states.last_sent_bioeb = int(datetime.timestamp(m.date))
                     if states.last_reply_bioeb_avocado == 0:  # reduce negative ping
-                        states.last_reply_bioeb_avocado = int(datetime.timestamp(m.date))
+                        states.last_reply_bioeb_avocado = int(
+                            datetime.timestamp(m.date))
                     await asyncio.sleep(3.3)
                     await client.delete_messages(event.chat_id, m.id)
                     delta_avocado = states.last_reply_bioeb_avocado - states.last_sent_bioeb
                     if delta_avocado < 0:
                         delta_avocado = delta_avocado * -1
-                    logger.debug(f'latency avocado reply: {delta_avocado} secs')
+                    logger.debug(
+                        f'latency avocado reply: {delta_avocado} secs')
                     if delta_avocado > states.avocado_reply_timeout:
-                        logger.debug(f'bioeb sleep [increased, because avocado have lag]: {rs}s')
+                        logger.debug(
+                            f'bioeb sleep [increased, because avocado have lag]: {rs}s')
                         await asyncio.sleep(rs + random.uniform(34, 69))
                     else:
                         logger.debug(f'bioeb sleep: {rs}s')
@@ -417,7 +437,8 @@ async def main():
                             break
                         random.shuffle(e_info)
                         e_count = len(e_info)
-                        logger.success(f'db refresh: {count} patiences; in stack: {e_count}')
+                        logger.success(
+                            f'db refresh: {count} patiences; in stack: {e_count}')
 
                 states.auto_bioeb_stop = True
                 logger.warning('auto bioeb stopped')
@@ -429,6 +450,37 @@ async def main():
         async def stop_bioeb(event):
             states.auto_bioeb_stop = True
             await event.edit('Trying stop...')  # ред
+
+        @client.on(events.NewMessage(outgoing=True, pattern=r'\.biocheck$'))
+        async def set_default_check_chat(event):
+            states.where_send_check_avocado = event.peer_id
+            await event.edit('Checks will be send here')
+
+        @client.on(events.NewMessage(pattern='.+Служба безопасности лаборатории'))
+        # Организатор заражения: нада биоебнуть?
+        async def iris_sb(event):
+            # iris off bio 31.12.24
+            m = event.message
+            t = m.raw_text
+            irises = [707693258, 5137994780,
+                      5226378684, 5443619563, 5434504334]
+            if m.sender_id not in irises:
+                pass
+            elif a_404_patient and len(m.entities) > 1 and states.where_send_check_avocado:
+                h = utils.sanitize_parse_mode(
+                    'html').unparse(t, m.entities)  # HTML
+                r = re.findall(
+                    r'Организатор заражения: <a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">', h)
+                user_url = r[0]
+                # user_id = await get_id(user_url)
+                if r:
+                    await asyncio.sleep(random.uniform(1, 2))
+                    logger.info(f'auto checking iris -> avocado: {user_url}')
+                    m = await client.send_message(states.where_send_check_avocado, f'.ч {user_url}')
+                    await asyncio.sleep(random.uniform(1, 5))
+                    await client.delete_messages(m.chat_id, m.id)
+
+                ####################################################################
 
         @client.on(events.NewMessage(pattern='🚫 Жертва не найдена'))
         async def infection_not_found(event):
@@ -463,14 +515,17 @@ async def main():
                     delete=False,
                 )
                 states.stats_medkit += 1
-                states.last_reply_bioeb_avocado = int(datetime.timestamp(event.date))
+                states.last_reply_bioeb_avocado = int(
+                    datetime.timestamp(event.date))
                 logger.debug(ah.text)
                 logger.warning('Used medkit')
             elif m.mentioned:
                 # alternative method: just waiting, this reduce bio-res usage
                 states.auto_bioeb_sleep_interval = (3600, 3600)
-                states.last_reply_bioeb_avocado = int(datetime.timestamp(event.date))
-                logger.warning('Waiting for infection release... [For skip just bioeb somebody]')
+                states.last_reply_bioeb_avocado = int(
+                    datetime.timestamp(event.date))
+                logger.warning(
+                    'Waiting for infection release... [For skip just bioeb somebody]')
 
         ####################################################################
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.bstat$'))

@@ -1,6 +1,6 @@
 This is fork from: https://github.com/S1S13AF7/ub4tg  
 Main changes:  
-* removed iris compatibility
+* removed iris compatibility (partially for avocado transition)
 * added loguru
 * other some improvments  
   
