@@ -423,9 +423,10 @@ async def main():
                     logger.debug(
                         f'latency avocado reply: {delta_avocado} secs')
                     if delta_avocado > states.avocado_reply_timeout:
+                        interval_with_lag = rs + random.uniform(9.18299148, 40.9201412499)
                         logger.debug(
-                            f'bioeb sleep [increased, because avocado have lag]: {rs}s')
-                        await asyncio.sleep(rs + random.uniform(34, 69))
+                            f'bioeb sleep [increased, because avocado have lag]: {interval_with_lag}s')
+                        await asyncio.sleep(interval_with_lag)
                     else:
                         logger.debug(f'bioeb sleep: {rs}s')
                         await asyncio.sleep(rs)
