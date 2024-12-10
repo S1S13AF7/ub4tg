@@ -4,7 +4,7 @@ import asyncio
 
 from datetime import datetime, timedelta
 #from telethon.sync import TelegramClient
-from telethon import TelegramClient, events, utils
+from telethon import TelegramClient, events, functions, utils
 
 import os
 import re
@@ -29,6 +29,9 @@ db_pymysql = True#set True or False
 db_sqlite3 = True#set True or False
 
 a_h = False # set True or False
+
+a_404_patient = False #set True or False
+
 
 async def main():
 	async with TelegramClient(sessdb,api_id,api_hash) as client:
@@ -351,6 +354,27 @@ async def main():
 					await client.delete_messages(event.chat_id,m.id)
 					await asyncio.sleep(rs)
 				
+		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(pattern='🚫 Жертва не найдена'))
+		async def infection_not_found(event):
+			m = event.message
+			if m.sender_id != 6333102398:
+				pass
+			elif a_404_patient and m.mentioned:
+				await asyncio.sleep(random.uniform(1.0001, 2.22394))
+				result = await client(functions.messages.GetBotCallbackAnswerRequest(  # src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
+				peer=m.peer_id,
+				msg_id=m.id,
+				game=False,  # idk why it works only when it false... 0_o
+				data=m.reply_markup.rows[0].buttons[0].data
+				))
+				print('trying eat patient')
+				if result.message:
+					print(f'avocado says: {result.message}')
+		
 		
 		####################################################################
 		
