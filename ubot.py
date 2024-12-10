@@ -343,7 +343,7 @@ async def main():
 			elif a_404_patient and i2a and len(m.entities) > 1:				
 				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)#HTML
 				r= re.findall(r'Организатор заражения: <a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
-				user_url=r[0][0]
+				user_url=r[0]
 				#user_id = await get_id(user_url)
 				if r:
 					await asyncio.sleep(random.uniform(1,2))
