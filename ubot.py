@@ -60,7 +60,7 @@ class states:
 
 @logger.catch
 async def main():
-    async with TelegramClient(sessdb, api_id, api_hash) as client:
+    async with TelegramClient(sessdb, api_id, api_hash, timeout=300) as client:
         client.parse_mode = "HTML"
         logger.success('User-Bot started')
         me = await client.get_me()
