@@ -30,7 +30,9 @@ db_sqlite3 = True#set True or False
 
 a_h = False # set True or False
 
-a_404_patient = False #set True or False
+a_404_patient = False#set True or False
+
+i2a = False # set True or False # є сенс вмикать лише якщо a_404_patient = True
 
 
 async def main():
@@ -324,6 +326,31 @@ async def main():
 								print(f'err: {Err} (tg_bio_users)')
 								#pass
 						print(f'''{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}] +{experience}''')#показать
+		
+		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(pattern='.+Служба безопасности лаборатории'))
+		#Организатор заражения: нада биоебнуть?
+		async def iris_sb(event):
+			#iris off bio 31.12.24
+			m = event.message
+			t = m.raw_text
+			irises = [707693258,5137994780,5226378684,5443619563,5434504334]
+			if m.sender_id not in irises:
+				pass
+			elif a_404_patient and i2a and len(m.entities) > 1:				
+				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)#HTML
+				r= re.findall(r'Организатор заражения: <a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
+				user_url=r[0][0]
+				#user_id = await get_id(user_url)
+				if r:
+					await asyncio.sleep(random.uniform(1,2))
+					m = await event.reply(f'.ч {user_url}')
+					await asyncio.sleep(random.uniform(1,5))
+					await client.delete_messages(event.chat_id, m.id)
+					
 		
 		
 		####################################################################
