@@ -305,7 +305,7 @@ async def main():
 									c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {"wh":int(when),"xp":str(experience),"xpi":int(exp_int),"end":int(datetime.timestamp(a)),"do":str(a.strftime("%d.%m.%y")),"z":int(u2id)}); conn.commit()
 								except Exception as Err:
 									print(f'err: {Err} avocado')
-						elif db_sqlite3:
+						elif db_sqlite3 and u2id!=my_id:
 							try:
 								c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (int(u2id),int(when),str(experience),int(exp_int),int(0))); conn.commit()#save not my pacients
 							except:
@@ -344,8 +344,8 @@ async def main():
 				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)#HTML
 				r= re.findall(r'Организатор заражения: <a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
 				user_url=r[0]
-				#user_id = await get_id(user_url)
-				if r:
+				user_id = await get_id(user_url)
+				if r and user_id!=my_id:
 					await asyncio.sleep(random.uniform(1,2))
 					m = await event.reply(f'.ч {user_url}')
 					await asyncio.sleep(random.uniform(1,5))
@@ -374,12 +374,13 @@ async def main():
 				await event.edit(pong) #ред
 				print(f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
 				for row in e_info:
-					rs = float(random.uniform(11,99)) #скільки спим: random
-					eb = f'Биоеб {row[0]}' #повідомлення.
-					m=await event.reply(eb)
-					await asyncio.sleep(3.3)
-					await client.delete_messages(event.chat_id,m.id)
-					await asyncio.sleep(rs)
+					if row[0]!=my_id:				#	❌ Нельзя заразить самого себя.
+						rs = float(random.uniform(11,99)) #скільки спим: random
+						eb = f'Биоеб {row[0]}' #повідомлення.
+						m=await event.reply(eb)
+						await asyncio.sleep(random.uniform(1.0001, 3.3))
+						await client.delete_messages(event.chat_id,m.id)
+						await asyncio.sleep(rs)
 				
 		
 		####################################################################
