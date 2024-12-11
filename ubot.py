@@ -193,7 +193,7 @@ async def main():
 
         ####################################################################
 
-        @client.on(events.NewMessage(pattern='.*йобнув.*|.*подверг(ла)? заражению.*|.*infected.*|.*сикди.*|.*насрал.*|.*подверг заморозке.*|.*за допомогою довіреності зазнала зараження.*|.*by authorization infected.*|.*при помощи анонимуса атаковала.*'))
+        @client.on(events.NewMessage(pattern='.*йобнув.*|.*подверг(ла)?.*|.*infected.*|.*сикди.*|.*насрал.*|.*за допомогою довіреності.*|.*by authorization infected.*|.*при помощи анонимуса атаковала.*'))
         @logger.catch
         async def podverg_a(event):
             logger.debug('bio attack detected')
@@ -341,7 +341,7 @@ async def main():
                                 # NOTE: this maybe useful if you want sort database by bio-experience, but as S1S13AF7 said this
                                 # can be like: in database you have +10k today, tomorrow it changed to +1...
                                 # so... idk what next...
-                                c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi WHERE user_id = :z", {
+                                c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi WHERE user_id = :z AND when_int < :wh AND expr_int < :wh", {
                                     "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "z": int(u2id)})
                                 conn.commit()
                                 logger.debug(
