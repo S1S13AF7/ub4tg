@@ -1,5 +1,6 @@
 # requirements.txt
 
+loguru
 aiohttp==3.9.0b0
 aiogram
 Telethon-Mod
