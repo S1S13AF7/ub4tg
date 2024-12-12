@@ -136,6 +136,12 @@ async def main():
                         expr_str	VARCHAR NOT NULL DEFAULT 0
                         )''')
             conn.commit()
+            c.execute('''CREATE TABLE IF NOT EXISTS avocado_exclude	(
+                        user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
+                        reason VARCHAR
+                        )''')
+            conn.commit()
+
         ####################################################################
 
         async def get_id(url):
@@ -266,6 +272,7 @@ async def main():
             )
 
             if m.sender_id != 6333102398:
+                logger.debug('not avocado infection, skipping')
                 pass
             elif len(m.entities) > 1:
                 h = utils.sanitize_parse_mode(
@@ -286,6 +293,7 @@ async def main():
                     u2url = r[0][1]
                     u1id = await get_id(u1url)
                     u2id = await get_id(u2url)
+                    bio_excludes = [x[0] for x in c.execute('select user_id from avocado_exclude').fetchall()]
                     # print(f'{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}]')#показать
                     when = int(datetime.timestamp(m.date))
                     days = int(re.findall(bio_attack_themes[trying_theme_index][2], t)[
@@ -331,7 +339,7 @@ async def main():
                                 except Exception as Err:
                                     logger.exception(f'err: {Err} avocado')
                             states.last_reply_bioeb_avocado = time.time()
-                        if db_sqlite3 and u1id != my_id:
+                        if db_sqlite3 and u1id != my_id and u2id not in bio_excludes:
                             try:
                                 c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (
                                     int(u2id), int(when), str(experience), int(exp_int), 0))
@@ -371,6 +379,8 @@ async def main():
                         else:
                             logger.info(
                                 f'''{u1url} [@{u1id}] подверг(ла) {u2url} [@{u2id}] +{experience}, d: {days}''')
+                            if u2id in bio_excludes:
+                                logger.debug(f'{u2id} not added: excluded')
 
         ####################################################################
 
@@ -383,9 +393,15 @@ async def main():
             def get_some_patients(limit=1000):
                 count = int(c.execute(
                     f"SELECT COUNT(*) FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}").fetchone()[0])
-                c.execute(
-                    f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}")
-                return count, list(c.fetchall())
+                patients = list(c.execute(
+                    f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY expr_int,when_int ASC LIMIT {limit}").fetchall())
+                bio_excludes = [x[0] for x in c.execute('select user_id from avocado_exclude').fetchall()]
+                for p in patients:
+                    if p[0] in bio_excludes:
+                        logger.warning(f'skipping patient {p[0]}, excluded from bioebinng')
+                        patients.remove(p)
+
+                return count, patients
 
             count, e_info = get_some_patients()
             # more random for random and reduce risk get very immun target after restart
@@ -451,6 +467,30 @@ async def main():
         async def stop_bioeb(event):
             states.auto_bioeb_stop = True
             await event.edit('Trying stop...')  # ред
+
+        @client.on(events.NewMessage(outgoing=True, pattern=r'\.bioexclude'))
+        async def add_bioeb_exclude(event):
+            reason = event.text.split(' ', 1)[1] or None
+            reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+            if not reply.entities:
+                await event.edit('ids not found')
+                return
+            t = reply.raw_text
+            h = utils.sanitize_parse_mode(
+                'html').unparse(t, reply.entities)  # HTML
+            r = re.findall(r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">', h)
+            insertion_status = []
+            for link in r:
+                user_id = await get_id(link)
+                try:
+                    c.execute("INSERT INTO avocado_exclude(user_id, reason) VALUES (?, ?)", (user_id, reason))
+                    insertion_status.append(f'{user_id}: ok')
+                except:
+                    insertion_status.append(f'{user_id}: exists')
+            conn.commit()
+            insertion_status = '\n'.join(insertion_status)
+            await event.edit(f'{insertion_status}\nreason: {reason}')
+            
 
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.biocheck$'))
         async def set_default_check_chat(event):
