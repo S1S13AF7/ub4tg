@@ -27,6 +27,8 @@ logger.add(sys.stderr, level="DEBUG")
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME')
 if is_termux:
     logger.info('Termux detected, checking permissions...')
+    logger.info('If you want prevent killing termux by android, get wake lock: check your notifications, find termux app and press "ACQUIRE WAKELOCK"')
+    logger.warning('This can cause battery drain!')
     if os.environ.get('TERMUX_APP__APK_RELEASE') not in ('F_DROID', 'GITHUB'):
         logger.warning('You use not f-droid/github apk release, it may have problems...')
         logger.warning('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
@@ -44,7 +46,31 @@ if is_termux:
 
 # Название сессии
 sessdb = 'tl-ub'
-with open("config.json", "r") as configfile:
+default_config_file_path = 'config.json'
+if is_termux:
+    default_directory = '/sdcard/ub4tg'
+    os.system(f'mkdir -p {default_directory}')
+    default_config_file_path = f'{default_directory}/config.json'
+if not os.path.exists(default_config_file_path):
+    logger.info('config not found, first launch setup...')
+    api_id = input('enter api_id from https://my.telegram.org/ : ')
+    api_hash = input('enter api_hash from https://my.telegram.org/ : ')
+    timezone = input('enter timezone, format is Country/City: ')
+    db_pymysql = False
+    db_sqlite3 = True
+    a_h = input('enable automatic use medkit? [true/false]: ')
+    a_404_patient = input('enable automatic bioeb if victim not found or expired? It will be trigger on "Жертва не найдена" [true/false]: ')
+    new_config = {'api_id': api_id,
+                  'api_hash': api_hash,
+                  'timezone': timezone,
+                  'db_pymysql': db_pymysql,
+                  'db_sqlite3': db_sqlite3,
+                  'a_h': a_h,
+                  'a_404_patient': a_404_patient}
+    with open(default_config_file_path, "w") as configfile:
+        json.dump(new_config, configfile, indent=4)
+
+with open(default_config_file_path, "r") as configfile:
     from types import SimpleNamespace
     cnf_dict = json.load(configfile)
     config = SimpleNamespace(**cnf_dict)
@@ -133,7 +159,10 @@ async def main():
             con.commit()
 
         if db_sqlite3:
-            conn = sqlite3.connect(f"{my_id}.sqlite")  # покласти базу рядом?
+            if is_termux:
+                conn = sqlite3.connect(f"{default_directory}/{my_id}.sqlite")
+            else:
+                conn = sqlite3.connect(f"{my_id}.sqlite")  # покласти базу рядом?
             # conn = sqlite3.connect(f"D:\\Misc\\projects\\Python\\ub4tg_db\\{my_id}.sqlite")#Або повністю
             c = conn.cursor()
             c.execute('''CREATE TABLE IF NOT EXISTS zarazy	(
