@@ -490,7 +490,53 @@ async def main():
             conn.commit()
             insertion_status = '\n'.join(insertion_status)
             await event.edit(f'{insertion_status}\nreason: {reason}')
-            
+
+        @client.on(events.NewMessage(outgoing=True, pattern=r'\.bioebmass$'))
+        async def bioeb_mass(event):
+            reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+            when = int(datetime.timestamp(event.date))
+            t = reply.raw_text
+            h = utils.sanitize_parse_mode(
+                'html').unparse(t, reply.entities)  # HTML
+            r_as_list = []
+            r = re.findall(r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">|(@\d+)', h)
+            for x in r:
+                r_as_list.extend(x)
+            r = r_as_list
+
+            if r == []:
+                await event.edit('nothing to do: ids not found')
+                return
+
+            def filter_bioeb(victims_ids):
+                bio_excludes = [x[0] for x in c.execute('SELECT user_id FROM avocado_exclude').fetchall()]
+                filted_victims = []
+                for v in victims_ids:
+                    if v in bio_excludes:
+                        logger.warning(f'skipping patient {v}, excluded from bioebinng')
+                    elif c.execute(f'SELECT user_id FROM avocado WHERE expr_int >= {when} and user_id == {v}').fetchone():
+                        logger.warning(f'skipping patient {v}, already eaten')
+                    else:
+                        filted_victims.append(v)
+
+                return list(set(filted_victims))
+            bioebbing_ids = []
+            for i in r:
+                if i == '':
+                    continue
+                if i.startswith('@'):
+                    bioebbing_ids.append(int(i.replace('@', '')))
+                else:
+                    bioebbing_ids.append(await get_id(i))
+            bioebbing_ids = filter_bioeb(bioebbing_ids)
+            bioebbing_len = len(bioebbing_ids)
+            if bioebbing_len == 0:
+                await event.edit('already eaten or excluded')
+                return
+            await event.edit(f'trying eat {bioebbing_len} patients...')
+            for patient in bioebbing_ids:
+                await asyncio.sleep(random.uniform(1.234, 4.222))
+                await event.respond(f'биоеб {patient}')
 
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.biocheck$'))
         async def set_default_check_chat(event):
