@@ -587,7 +587,7 @@ async def main():
 
                 ####################################################################
 
-        @client.on(events.NewMessage(pattern='🚫 Жертва не найдена'))
+        @client.on(events.NewMessage(pattern='⏱?🚫 Жертва'))
         async def infection_not_found(event):
             m = event.message
             if m.sender_id != 6333102398:
