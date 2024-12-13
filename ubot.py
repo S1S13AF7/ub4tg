@@ -46,6 +46,7 @@ if is_termux:
 
 # Название сессии
 sessdb = 'tl-ub'
+default_directory = ''
 default_config_file_path = 'config.json'
 treat_as_true = ('true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh')
 if is_termux:
@@ -587,6 +588,53 @@ async def main():
             for patient in bioebbing_ids:
                 await asyncio.sleep(random.uniform(1.234, 4.222))
                 await event.respond(f'биоеб {patient}')
+
+        @client.on(events.NewMessage(outgoing=True, pattern=r'\.biostealbackup'))
+        async def bio_steal_backup(event):
+            cmd = event.text.split(' ', 1)
+            if len(cmd) > 1:
+                cmd = cmd[1].lower()
+            if cmd == 'me':
+                logger.info('Requested steal yourself backup...')
+            else:
+                logger.info('Stealing backup...')
+            reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+            file_path = await reply.download_media(file=f"{default_directory}")
+            logger.success(f'backup file saved to {file_path}')
+            with open(file_path, 'r') as stealed_backup:
+                victims = json.load(stealed_backup)
+            added = 0
+            my_victims_ids = []
+            for v in victims:
+                user_id = int(v['user_id'])
+                profit = v['profit']
+                when = v['from_infect']
+                expr = v['until_infect']
+                if cmd == 'me':
+                    my_victims_ids.append(user_id)
+                    c.execute("INSERT OR REPLACE INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
+                              (int(user_id), int(when), str(profit), int(profit), int(expr)))
+                    added += 1
+                else:
+                    if not c.execute(f'SELECT user_id FROM avocado WHERE user_id == {user_id}').fetchone():
+                        c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
+                                  (int(user_id), int(when), str(profit), int(profit), 0))
+                        added += 1
+            conn.commit()
+            logger.success('backup success stealed')
+            if cmd == 'me':
+                my_victims_ids = tuple(my_victims_ids)
+                result = c.execute(f'UPDATE avocado SET expr_int = 0 WHERE user_id NOT IN {my_victims_ids}').fetchall()
+                conn.commit()
+                logger.success('database rebased')
+            del my_victims_ids
+            del victims  # free memory
+            if cmd == 'me':
+                rebased = len(result)
+                await event.edit(f'Success added/updated {added} patients\nOther {rebased} patients reset to 0')
+                del result
+            else:
+                await event.edit(f'Success added {added} new patients')
 
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.biocheck$'))
         async def set_default_check_chat(event):
