@@ -47,19 +47,20 @@ if is_termux:
 # Название сессии
 sessdb = 'tl-ub'
 default_config_file_path = 'config.json'
+treat_as_true = ('true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh')
 if is_termux:
     default_directory = '/sdcard/ub4tg'
     os.system(f'mkdir -p {default_directory}')
     default_config_file_path = f'{default_directory}/config.json'
 if not os.path.exists(default_config_file_path):
     logger.info('config not found, first launch setup...')
-    api_id = input('enter api_id from https://my.telegram.org/ : ')
+    api_id = int(input('enter api_id from https://my.telegram.org/ : '))
     api_hash = input('enter api_hash from https://my.telegram.org/ : ')
     timezone = input('enter timezone, format is Country/City: ')
     db_pymysql = False
     db_sqlite3 = True
-    a_h = input('enable automatic use medkit? [true/false]: ')
-    a_404_patient = input('enable automatic bioeb if victim not found or expired? It will be trigger on "Жертва не найдена" [true/false]: ')
+    a_h = input('enable automatic use medkit? [y/n]: ').lower() in treat_as_true
+    a_404_patient = input('enable automatic bioeb if victim not found or expired? It will be trigger on "Жертва не найдена" [y/n]: ').lower() in treat_as_true
     new_config = {'api_id': api_id,
                   'api_hash': api_hash,
                   'timezone': timezone,
@@ -159,6 +160,7 @@ async def main():
             con.commit()
 
         if db_sqlite3:
+            logger.debug('sqlite3 database connecting...')
             if is_termux:
                 conn = sqlite3.connect(f"{default_directory}/{my_id}.sqlite")
             else:
@@ -188,6 +190,7 @@ async def main():
                         reason VARCHAR
                         )''')
             conn.commit()
+            logger.debug('sqlite3 database initialized')
 
         ####################################################################
 
