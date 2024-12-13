@@ -8,6 +8,7 @@ from telethon import TelegramClient, events, utils
 from telethon import functions, types
 
 import sys
+import os
 import json
 import re
 import random
@@ -23,6 +24,23 @@ from collections import Counter
 logger.remove()
 logger.level("DEBUG", color='<magenta>')
 logger.add(sys.stderr, level="DEBUG")
+is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME')
+if is_termux:
+    logger.info('Termux detected, checking permissions...')
+    if os.environ.get('TERMUX_APP__APK_RELEASE') not in ('F_DROID', 'GITHUB'):
+        logger.warning('You use not f-droid/github apk release, it may have problems...')
+        logger.warning('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
+        logger.warning('Github termux release here: https://github.com/termux/termux-app/releases')
+    if int(os.environ.get('TERMUX_APP__APP_VERSION_CODE')) < 118:
+        logger.warning('You use old version of termux, highly recommended that you update to v0.118.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
+    if os.access('/sdcard', os.W_OK):
+        logger.success('permission to write on internal storage allowed')
+    else:
+        logger.warning('permission denied to write on internal storage')
+        logger.info('trying get permission...')
+        os.system('termux-setup-storage')
+        logger.info('Restart termux [Press CTRL+D or command "exit"]')
+        sys.exit(0)
 
 # Название сессии
 sessdb = 'tl-ub'
