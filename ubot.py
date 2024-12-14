@@ -250,7 +250,7 @@ async def main():
 
         ####################################################################
 
-        @client.on(events.NewMessage(pattern='.*йобнув.*|.*подверг(ла)?.*|.*infected.*|.*сикди.*|.*насрал.*|.*за допомогою довіреності.*|.*by authorization infected.*|.*при помощи анонимуса атаковала.*'))
+        @client.on(events.NewMessage(pattern='.*йобнув.*|.*подверг(ла)?.*|.*infected.*|.*сикди.*|.*насрал.*|.*выебал.*|.*за допомогою довіреності.*|.*by authorization infected.*|.*при помощи анонимуса атаковала.*'))
         @logger.catch
         async def podverg_a(event):
             logger.debug('bio attack detected')
@@ -299,6 +299,11 @@ async def main():
                 (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> подверг заморозке.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
                  default_bioexpr_theme,
                  default_infected_days_theme,
+                 default_pathogen_remaining_theme),
+                # "Сексуальная индустрия" theme
+                (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> выебал.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
+                 r"кончила ([0-9\.\,k]+)",
+                 r' ещё ([0-9\ ]+) д.*',
                  default_pathogen_remaining_theme),
                 # UA theme [via trust]
                 (r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> за допомогою довіреності зазнала зараження.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',
