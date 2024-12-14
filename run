@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ -d "venv" ]; then
+  . venv/bin/activate && python3 ubot.py
+else
+  python3 ubot.py
+fi
