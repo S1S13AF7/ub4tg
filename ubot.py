@@ -599,6 +599,7 @@ async def main():
             else:
                 logger.info('Stealing backup...')
             reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+            await event.edit('Downloading file...')
             file_path = await reply.download_media(file=f"{default_directory}")
             logger.success(f'backup file saved to {file_path}')
             victims = None
@@ -608,14 +609,17 @@ async def main():
                 if file_path.lower().endswith('.json'):
                     victims = json.load(stealed_backup)
                     file_format = 'json'
+                    await event.edit('Processing json victims...')
                 elif file_path.lower().endswith('.txt'):
                     raw_victims = stealed_backup.readlines()
                     file_format = 'txt'
+                    await event.edit('Processing raw txt victims...')
                 else:
                     await event.edit('Format not supported, avalaible: txt, json')
                     return
 
             added = 0
+            rejected = 0
             my_victims_ids = []
             if file_format == 'json':
                 for v in victims:
@@ -633,6 +637,8 @@ async def main():
                             c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
                                       (int(user_id), int(when), str(profit), int(profit), 0))
                             added += 1
+                        else:
+                            rejected += 1
             elif file_format == 'txt':
                 when = int(datetime.timestamp(event.date))
                 for raw_v in raw_victims:
@@ -658,6 +664,8 @@ async def main():
                                   (int(user_id), int(when), str(profit), int(profit_int), 0))
                         added += 1
                         logger.debug(f'added {user_id} - {profit_int}')
+                    else:
+                        rejected += 1
             conn.commit()
             logger.success('backup success stealed')
             if cmd == 'me':
@@ -673,7 +681,7 @@ async def main():
                 await event.edit(f'Success added/updated {added} patients\nOther {rebased} patients reset to 0')
                 del result
             else:
-                await event.edit(f'Success added {added} new patients')
+                await event.edit(f'Success added {added} new patients\nRejected or exists: {rejected}')
 
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.biocheck$'))
         async def set_default_check_chat(event):
