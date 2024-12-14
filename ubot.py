@@ -12,7 +12,6 @@ import os
 import json
 import re
 import random
-# import pytz
 import time
 
 import pymysql
@@ -165,8 +164,7 @@ async def main():
             if is_termux:
                 conn = sqlite3.connect(f"{default_directory}/{my_id}.sqlite")
             else:
-                conn = sqlite3.connect(f"{my_id}.sqlite")  # покласти базу рядом?
-            # conn = sqlite3.connect(f"D:\\Misc\\projects\\Python\\ub4tg_db\\{my_id}.sqlite")#Або повністю
+                conn = sqlite3.connect(f"{my_id}.sqlite")  # покласти базу рядом
             c = conn.cursor()
             c.execute('''CREATE TABLE IF NOT EXISTS zarazy	(
                         user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
@@ -208,13 +206,12 @@ async def main():
                             "SELECT * FROM `tg_users_url` WHERE `u_link` = '%s' ORDER BY `when_int` DESC" % str(url))
                         user = d.fetchone()
                         if user is None:
-                            # print(f'не знайшли {url} у `tg_users_url`')
                             pass
                         else:
                             user_id = int(user['user_id'])
                             print(f'{url} in db: @{user_id}')
-                    except Exception as Err:
-                        print(f'E:{Err}/S {url} у `tg_users_url`')
+                    except:
+                        pass
                 if user_id == 0:
                     try:
                         user_entity = await client.get_entity(url)
