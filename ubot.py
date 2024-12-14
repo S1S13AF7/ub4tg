@@ -95,7 +95,7 @@ class states:
     auto_bioeb_min_interval = (0.666, 3.666)  # for fast leak pathogen
     auto_bioeb_max_interval = (71, 121)  # waiting for more pathogen
     # Default strategy mean: you have 4-5 pathogens when auto bioeb is enabled, pathogen overflow reduced
-    auto_bioeb_stop = False
+    auto_bioeb_stop = True
     where_send_check_avocado = None
     last_sent_bioeb = 0  # for measure time between reply avocado and bioeb
     last_reply_bioeb_avocado = 0  # same as above
@@ -442,6 +442,9 @@ async def main():
 
         @client.on(events.NewMessage(outgoing=True, pattern=r'\.biofuck$'))
         async def cmd_bf(event):  # крч акуратно з цим,вдруг шо я нічо
+            if states.auto_bioeb_stop is False:
+                await event.edit('biofucking already runned!')
+                return
             m = event.message
             when = int(datetime.timestamp(m.date))
             msg = '🤷'  # якщо нема кого то жри рандом.
