@@ -601,25 +601,63 @@ async def main():
             reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
             file_path = await reply.download_media(file=f"{default_directory}")
             logger.success(f'backup file saved to {file_path}')
+            victims = None
+            raw_victims = None
+            file_format = None
             with open(file_path, 'r') as stealed_backup:
-                victims = json.load(stealed_backup)
+                if file_path.lower().endswith('.json'):
+                    victims = json.load(stealed_backup)
+                    file_format = 'json'
+                elif file_path.lower().endswith('.txt'):
+                    raw_victims = stealed_backup.readlines()
+                    file_format = 'txt'
+                else:
+                    await event.edit('Format not supported, avalaible: txt, json')
+                    return
+
             added = 0
             my_victims_ids = []
-            for v in victims:
-                user_id = int(v['user_id'])
-                profit = v['profit']
-                when = v['from_infect']
-                expr = v['until_infect']
-                if cmd == 'me':
-                    my_victims_ids.append(user_id)
-                    c.execute("INSERT OR REPLACE INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
-                              (int(user_id), int(when), str(profit), int(profit), int(expr)))
-                    added += 1
-                else:
-                    if not c.execute(f'SELECT user_id FROM avocado WHERE user_id == {user_id}').fetchone():
-                        c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
-                                  (int(user_id), int(when), str(profit), int(profit), 0))
+            if file_format == 'json':
+                for v in victims:
+                    user_id = int(v['user_id'])
+                    profit = v['profit']
+                    when = v['from_infect']
+                    expr = v['until_infect']
+                    if cmd == 'me':
+                        my_victims_ids.append(user_id)
+                        c.execute("INSERT OR REPLACE INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
+                                  (int(user_id), int(when), str(profit), int(profit), int(expr)))
                         added += 1
+                    else:
+                        if not c.execute(f'SELECT user_id FROM avocado WHERE user_id == {user_id}').fetchone() and not c.execute(f'SELECT user_id FROM avocado_exclude WHERE user_id == {user_id}').fetchone():
+                            c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
+                                      (int(user_id), int(when), str(profit), int(profit), 0))
+                            added += 1
+            elif file_format == 'txt':
+                when = int(datetime.timestamp(event.date))
+                for raw_v in raw_victims:
+                    if raw_v == '':
+                        continue
+                    user_id = re.findall(r'tg://openmessage\?user_id=(\d+)', raw_v)
+                    if not user_id:
+                        continue
+                    user_id = int(user_id[0])
+                    profit = re.findall(r'([0-9\.\,k]+) опыта', raw_v)
+                    if not profit:
+                        continue
+                    profit = profit[0]
+                    if ',' in profit:
+                        profit = re.sub(r',', r'.', profit)
+                    if 'k' in profit:
+                        profit_int = int(
+                            float(re.sub('k', '', profit)) * 1000)
+                    else:
+                        profit_int = int(profit)
+                    if not c.execute(f'SELECT user_id FROM avocado WHERE user_id == {user_id}').fetchone() and not c.execute(f'SELECT user_id FROM avocado_exclude WHERE user_id == {user_id}').fetchone():
+                        c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
+                                  (int(user_id), int(when), str(profit), int(profit_int), 0))
+                        added += 1
+                        logger.debug(f'added {user_id} - {profit_int}')
             conn.commit()
             logger.success('backup success stealed')
             if cmd == 'me':
@@ -629,6 +667,7 @@ async def main():
                 logger.success('database rebased')
             del my_victims_ids
             del victims  # free memory
+            del raw_victims
             if cmd == 'me':
                 rebased = len(result)
                 await event.edit(f'Success added/updated {added} patients\nOther {rebased} patients reset to 0')
