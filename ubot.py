@@ -23,16 +23,16 @@ from collections import Counter
 logger.remove()
 logger.level("DEBUG", color='<magenta>')
 logger.add(sys.stderr, level="DEBUG")
-is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME')
+is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 if is_termux:
     logger.info('Termux detected, checking permissions...')
     logger.info('If you want prevent killing termux by android, get wake lock: check your notifications, find termux app and press "ACQUIRE WAKELOCK"')
     logger.warning('This can cause battery drain!')
-    if os.environ.get('TERMUX_APP__APK_RELEASE') not in ('F_DROID', 'GITHUB'):
+    if (os.environ.get('TERMUX_APP__APK_RELEASE') or os.environ.get('TERMUX_APK_RELEASE')) not in ('F_DROID', 'GITHUB'):
         logger.warning('You use not f-droid/github apk release, it may have problems...')
         logger.warning('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
         logger.warning('Github termux release here: https://github.com/termux/termux-app/releases')
-    if int(os.environ.get('TERMUX_APP__APP_VERSION_CODE')) < 118:
+    if int(os.environ.get('TERMUX_VERSION').split('.')[1]) < 118:
         logger.warning('You use old version of termux, highly recommended that you update to v0.118.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
     if os.access('/sdcard', os.W_OK):
         logger.success('permission to write on internal storage allowed')
