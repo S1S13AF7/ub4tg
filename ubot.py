@@ -32,7 +32,7 @@ if is_termux:
         logger.warning('You use not f-droid/github apk release, it may have problems...')
         logger.warning('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
         logger.warning('Github termux release here: https://github.com/termux/termux-app/releases')
-    if int(os.environ.get('TERMUX_VERSION').split('.')[1]) < 118:
+    if float(os.environ.get('TERMUX_VERSION')[:5]) < 0.118:
         logger.warning('You use old version of termux, highly recommended that you update to v0.118.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
     if os.access('/sdcard', os.W_OK):
         logger.success('permission to write on internal storage allowed')
