@@ -583,7 +583,8 @@ async def main():
             for patient in bioebbing_ids:
                 await asyncio.sleep(random.uniform(1.234, 4.222))
                 await event.respond(f'биоеб {patient}')
-
+        
+        
         @client.on(events.NewMessage(pattern='.+Резервная копия жертв'))
         async def bio_backup(event):
             m = event.message
@@ -621,6 +622,7 @@ async def main():
                         print(f'added: {added}')
         
         
+        @client.on(events.NewMessage(outgoing=True, pattern=r'\.biostealbackup'))
         async def bio_steal_backup(event):
             cmd = event.text.split(' ', 1)
             if len(cmd) > 1:
