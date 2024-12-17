@@ -166,19 +166,9 @@ async def main():
             else:
                 conn = sqlite3.connect(f"{my_id}.sqlite")  # покласти базу рядом
             c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS zarazy	(
-                        user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
-                        when_int	INTEGER NOT NULL DEFAULT 0,
-                        bio_str	VARCHAR NOT NULL DEFAULT 1,
-                        bio_int	INTEGER NOT NULL DEFAULT 1,
-                        expr_int	INTEGER NOT NULL DEFAULT 0,
-                        expr_str	VARCHAR NOT NULL DEFAULT 0
-                        )''')
-            conn.commit()
             c.execute('''CREATE TABLE IF NOT EXISTS avocado	(
                         user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
                         when_int	INTEGER NOT NULL DEFAULT 0,
-                        bio_str	VARCHAR NOT NULL DEFAULT 1,
                         bio_int	INTEGER NOT NULL DEFAULT 1,
                         expr_int	INTEGER NOT NULL DEFAULT 0,
                         expr_str	VARCHAR NOT NULL DEFAULT 0
@@ -377,15 +367,15 @@ async def main():
                     if u1id > 0 and u2id > 0:
                         if db_sqlite3 and u1id == my_id:
                             try:
-                                c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?, ?)", (int(
-                                    u2id), int(when), str(experience), int(exp_int), int(datetime.timestamp(a)), str(a.strftime("%d.%m.%y"))))
+                                c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int,expr_str) VALUES (?, ?, ?, ?, ?)", (int(
+                                    u2id), int(when), int(exp_int), int(datetime.timestamp(a)), str(a.strftime("%d.%m.%y"))))
                                 conn.commit()
                                 logger.debug(
                                     '[new] success writen my bio attack')
                             except:
                                 try:
-                                    c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {
-                                              "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "end": int(datetime.timestamp(a)), "do": str(a.strftime("%d.%m.%y")), "z": int(u2id)})
+                                    c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {
+                                              "wh": int(when), "xpi": int(exp_int), "end": int(datetime.timestamp(a)), "do": str(a.strftime("%d.%m.%y")), "z": int(u2id)})
                                     conn.commit()
                                     logger.debug(
                                         '[upd] success updated my bio attack')
@@ -394,16 +384,16 @@ async def main():
                             states.last_reply_bioeb_avocado = time.time()
                         if db_sqlite3 and u1id != my_id and u2id not in bio_excludes:
                             try:
-                                c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (
-                                    int(u2id), int(when), str(experience), int(exp_int), 0))
+                                c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?, ?, ?, ?)", (
+                                    int(u2id), int(when), int(exp_int), 0))
                                 conn.commit()
                                 logger.debug('[new] success writen bio attack')
                             except:
                                 # NOTE: this maybe useful if you want sort database by bio-experience, but as S1S13AF7 said this
                                 # can be like: in database you have +10k today, tomorrow it changed to +1...
                                 # so... idk what next...
-                                c.execute("UPDATE avocado SET when_int = :wh, bio_str = :xp, bio_int = :xpi WHERE user_id = :z AND when_int < :wh AND expr_int < :wh", {
-                                    "wh": int(when), "xp": str(experience), "xpi": int(exp_int), "z": int(u2id)})
+                                c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND when_int < :wh AND expr_int < :wh", {
+                                    "wh": int(when), "xpi": int(exp_int), "z": int(u2id)})
                                 conn.commit()
                                 logger.debug(
                                     '[upd] success updated bio attack')
@@ -594,7 +584,43 @@ async def main():
                 await asyncio.sleep(random.uniform(1.234, 4.222))
                 await event.respond(f'биоеб {patient}')
 
-        @client.on(events.NewMessage(outgoing=True, pattern=r'\.biostealbackup'))
+        @client.on(events.NewMessage(pattern='.+Резервная копия жертв'))
+        async def bio_backup(event):
+            m = event.message
+            if m.sender_id == 6333102398 and event.chat_id == 6333102398:
+                file_path = await m.download_media(file=f"{default_directory}")
+                print(f'backup file saved to {file_path}')
+                added = 0
+                victims = None
+                raw_victims = None
+                file_format = None
+                with open(file_path, 'r') as stealed_backup:
+                    if file_path.lower().endswith('.json'):
+                        victims = json.load(stealed_backup)
+                        file_format = 'json'
+                        my_victims_ids = []
+                        added = 0
+                        for v in victims:
+                            u_id = int(v['user_id'])
+                            profit= int(v['profit'])
+                            when = int(v['from_infect'])
+                            expr = int(v['until_infect'])
+                            a=datetime.fromtimestamp(expr)
+                            do=str(a.strftime("%d.%m.%y"))
+                            if db_sqlite3:
+                                try:
+                                    c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",(int(u_id),int(when),int(profit),int(expr),str(do))); conn.commit()
+                                    print(f'''[@{u_id}] +{profit}''')# показать
+                                    added+=1
+                                except:
+                                    try:
+                                        c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expri, expr_str = :exprs WHERE user_id = :z AND when_int < :wh AND expr_int < :expr;", {"wh":int(when),"xpi":int(profit),"expri":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
+                                    except Exception as Err:
+                                        print(f'err: {Err} avocado backup')
+                                        # pass
+                        print(f'added: {added}')
+        
+        
         async def bio_steal_backup(event):
             cmd = event.text.split(' ', 1)
             if len(cmd) > 1:
@@ -634,13 +660,13 @@ async def main():
                     expr = v['until_infect']
                     if cmd == 'me':
                         my_victims_ids.append(user_id)
-                        c.execute("INSERT OR REPLACE INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
-                                  (int(user_id), int(when), str(profit), int(profit), int(expr)))
+                        c.execute("INSERT OR REPLACE INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?, ?, ?, ?)",
+                                  (int(user_id), int(when), int(profit), int(expr)))
                         added += 1
                     else:
                         if not c.execute(f'SELECT user_id FROM avocado WHERE user_id == {user_id}').fetchone() and not c.execute(f'SELECT user_id FROM avocado_exclude WHERE user_id == {user_id}').fetchone():
-                            c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
-                                      (int(user_id), int(when), str(profit), int(profit), 0))
+                            c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?, ?, ?, ?)",
+                                      (int(user_id), int(when), int(profit), 0))
                             added += 1
                         else:
                             rejected += 1
@@ -665,8 +691,8 @@ async def main():
                     else:
                         profit_int = int(profit)
                     if not c.execute(f'SELECT user_id FROM avocado WHERE user_id == {user_id}').fetchone() and not c.execute(f'SELECT user_id FROM avocado_exclude WHERE user_id == {user_id}').fetchone():
-                        c.execute("INSERT INTO avocado(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)",
-                                  (int(user_id), int(when), str(profit), int(profit_int), 0))
+                        c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?, ?, ?, ?)",
+                                  (int(user_id), int(when), int(profit_int), 0))
                         added += 1
                         logger.debug(f'added {user_id} - {profit_int}')
                     else:
