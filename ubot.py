@@ -757,11 +757,29 @@ async def main():
 			m = event.message
 			Майн=get_config_key("Майн")
 			if m.sender_id == 6333102398 and (c == 6333102398 or (c == ch_id and m.mentioned)) and Майн:
+				if ch_id < 0 and get_config_key("Ферма"):
+					rs=random.uniform(2.2,3.5)	# random
+					await asyncio.sleep(rs)	# ждем rs секунд
+					await client.send_message(ch_id,'Ферма')
 				rs=random.uniform(14404,14464)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(c,'Майн')
 		
 		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(pattern='✅ ВДАЛО! ☢️'))
+		async def ферма(event):
+			m = event.message
+			print(m.raw_text)
+			if m.sender_id in irises:
+				if ch_id < 0 and get_config_key("Ферма"):
+					rs=random.uniform(14464,14646)	# random
+					await asyncio.sleep(rs)	# ждем rs секунд
+					await client.send_message(ch_id,'Ферма')
+				
+				
 		####################################################################
 		
 		
