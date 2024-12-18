@@ -151,7 +151,25 @@ if not os.path.exists(CONFIG_PATH):
 
 with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	from types import SimpleNamespace
+	default_params = {
+	'api_id': '1',
+	'api_hash': 'test',
+	'timezone': 'Europe/Kiev',
+	'db_pymysql': False,
+	'db_sqlite3': True,
+	'a_404_p': False,
+	'ch_id': 0,
+	'Ферма': False,
+	'Майн': False,
+	'a_h': False,
+	'i2a': False
+	}
 	cnf_dict = json.load(configfile)
+	for i in default_params.keys():
+		if cnf_dict.get(i) is None:
+			default_val = default_params[i]
+			cnf_dict[i] = default_val
+			print(f'{i} in config not found, using defalt value {default_val}')
 	config = SimpleNamespace(**cnf_dict)
 	print('config loaded')
 	api_id = config.api_id
