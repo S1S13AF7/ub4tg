@@ -1,17 +1,23 @@
-# установка ub4tg – Termux
-<br/>
+Termux apk тут: https://f-droid.org/repo/com.termux_1020.apk
+Termux:API apk, якщо ви хочете отримувати сповіщення про оновлення цього коду: https://f-droid.org/repo/com.termux.api_51.apk
 
-Ну для початку у вас має бути сам Termux<br/>
-Встановлений із github або F-Droid<br/>
-Версія не нижче за 119<br/>
-Вважаємо що він уже є.<br/>
-Якщо щойно встановили дать доступ до пам'яті.<br/>
+0. Додатковий крок: надайте дозвіл на зберігання в Termux перед початком, після цього кроки 3-4 можна пропустити
+1. Запустіть termux і введіть цей єдиний рядок:
+`pkg update && pkg upgrade && pkg install openssl python3 git termux-api && git clone https://code.criminallycute.fi/bioeb_org/ub4tg/ && cd ub4tg && pip3 install -r requirements.txt`
+Якщо pkg upgrade запитує перезаписати деякі файли - натисніть Y
+2. Тепер після цього ви можете запустити бота:
+`./run` або `python3 ubot.py`
+3. Termux запитає дозвіл на зберігання, дозвольте. Перезапустіть Termux (введіть `quit` або натисніть CTRL+d)
+4. Запустіть бота знову:
+`cd ub4tg; ./run`
+5. Виконайте перше налаштування, воно створить конфігурацію для вас і задасть кілька запитань
+6. Насолоджуйтесь
+7. Якщо ви отримуєте попередження про майбутні події: синхронізуйте свій час у налаштуваннях Android «дата й час» і вимкніть/увімкніть «час мережі».
 
-Вводим у Termux:<br/>
-`pkg install openssl python3 git termux-api && git clone https://github.com/S1S13AF7/ub4tg && cd ub4tg && pip3 install -r requirements.txt`<br/>
-
-запуск бота: <br/>
-python3 ubot.py<br/>
-якщо пише 
-mkdir: cannot create directory ‘/sdcard/ub4tg’: Permission denied 
-перевірте чи дали доступ на пам'ять. і заново запуск.<br/>
+Для повторного запуску бота (якщо Termux перезавантажено) просто введіть:
+`cd ub4tg; ./run`
+Для швидкого доступу до бота створіть псевдонім:
+`echo "псевдонім ub4tg='cd ~/ub4tg; ./run'" >> .bashrc`
+потім
+`джерело ~/.bashrc`
+Тепер ви можете запускати бота у будь-якому каталозі, просто введіть: `ub4tg`
