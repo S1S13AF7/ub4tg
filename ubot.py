@@ -53,6 +53,7 @@ irises = [707693258,5137994780,5226378684,5443619563,5434504334]
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 treat_as_true = ('true', '1', 't', 'y', 'yes', 'yeah')
+noeb_file = "noeb.json" # кого ненада заражать айдішки
 
 ########################################################################
 
@@ -61,6 +62,7 @@ if is_termux:
 	default_directory = '/sdcard/ub4tg'
 	os.system(f'mkdir -p {default_directory}')
 	CONFIG_PATH = f'{default_directory}/conf.json'
+	noeb_file = f'{default_directory}/{noeb_file}' # положить файл в доступну без рута теку.
 	if (os.environ.get('TERMUX_APP__APK_RELEASE') or os.environ.get('TERMUX_APK_RELEASE')) not in ('F_DROID', 'GITHUB'):
 		print('You use not f-droid/github apk release, it may have problems...')
 		print('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
@@ -174,22 +176,22 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	print('config loaded')
 	api_id = config.api_id
 	api_hash = config.api_hash
-	db_pymysql = config.db_pymysql  # set True or False
-	db_sqlite3 = config.db_sqlite3  # set True or False
+	db_pymysql = config.db_pymysql
+	db_sqlite3 = config.db_sqlite3
 	a_h = config.a_h
 	a_404_p = config.a_404_p
-	i2a = config.i2a# set True or False # є сенс вмикать лише якщо a_404_p = True
+	i2a = config.i2a # є сенс вмикать лише якщо a_404_p = True
 	ch_id = config.ch_id	# id чата
-	#Майн = get_config_key("Майн")
 
 ########################################################################
 
 try:
-	with open("noeb.json", "r") as read_file:
+	#noeb_file = "noeb.json"
+	with open(noeb_file, "r") as read_file:
 		noeb = json.load(read_file)
 except:
 	noeb =[707693258,5137994780,5226378684,5443619563,5434504334,6333102398]
-	with open("noeb.json", "w", encoding="utf-8") as write_file:
+	with open(noeb_file, "w", encoding="utf-8") as write_file:
 		json.dump(noeb, write_file, indent='	')
 
 ########################################################################
@@ -385,7 +387,7 @@ async def main():
 			# хто там кого того
 			m = event.message
 			t = m.raw_text
-			global irises
+			#global irises # здається воно там ненада
 			if m.sender_id !=6333102398 and m.sender_id not in irises:
 				# зараз підтримуються лише Авокадо & Іріс.
 				pass
