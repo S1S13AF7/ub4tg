@@ -3,7 +3,7 @@ Termux:API apk if you want get notifications about updates of this code: https:/
 
 0. Optional step: allow permission on storage in Termux before start, after this, step 3-4 can be skipped
 1. Run termux and enter this oneliner:  
-`pkg update && pkg upgrade && pkg install openssl python3 git termux-api && git clone https://github.com/S1S13AF7/ub4tg && cd ub4tg && pip3 install -r requirements.txt`  
+`pkg install openssl python3 git termux-api && git clone https://github.com/S1S13AF7/ub4tg && cd ub4tg && pip3 install -r requirements.txt`  
 If pkg upgrade ask overwrite some files - press Y
 2. Now after this you can run bot:  
 `./run` or `python3 ubot.py`
@@ -16,9 +16,4 @@ If pkg upgrade ask overwrite some files - press Y
 
 For start bot again (if Termux restarted) just enter:  
 `cd ub4tg; ./run`  
-For fast access to bot, make alias:  
-`echo "alias ub4tg='cd ~/ub4tg; ./run'" >> .bashrc`  
-then  
-`source ~/.bashrc`  
-Now you can run bot in everywhere directory, just enter: `ub4tg`
 
