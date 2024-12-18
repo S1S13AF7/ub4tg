@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # https://docs-python.ru/packages/telegram-klient-telethon-python/	<-info
+
 import asyncio
 
 from datetime import datetime, timedelta
@@ -12,8 +13,8 @@ import random
 import time
 import json
 
-import pymysql
-import pymysql.cursors
+#import pymysql
+#import pymysql.cursors
 
 import sqlite3
 
@@ -22,21 +23,102 @@ import typing
 if os.name == 'nt':
 	import win32api
 
+sessdb = 'tl-ub' # назва бази сесії telethon
+default_directory = '' # "робоча папка" бота
+CONFIG_PATH = "conf.json"	# main config file
+noeb_file = "noeb.json"		# кого ненада заражать айдішки
+
+is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
+
+treat_as_true = ('true','1','t','y','yes','yeah','yup')# все інше False
+
+if is_termux:
+	import sys
+	# майже все що для термукса я вкрав з форка бота.
+	print('Termux detected, checking permissions...')
+	print('If you want prevent killing termux by android, get wake lock: check your notifications, find termux app and press "ACQUIRE WAKELOCK"')
+	print('This can cause battery drain!')
+	if (os.environ.get('TERMUX_APP__APK_RELEASE') or os.environ.get('TERMUX_APK_RELEASE')) not in ('F_DROID', 'GITHUB'):
+		print('You use not f-droid/github apk release, it may have problems...')
+		print('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
+		print('Github termux release here: https://github.com/termux/termux-app/releases')
+	if float(os.environ.get('TERMUX_VERSION')[:5]) < 0.118:
+		print('You use old version of termux, highly recommended that you update to v0.119.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
+	if os.access('/sdcard', os.W_OK):
+		print('✅ дозвіл на запис надано')
+		default_directory = '/sdcard/ub4tg'
+		os.system(f'mkdir -p {default_directory}')
+		CONFIG_PATH = f'{default_directory}/conf.json' # положить файл в доступну без рута теку.
+		noeb_file = f'{default_directory}/{noeb_file}' # положить файл в доступну без рута теку.
+		sessdb = f'{default_directory}/{sessdb}' # Або закоментувать або змінити якщо нада куда?
+	else:
+		print('permission denied to write on internal storage')
+		print('trying get permission...')
+		os.system('termux-setup-storage')
+		print('Restart termux [Press CTRL+D or command "exit"]')
+		sys.exit(0)
+
+if not os.path.exists(CONFIG_PATH):
+	api_id = int(input('enter api_id from https://my.telegram.org/ :'))
+	api_hash = input('enter api_hash from https://my.telegram.org/ :')
+	
+	a_h = input('enable automatic use medkit? [y/n]: ').lower() in treat_as_true
+	a_404_p = input('enable automatic bioeb if victim not found or expired? It will be trigger on "Жертва не найдена" [y/n]: ').lower() in treat_as_true
+	
+	#automine = input('enable automatic mining of gems? [y/n]: ').lower() in treat_as_true
+	
+	new_config = {
+	'api_id': api_id,
+	'api_hash': api_hash,
+	'db_pymysql': False,
+	'db_sqlite3': True,
+	'a_404_p': a_404_p,
+	'Ферма': False,
+	'Майн': False,
+	'i2a': False,
+	'a_h': a_h,
+	'ch_id': 0
+	}
+	
+	with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
+		json.dump(new_config, configfile, indent='	')
+
+with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
+	from types import SimpleNamespace
+	default_params = {
+	'api_id': '1',
+	'api_hash': 'test',
+	'timezone': 'Europe/Kiev',
+	'db_pymysql': False,
+	'db_sqlite3': True,
+	'a_404_p': False,
+	'ch_id': 0,
+	'Ферма': False,
+	'Майн': False,
+	'a_h': False,
+	'i2a': False
+	}
+	cnf_dict = json.load(configfile)
+	for i in default_params.keys():
+		if cnf_dict.get(i) is None:
+			default_val = default_params[i]
+			cnf_dict[i] = default_val
+			print(f'{i} in config not found, using defalt value {default_val}')
+	config = SimpleNamespace(**cnf_dict)
+	print('✅ config loaded')
+	
+	api_id = config.api_id
+	api_hash = config.api_hash
+	
+	db_pymysql = config.db_pymysql
+	db_sqlite3 = config.db_sqlite3
+	
+	a_404_p = config.a_404_p
+	ch_id = config.ch_id	# id чата з ботами
+	a_h = config.a_h # automatic use medkit? 
+	i2a = config.i2a # є сенс вмикать лише якщо a_404_p = True
+
 ########################################################################
-# крч тут у нас стандартні параметри. Більшість з них буде перевизначено
-
-sessdb = 'tl-ub'
-
-api_id = 00000000
-api_hash = 'blahblahblahblahblahblahblahblah'
-
-default_directory = ''
-CONFIG_PATH = "conf.json"
-config = {} # Empty.json
-timezone = "Europe/Kiev"
-
-db_pymysql = False#set True or False
-db_sqlite3 = True #set True or False
 
 bf_mode='Normal'# dnt edit this. :Normal|Slow|Fast|Turbo # is beta...
 bf_run = False	# dnt edit this. 
@@ -45,39 +127,7 @@ ostalos_pt=10	# осталось. буде мінятись.
 rs_min= 11	# інтервал. буде мінятись. 
 rs_max=3600	# інтервал. буде мінятись. 
 
-a_h = False # тут не чіпать, лише в конфіґ записуйте, якщо нада. 
-i2a = False # тут не чіпать, лише в конфіґ записуйте, якщо нада. 
-a_404_p = False # не чіпать, лише в конфіґ записуйте, якщо нада. 
-
 irises = [707693258,5137994780,5226378684,5443619563,5434504334]
-
-is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
-treat_as_true = ('true', '1', 't', 'y', 'yes', 'yeah')
-noeb_file = "noeb.json" # кого ненада заражать айдішки
-
-########################################################################
-
-if is_termux:
-	import sys
-	default_directory = '/sdcard/ub4tg'
-	os.system(f'mkdir -p {default_directory}')
-	CONFIG_PATH = f'{default_directory}/conf.json'
-	noeb_file = f'{default_directory}/{noeb_file}' # положить файл в доступну без рута теку.
-	if (os.environ.get('TERMUX_APP__APK_RELEASE') or os.environ.get('TERMUX_APK_RELEASE')) not in ('F_DROID', 'GITHUB'):
-		print('You use not f-droid/github apk release, it may have problems...')
-		print('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
-		print('Github termux release here: https://github.com/termux/termux-app/releases')
-	if float(os.environ.get('TERMUX_VERSION')[:5]) < 0.118:
-		print('You use old version of termux, highly recommended that you update to v0.119.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
-	if os.access('/sdcard', os.W_OK):
-		print('permission to write on internal storage allowed')
-		sessdb = f'{default_directory}/{sessdb}' # ну і положим. Або закоментувать якщо ненада туда.
-	else:
-		print('permission denied to write on internal storage')
-		print('trying get permission...')
-		print('termux-setup-storage')
-		print('Restart termux [Press CTRL+D or command "exit"]')
-		sys.exit(0)
 
 ########################################################################
 
@@ -125,66 +175,6 @@ def save_config_key(key: str, value: str) -> bool:
 
 ########################################################################
 
-if not os.path.exists(CONFIG_PATH):
-	api_id = int(input('enter api_id from https://my.telegram.org/ :'))
-	api_hash = input('enter api_hash from https://my.telegram.org/ :')
-	db_pymysql = False# тут не чіпать, лише в конфіґ записуйте, якщо нада. 
-	db_sqlite3 = True # тут не чіпать, лише в конфіґ записуйте, якщо нада. 
-	a_h = input('enable automatic use medkit? [y/n]: ').lower() in treat_as_true
-	a_404_p = input('''enable automatic bioeb if not found or expired?:''').lower() in treat_as_true
-	Майн = False# тут не чіпать, лише в конфіґ записуйте, якщо нада. 
-	i2a = False # тут не чіпать, лише в конфіґ записуйте, якщо нада. 
-	new_config = {
-	'api_id': api_id,
-	'api_hash': api_hash,
-	'timezone': timezone,
-	'db_pymysql': db_pymysql,
-	'db_sqlite3': db_sqlite3,
-	'a_404_p': a_404_p,
-	'a_h': a_h,
-	'i2a': i2a,
-	'Майн': Майн,
-	'ch_id': 0
-	}
-	
-	with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
-		json.dump(new_config, configfile, indent='	')
-
-
-with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
-	from types import SimpleNamespace
-	default_params = {
-	'api_id': '1',
-	'api_hash': 'test',
-	'timezone': 'Europe/Kiev',
-	'db_pymysql': False,
-	'db_sqlite3': True,
-	'a_404_p': False,
-	'ch_id': 0,
-	'Ферма': False,
-	'Майн': False,
-	'a_h': False,
-	'i2a': False
-	}
-	cnf_dict = json.load(configfile)
-	for i in default_params.keys():
-		if cnf_dict.get(i) is None:
-			default_val = default_params[i]
-			cnf_dict[i] = default_val
-			print(f'{i} in config not found, using defalt value {default_val}')
-	config = SimpleNamespace(**cnf_dict)
-	print('config loaded')
-	api_id = config.api_id
-	api_hash = config.api_hash
-	db_pymysql = config.db_pymysql
-	db_sqlite3 = config.db_sqlite3
-	a_h = config.a_h
-	a_404_p = config.a_404_p
-	i2a = config.i2a # є сенс вмикать лише якщо a_404_p = True
-	ch_id = config.ch_id	# id чата
-
-########################################################################
-
 try:
 	#noeb_file = "noeb.json"
 	with open(noeb_file, "r") as read_file:
@@ -209,6 +199,10 @@ async def main():
 			win32api.SetConsoleTitle(f'{my_id}')
 		
 		if db_pymysql:
+			
+			import pymysql
+			import pymysql.cursors
+			
 			con = pymysql.connect(host='localhost',
 			user='root',
 			password='V3rY$tR0NgPaS$Sw0Rd',
@@ -387,7 +381,6 @@ async def main():
 			# хто там кого того
 			m = event.message
 			t = m.raw_text
-			#global irises # здається воно там ненада
 			if m.sender_id !=6333102398 and m.sender_id not in irises:
 				# зараз підтримуються лише Авокадо & Іріс.
 				pass
