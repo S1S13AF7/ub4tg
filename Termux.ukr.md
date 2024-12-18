@@ -1,8 +1,8 @@
-# установка ub4tg – Termux
+# Termux
 <br/>
-
-У вас має бути сам Termux<br/>
-Встановлений із github або F-Droid<br/>
+Termux apk: https://f-droid.org/repo/com.termux_1020.apk
+Termux:API: https://f-droid.org/repo/com.termux.api_51.apk
+<br/>(або новіші)<br/>
 
 Якщо щойно встановили дать доступ до пам'яті.<br/>
 
