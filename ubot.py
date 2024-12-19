@@ -735,10 +735,8 @@ async def main():
 			m = event.message
 			Майн=get_config_key("Майн")
 			if m.sender_id == 6333102398 and (c == 6333102398 or (c == ch_id and m.mentioned)) and Майн:
-				if ch_id < 0 and get_config_key("Ферма"):
-					rs=random.uniform(2.2,3.5)	# random
-					await asyncio.sleep(rs)	# ждем rs секунд
-					await client.send_message(ch_id,'Ферма')
+				#save_config_key('Майн',int(datetime.timestamp(m.date)))	# when (хз чи нада?)
+				print(m.text) # показать в консолі текст
 				rs=random.uniform(14404,14464)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(c,'Майн')
