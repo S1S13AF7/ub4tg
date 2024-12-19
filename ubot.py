@@ -399,7 +399,8 @@ async def main():
 					if m.sender_id in irises:
 						experience=re.findall(r"\+([0-9\.\,k]+) био-опыта", t)[0]
 					if m.sender_id==6333102398:
-						experience=re.findall(r"([☣️🧬🎄🥰]).+: ([0-9\.\,k]+).+ \|",t)[0][1]
+						experience=re.findall(r"([☣️🧬🎄🥰🍖]).+: ([0-9\.\,k]+).+ \|",t)[0][1]
+						
 					
 					if ',' in experience:
 						experience=re.sub(r',', r'.',experience)
