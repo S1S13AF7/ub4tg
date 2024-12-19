@@ -51,7 +51,10 @@ if is_termux:
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # положить файл в доступну без рута теку.
 		noeb_file = f'{default_directory}/{noeb_file}' # положить файл в доступну без рута теку.
-		sessdb = f'{default_directory}/{sessdb}' # Або закоментувать або змінити якщо нада куда?
+		#sessdb = f'{default_directory}/{sessdb}' # * спершу я думав просто положить в доступну, 
+		#Але тоді буде проблемно запускать кілька копій бота з телефону з різними авторизаціями, 
+		#В тому плані, що прийшлось би редагувать код, але тоді мінус оновлення через git pull, 
+		#Тому хай валяється рядом з ботом. так можна просто копіювать і не редагуючи код запуск
 		from add import updatenotif # украв там: https://code.criminallycute.fi/bioeb_org/ub4tg
 		asyncio.ensure_future(updatenotif.git_notifications_update())
 	else:
