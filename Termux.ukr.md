@@ -6,12 +6,12 @@ Termux:API: https://f-droid.org/repo/com.termux.api_51.apk<br/>
 
 Якщо щойно встановили дать доступ до пам'яті.<br/>
 
-Вводим у Termux:<br/>
-`pkg install openssl python3 git termux-api`<br/>
-після установки клонуємо: <br/>
-`git clone https://github.com/S1S13AF7/ub4tg`<br/>
-Установка requirements:<br/>
-`cd ub4tg && pip3 install -r requirements.txt`<br/>
+Вводим у Termux:<br/><br/>
+`pkg install openssl python3 git termux-api`<br/><br/>
+після установки клонуємо: <br/><br/>
+`git clone https://github.com/S1S13AF7/ub4tg`<br/><br/>
+Установка requirements:<br/><br/>
+`cd ub4tg && pip3 install -r requirements.txt`<br/><br/>
 
 запуск бота: <br/>
 `python3 ubot.py`<br/>
