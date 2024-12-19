@@ -81,7 +81,7 @@ if not os.path.exists(CONFIG_PATH):
 	}
 	
 	with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
-		json.dump(new_config, configfile, indent='	')
+		json.dump(new_config, configfile,ensure_ascii=False, indent='	')
 
 with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	from types import SimpleNamespace
@@ -169,7 +169,7 @@ def save_config_key(key: str, value: str) -> bool:
 	
 	# And save config
 	with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-		json.dump(config, f, indent='	')
+		json.dump(config, f,ensure_ascii=False, indent='	')
 	
 	return True
 
@@ -182,7 +182,7 @@ try:
 except:
 	noeb =[707693258,5137994780,5226378684,5443619563,5434504334,6333102398]
 	with open(noeb_file, "w", encoding="utf-8") as write_file:
-		json.dump(noeb, write_file, indent='	')
+		json.dump(noeb, write_file,ensure_ascii=False, indent='	')
 
 ########################################################################
 
