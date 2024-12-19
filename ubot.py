@@ -65,8 +65,6 @@ if not os.path.exists(CONFIG_PATH):
 	a_h = input('enable automatic use medkit? [y/n]: ').lower() in treat_as_true
 	a_404_p = input('enable automatic bioeb if victim not found or expired? It will be trigger on "Жертва не найдена" [y/n]: ').lower() in treat_as_true
 	
-	#automine = input('enable automatic mining of gems? [y/n]: ').lower() in treat_as_true
-	
 	new_config = {
 	'api_id': api_id,
 	'api_hash': api_hash,
@@ -84,39 +82,20 @@ if not os.path.exists(CONFIG_PATH):
 		json.dump(new_config, configfile,ensure_ascii=False, indent='	')
 
 with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
-	from types import SimpleNamespace
-	default_params = {
-	'api_id': '1',
-	'api_hash': 'test',
-	'timezone': 'Europe/Kiev',
-	'db_pymysql': False,
-	'db_sqlite3': True,
-	'a_404_p': False,
-	'ch_id': 0,
-	'Ферма': False,
-	'Майн': False,
-	'a_h': False,
-	'i2a': False
-	}
-	cnf_dict = json.load(configfile)
-	for i in default_params.keys():
-		if cnf_dict.get(i) is None:
-			default_val = default_params[i]
-			cnf_dict[i] = default_val
-			print(f'{i} in config not found, using defalt value {default_val}')
-	config = SimpleNamespace(**cnf_dict)
+	#from types import SimpleNamespace
+	config = json.load(configfile)
 	print('✅ config loaded')
 	
-	api_id = config.api_id
-	api_hash = config.api_hash
+	api_id = int(config['api_id'])
+	api_hash = config['api_hash']
 	
-	db_pymysql = config.db_pymysql
-	db_sqlite3 = config.db_sqlite3
+	db_pymysql = bool(config['db_pymysql'] or False)
+	db_sqlite3 = bool(config['db_sqlite3'] or True)
 	
-	a_404_p = config.a_404_p
-	ch_id = config.ch_id	# id чата з ботами
-	a_h = config.a_h # automatic use medkit? 
-	i2a = config.i2a # є сенс вмикать лише якщо a_404_p = True
+	a_404_p = bool(config['a_404_p'] or False)
+	ch_id = int(config['ch_id'] or 0)  # id чата
+	a_h = bool(config['a_h'] or False) # automatic use medkit? 
+	i2a = bool(config['i2a'] or False) # вмикать лише якщо a_404_p = True
 
 ########################################################################
 
