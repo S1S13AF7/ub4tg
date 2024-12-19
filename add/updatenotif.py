@@ -30,4 +30,4 @@ async def git_notifications_update():
             logger.warning(
                 'download the apk: https://f-droid.org/repo/com.termux.api_51.apk')
         logger.debug('next update will be check after 6 hours')
-        await asyncio.sleep(6 * 60 * 60)
+        await asyncio.sleep(3666)
