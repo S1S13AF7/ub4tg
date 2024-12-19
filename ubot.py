@@ -735,13 +735,27 @@ async def main():
 			m = event.message
 			Майн=get_config_key("Майн")
 			if m.sender_id == 6333102398 and (c == 6333102398 or (c == ch_id and m.mentioned)) and Майн:
-				save_config_key('Майн',int(datetime.timestamp(m.date)))	# when
+				#save_config_key('Майн',int(datetime.timestamp(m.date)))	# when
 				print(m.text) # показать в консолі текст
 				rs=random.uniform(14404,14464)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(c,'Майн')
 		
 		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(pattern='✅ ВДАЛО! ☢️'))
+		async def ферма(event):
+			m = event.message
+			print(m.raw_text)
+			if m.sender_id in irises:
+				if ch_id < 0 and get_config_key("Ферма"):
+					rs=random.uniform(14464,14646)	# random
+					await asyncio.sleep(rs)	# ждем rs секунд
+					await client.send_message(ch_id,'Ферма')
+				
+				
 		####################################################################
 		
 		
@@ -752,20 +766,6 @@ async def main():
 			await asyncio.sleep(5)
 			await client.delete_messages(event.chat_id, [event.id, m.id])
 		
-		
-		####################################################################
-		
-		if get_config_key("Майн") and ch_id < 0:
-			async def Майн():
-				Майн = int(get_config_key("Майн"))
-				Next = 14444+Майн # time when next
-				if Next > int(time.time()):
-					await asyncio.sleep(Next-time.time())
-				await client.send_message(ch_id,'Майн')
-			
-		
-		####################################################################
-
 		await client.run_until_disconnected()
 
 asyncio.run(main())
