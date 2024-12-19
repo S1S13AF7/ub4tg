@@ -589,9 +589,11 @@ async def main():
 			else:
 				bf_run = True
 				pong='✅ погнали...'
-				ch_id = event.chat_id
 				await event.edit(pong) # ред.
-				print(f'є {count} потенційних пацієнтів. спробуєм їх сожрать')
+				if ch_id != event.chat_id:
+					ch_id = event.chat_id
+					save_config_key('ch_id',ch_id)
+				print(f'✅ є {count} потенційних пацієнтів. спробуєм їх сожрать')
 				for row in e_info:
 					if row[0]!=my_id:				#	❌ Нельзя заразить самого себя.
 						if ostalos_pt < 7:
