@@ -73,8 +73,8 @@ if not os.path.exists(CONFIG_PATH):
 	'db_pymysql': False,
 	'db_sqlite3': True,
 	'a_404_p': a_404_p,
-	'Ферма': False,
-	'Майн': False,
+	'farm': False,
+	'mine': False,
 	'i2a': False,
 	'a_h': a_h,
 	'ch_id': 0
@@ -98,6 +98,8 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	ch_id = int(config['ch_id'] or 0)  # id чата
 	a_h = bool(config['a_h'] or False) # automatic use medkit? 
 	i2a = bool(config['i2a'] or False) # вмикать лише якщо a_404_p = True
+	farm= bool(config['farm'] or False)# вмикать фарм?
+	mine= bool(config['mine'] or False)# вмикать майн?
 
 ########################################################################
 
@@ -255,7 +257,15 @@ async def main():
 			expr_str	VARCHAR NOT NULL DEFAULT 0
 			)''');
 			conn.commit()
+		
+		if farm:
+			await client.send_message(5443619563,'Ферма')
+		
+		if mine:
+			await client.send_message(6333102398,'Майн')
+		
 		####################################################################
+		
 		async def get_id(url):
 			user_id = 0
 			if "tg://openmessage?user_id=" in url:
@@ -719,11 +729,16 @@ async def main():
 			t = m.raw_text
 			if m.sender_id == 6333102398 and (c == 6333102398 or c == ch_id):
 				r=re.findall(r'⏱ Следующая попытка — через ([0-9]{1,3}) минут',t)
-				Майн=get_config_key("Майн")
+				Майн=get_config_key("mine")
 				if r and Майн:
+					print(t)
+					if ch_id < 0:
+						kuda = ch_id # слать в чат # навіть якщо неудача в лс бота. 
+					else:
+						kuda = 6333102398 # if!ch_id
 					m = (int(r[0]) +1)*60	# +1 м
 					await asyncio.sleep(m)	# ждем
-					await client.send_message(c,'Майн')
+					await client.send_message(kuda,'Майн')
 		
 		
 		####################################################################
@@ -733,29 +748,33 @@ async def main():
 		async def удачнаяпопыткамайнинга(event):
 			c = event.chat_id
 			m = event.message
-			Майн=get_config_key("Майн")
+			Майн=get_config_key("mine")
 			if m.sender_id == 6333102398 and (c == 6333102398 or (c == ch_id and m.mentioned)) and Майн:
-				#save_config_key('Майн',int(datetime.timestamp(m.date)))	# when
+				#save_config_key('mine',int(datetime.timestamp(m.date)))	# when
+				if ch_id < 0:
+					kuda = ch_id # слать в чат # навіть якщо удалось в лс бота. 
+				else:
+					kuda = 6333102398 # якщо чат не задано
 				print(m.text) # показать в консолі текст
 				rs=random.uniform(14404,14464)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
-				await client.send_message(c,'Майн')
+				await client.send_message(kuda,'Майн')
 		
 		
 		####################################################################
 		
 		
-		@client.on(events.NewMessage(pattern='✅ ВДАЛО! ☢️'))
+		@client.on(events.NewMessage(pattern=r'✅ (ВДАЛО|ЗАЧЁТ)'))
 		async def ферма(event):
 			m = event.message
 			print(m.raw_text)
 			if m.sender_id in irises:
-				if ch_id < 0 and get_config_key("Ферма"):
+				if ch_id < 0 and get_config_key("farm"):
 					rs=random.uniform(14464,14646)	# random
 					await asyncio.sleep(rs)	# ждем rs секунд
 					await client.send_message(ch_id,'Ферма')
 				
-				
+		
 		####################################################################
 		
 		
