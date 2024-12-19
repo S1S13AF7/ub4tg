@@ -6,4 +6,5 @@ Telethon-Mod
 #aiosqlite
 asyncio
 pymysql
+loguru
 emoji
