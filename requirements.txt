@@ -1,9 +1,6 @@
 # requirements.txt
 
-#aiogram==2.19
-#aiohttp==3.9.0b0
 Telethon-Mod
-#aiosqlite
 asyncio
 pymysql
 loguru
