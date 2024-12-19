@@ -479,7 +479,7 @@ async def main():
 									added+=1
 								except:
 									try:
-										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expri, expr_str = :exprs WHERE user_id = :z AND when_int < :wh AND expr_int < :expr;", {"wh":int(when),"xpi":int(profit),"expri":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
+										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expri, expr_str = :exprs WHERE user_id = :z AND when_int < :wh AND expr_int < :expri;", {"wh":int(when),"xpi":int(profit),"expri":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
 									except Exception as Err:
 										print(f'err: {Err} avocado backup')
 										# pass
