@@ -51,7 +51,8 @@ if is_termux:
 		CONFIG_PATH = f'{default_directory}/conf.json' # положить файл в доступну без рута теку.
 		noeb_file = f'{default_directory}/{noeb_file}' # положить файл в доступну без рута теку.
 		sessdb = f'{default_directory}/{sessdb}' # Або закоментувать або змінити якщо нада куда?
-		
+		from add import updatenotif # украв там: https://code.criminallycute.fi/bioeb_org/ub4tg
+		asyncio.ensure_future(updatenotif.git_notifications_update())
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
