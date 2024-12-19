@@ -36,7 +36,8 @@ if is_termux:
 	import sys
 	# майже все що для термукса я вкрав з форка бота.
 	print('Termux detected, checking permissions...')
-	print('If you want prevent killing termux by android, get wake lock: check your notifications, find termux app and press "ACQUIRE WAKELOCK"')
+	print('Prevent killing termux by android, getting wakelock...')
+	os.system('termux-wake-lock')
 	print('This can cause battery drain!')
 	if (os.environ.get('TERMUX_APP__APK_RELEASE') or os.environ.get('TERMUX_APK_RELEASE')) not in ('F_DROID', 'GITHUB'):
 		print('You use not f-droid/github apk release, it may have problems...')
