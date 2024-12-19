@@ -770,9 +770,11 @@ async def main():
 			print(m.raw_text)
 			if m.sender_id in irises:
 				if ch_id < 0 and get_config_key("farm"):
-					rs=random.uniform(14464,14646)	# random
+					rs=random.uniform(3.53,5.11)	# random
 					await asyncio.sleep(rs)	# ждем rs секунд
-					await client.send_message(ch_id,'Ферма')
+					await client.send_message(ch_id,'''.таймер 4 часа
+.ферма''') # спробуєм ще так. \
+						# бо з цими оновленнями у мене вони не працюють і по 4 часа.
 				
 		
 		####################################################################
