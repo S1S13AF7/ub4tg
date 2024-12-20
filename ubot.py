@@ -602,7 +602,7 @@ async def main():
 				if ch_id != event.chat_id:
 					ch_id = event.chat_id
 					save_config_key('ch_id',ch_id)
-				print(f'✅ є {count} потенційних пацієнтів. спробуєм їх сожрать')
+				print(f'🗃️ є {count} потенційних пацієнтів. Пробуєм сожрать')
 				for row in e_info:
 					if row[0]!=my_id:				#	❌ Нельзя заразить самого себя.
 						if ostalos_pt < 7:
@@ -623,7 +623,7 @@ async def main():
 							win32api.SetConsoleTitle(f'{my_id}#{bf_mode}')
 						rs = float(random.uniform(rs_min,rs_max))# random
 						eb = f'Биоеб {row[0]}' # повідомлення.
-						print(f'{eb} and wait {rs}')
+						print(f'🦠 {eb} and wait {rs}')
 						m=await event.reply(eb)
 						await asyncio.sleep(random.uniform(1.0001, 3.3))
 						await client.delete_messages(event.chat_id,m.id)
@@ -643,7 +643,7 @@ async def main():
 			m = event.message
 			t = m.raw_text
 			if m.sender_id in irises:
-				#a_404_p=get_config_key("a_404_p") # A_Click
+				a_404_p=get_config_key("a_404_p") # A_Click
 				i2a=get_config_key("i2a") # Iris => Avocado
 				if a_404_p and i2a and len(m.entities) > 1:				
 					h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
@@ -704,7 +704,7 @@ async def main():
 					print('trying eat patient')
 					if result.message:
 						print(f'avocado says: {result.message}')
-				
+		
 		
 		####################################################################
 		
