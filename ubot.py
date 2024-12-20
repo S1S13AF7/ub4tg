@@ -674,7 +674,7 @@ async def main():
 		####################################################################
 		
 		
-		@client.on(events.NewMessage(outgoing=True, pattern='\.ч(ек)?(_|\ )список$'))
+		@client.on(events.NewMessage(outgoing=True, pattern=r'\.ч(ек)?(_|\ )список$'))
 		async def ch_list(event):
 			reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
 			when = int(datetime.timestamp(event.date))
