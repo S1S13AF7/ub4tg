@@ -100,9 +100,9 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 	a_404_p = bool(config['a_404_p'] or False)
 	ch_id = int(config['ch_id'] or 0)  # id чата
-	a_h = bool(config['a_h'] or False) # automatic use medkit? 
-	i2a = bool(config['i2a'] or False) # вмикать лише якщо a_404_p = True
-	farm= bool(config['farm'] or False)# вмикать фарм?
+	#a_h = bool(config['a_h'] or False) # automatic use medkit? 
+	#i2a = bool(config['i2a'] or False) # вмикать лише якщо a_404_p = True
+	#farm= bool(config['farm'] or False)# вмикать фарм?
 	mine= bool(config['mine'] or False)# вмикать майн?
 
 ########################################################################
@@ -261,9 +261,6 @@ async def main():
 			expr_str	VARCHAR NOT NULL DEFAULT 0
 			)''');
 			conn.commit()
-		
-		if farm:
-			await client.send_message(5443619563,'Ферма')
 		
 		if mine:
 			await client.send_message(6333102398,'Майн')
@@ -650,24 +647,25 @@ async def main():
 			# iris off bio 31.12.24
 			m = event.message
 			t = m.raw_text
-			if m.sender_id not in irises:
-				pass
-			elif a_404_p and i2a and len(m.entities) > 1:				
-				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
-				r= re.findall(r'Организатор заражения: <a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
-				user_url=r[0]
-				user_id = await get_id(user_url)
-				if r and user_id!=my_id and user_id not in noeb:
-					ch=f'.ч {user_url}'
-					await asyncio.sleep(random.uniform(1,2))
-					if ch_id == 0 or ch_id == event.chat_id:
-						m = await event.reply(ch)
-						kuda = event.chat_id
-					else:
-						kuda = ch_id
-						m=await client.send_message(kuda,ch)
-					await asyncio.sleep(random.uniform(1,5))
-					await client.delete_messages(kuda, m.id)
+			if m.sender_id in irises:
+				#a_404_p=get_config_key("a_404_p") # A_Click
+				i2a=get_config_key("i2a") # Iris => Avocado
+				if a_404_p and i2a and len(m.entities) > 1:				
+					h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
+					r= re.findall(r'Организатор заражения: <a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
+					user_url=r[0]
+					user_id = await get_id(user_url)
+					if r and user_id!=my_id and user_id not in noeb:
+						ch=f'.ч {user_url}'
+						await asyncio.sleep(random.uniform(2,3))
+						if ch_id == 0 or ch_id == event.chat_id:
+							m = await event.reply(ch)
+							kuda = event.chat_id
+						else:
+							kuda = ch_id
+							m=await client.send_message(kuda,ch)
+						await asyncio.sleep(random.uniform(2,5))
+						await client.delete_messages(kuda, m.id)
 					
 		
 		
