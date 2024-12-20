@@ -469,7 +469,7 @@ async def main():
 			if m.sender_id == 6333102398 and event.chat_id == 6333102398:
 				# відаправник Авокадо і це приват з Авокадо. перестрахувавсь?
 				file_path = await m.download_media(file=f"{default_directory}")
-				print(f'backup file saved to {file_path}')
+				print(f'📃 backup file saved to {file_path}')
 				added = 0
 				victims = None
 				raw_victims = None
@@ -511,7 +511,7 @@ async def main():
 			reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
 			await event.edit('Downloading file...')
 			file_path = await reply.download_media(file=f"{default_directory}")
-			print(f'backup file saved to {file_path}')
+			print(f'📃 backup file saved to {file_path}')
 			victims = None
 			raw_victims = None
 			file_format = None
@@ -674,6 +674,28 @@ async def main():
 		####################################################################
 		
 		
+		@client.on(events.NewMessage(outgoing=True, pattern='\.ч(ек)?(_|\ )список$'))
+		async def ch_list(event):
+			reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+			when = int(datetime.timestamp(event.date))
+			t = reply.raw_text
+			h = utils.sanitize_parse_mode('html').unparse(t, reply.entities)  # HTML
+			r = re.findall(r'<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">', h)
+			for link in r:
+				id = await get_id(link)
+				if id > 0  and id!=my_id:
+					rs_min = 2.01
+					rs_max = 3.13
+					ch = f'.ч {id}' # повідомлення.
+					rs = float(random.uniform(rs_min,rs_max))
+					print(f'{ch} and wait {rs}')
+					m=await event.reply(ch)
+					await asyncio.sleep(rs)
+				
+		
+		####################################################################
+		
+		
 		@client.on(events.NewMessage(pattern='⏱?🚫 Жертва'))
 		async def infection_not_found(event):
 			m = event.message
@@ -698,6 +720,8 @@ async def main():
 		@client.on(events.NewMessage(pattern='🌡 У вас горячка вызванная'))
 		async def need_h(event):
 			m = event.message
+			a_h=get_config_key("a_h") # читаємо із файла. 
+			# ^ не баг, а фіча. Можливіть переключать в кофіґу без перезапуска
 			if m.sender_id !=6333102398:
 				pass
 			elif a_h and m.mentioned:
@@ -708,7 +732,12 @@ async def main():
 				mark_read=True,
 				delete=False,
 				)
-		
+			elif m.mentioned:
+				# нада,но !a_h:
+				global bf_mode,ostalos_pt
+				bf_mode = 'Slow'
+				ostalos_pt=1 # => 'Slow'. <= тобто 'костиль', да.
+				
 		
 		####################################################################
 		
