@@ -721,7 +721,7 @@ async def main():
 		async def need_h(event):
 			m = event.message
 			a_h=get_config_key("a_h") # читаємо із файла. 
-			# ^ не баг, а фіча. Можливіть переключать в кофіґу без перезапуска
+			# ^ не баг, а фіча. Можливіть переключать в конфіґу без перезапуска
 			if m.sender_id !=6333102398:
 				pass
 			elif a_h and m.mentioned:
