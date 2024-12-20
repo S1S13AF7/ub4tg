@@ -692,7 +692,7 @@ async def main():
 		async def infection_not_found(event):
 			m = event.message
 			if m.sender_id == 6333102398 and m.mentioned:
-				if get_config_key("a_404_p") # A_Click enabled?
+				if get_config_key("a_404_p"): # A_Click enabled?
 					await asyncio.sleep(random.uniform(1.111,2.239))
 					result = await client(functions.messages.GetBotCallbackAnswerRequest(  # src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
 					peer=m.peer_id,
