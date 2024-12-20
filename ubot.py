@@ -643,6 +643,7 @@ async def main():
 			m = event.message
 			t = m.raw_text
 			if m.sender_id in irises:
+				#a_404_p=get_config_key("a_404_p") # A_Click
 				i2a=get_config_key("i2a") # Iris => Avocado
 				if a_404_p and i2a and len(m.entities) > 1:				
 					h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
@@ -703,7 +704,22 @@ async def main():
 					print('trying eat patient')
 					if result.message:
 						print(f'avocado says: {result.message}')
+				
 		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(pattern='.+ ЗАБРАЛ у тебя'))
+		async def ЗАБРАЛ(event):
+			if m.sender_id ==6333102398:
+				if m.mentioned or m.chat_id == 6333102398:
+					r= re.findall(r'([0-9]{1,})',m.raw_text)
+					if r:
+						global ostalos_pt
+						print(m.raw_text)
+						ostalos_pt-=r[0]
+		
+				
 		
 		####################################################################
 		
@@ -711,23 +727,14 @@ async def main():
 		@client.on(events.NewMessage(pattern='🌡 У вас горячка вызванная'))
 		async def need_h(event):
 			m = event.message
-			a_h=get_config_key("a_h") # читаємо із файла. 
-			# ^ не баг, а фіча. Можливіть переключать в конфіґу без перезапуска
-			if m.sender_id !=6333102398:
-				pass
-			elif a_h and m.mentioned:
-				# нада хил
-				ah = await message_q( # отправляет сообщение боту
-				f"Хил",
-				6333102398,
-				mark_read=True,
-				delete=False,
-				)
-			elif m.mentioned:
-				# нада,но !a_h:
-				global bf_mode,ostalos_pt
-				bf_mode = 'Slow'
-				ostalos_pt=1 # => 'Slow'. <= тобто 'костиль', да.
+			if m.sender_id=6333102398: 
+				if m.mentioned or m.chat_id == 6333102398:
+					if get_config_key("a_h"): # читаємо із файла. 
+						ah = await message_q(f"Хил",6333102398,mark_read=True)
+						print(ah.raw_text)
+					else:
+						global ostalos_pt
+						ostalos_pt=1 # => 'Slow'. <= тобто 'костиль', да.
 				
 		
 		####################################################################
@@ -736,12 +743,11 @@ async def main():
 		@client.on(events.NewMessage(pattern='👺 Чекай нових патогенів!'))
 		async def need_p(event):
 			m = event.message
-			if m.sender_id !=6333102398:
-				pass
-			elif m.mentioned:
-				global bf_mode,ostalos_pt
-				bf_mode = 'Slow'
-				ostalos_pt=0
+			if m.sender_id == 6333102398:
+				if m.mentioned or m.chat_id == 6333102398:
+					global bf_mode,ostalos_pt
+					bf_mode = 'Slow'
+					ostalos_pt=0
 		
 		
 		####################################################################
@@ -752,13 +758,13 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
-			if m.sender_id == 6333102398 and (c == 6333102398 or c == ch_id):
+			if m.chat_id == 6333102398:	# крч від неудачних будем лише в лс бота
 				r=re.findall(r'⏱ Следующая попытка — через ([0-9]{1,3}) минут',t)
 				Майн=get_config_key("mine")
 				if r and Майн:
 					print(t)
 					if ch_id < 0:
-						kuda = ch_id # слать в чат # навіть якщо неудача в лс бота. 
+						kuda = ch_id # слать в чат
 					else:
 						kuda = 6333102398 # if!ch_id
 					m = (int(r[0]) +1)*60	# +1 м
@@ -785,7 +791,7 @@ async def main():
 				else:
 					kuda = 6333102398 # якщо чат не задано
 				print(m.text) # показать в консолі текст
-				rs=random.uniform(14402,14464)	# random
+				rs=random.uniform(14404,14464)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(kuda,'Майн')
 		
