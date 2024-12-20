@@ -785,10 +785,13 @@ async def main():
 				#save_config_key('mine',int(datetime.timestamp(m.date)))	# when
 				if ch_id < 0:
 					kuda = ch_id # слать в чат # навіть якщо удалось в лс бота. 
+					if get_config_key("farm"):
+						await asyncio.sleep(3.53)	# ждем
+						await client.send_message(ch_id,'Ферма')
 				else:
 					kuda = 6333102398 # якщо чат не задано
 				print(m.text) # показать в консолі текст
-				rs=random.uniform(14404,14464)	# random
+				rs=random.uniform(14401,14464)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(kuda,'Майн')
 		
