@@ -174,8 +174,7 @@ async def main():
 		print('User-Bot started')
 		me= await client.get_me()
 		my_id = int(me.id)
-		my_fn = me.first_name
-		print(my_id)
+		print(f'🆔 {my_id}')
 		
 		if os.name == 'nt':
 			win32api.SetConsoleTitle(f'{my_id}')
