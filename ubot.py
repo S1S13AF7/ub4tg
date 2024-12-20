@@ -98,9 +98,6 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 	a_404_p = bool(config['a_404_p'] or False)
 	ch_id = int(config['ch_id'] or 0)  # id чата
-	#a_h = bool(config['a_h'] or False) # automatic use medkit? 
-	#i2a = bool(config['i2a'] or False) # вмикать лише якщо a_404_p = True
-	#farm= bool(config['farm'] or False)# вмикать фарм?
 	mine= bool(config['mine'] or False)# вмикать майн?
 
 ########################################################################
@@ -646,7 +643,6 @@ async def main():
 			m = event.message
 			t = m.raw_text
 			if m.sender_id in irises:
-				#a_404_p=get_config_key("a_404_p") # A_Click
 				i2a=get_config_key("i2a") # Iris => Avocado
 				if a_404_p and i2a and len(m.entities) > 1:				
 					h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
@@ -695,19 +691,18 @@ async def main():
 		@client.on(events.NewMessage(pattern='⏱?🚫 Жертва'))
 		async def infection_not_found(event):
 			m = event.message
-			if m.sender_id != 6333102398:
-				pass
-			elif a_404_p and m.mentioned:
-				await asyncio.sleep(random.uniform(1.0001, 2.22394))
-				result = await client(functions.messages.GetBotCallbackAnswerRequest(  # src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
-				peer=m.peer_id,
-				msg_id=m.id,
-				game=False,  # idk why it works only when it false... 0_o
-				data=m.reply_markup.rows[0].buttons[0].data
-				))
-				print('trying eat patient')
-				if result.message:
-					print(f'avocado says: {result.message}')
+			if m.sender_id == 6333102398 and m.mentioned:
+				if get_config_key("a_404_p") # A_Click enabled?
+					await asyncio.sleep(random.uniform(1.111,2.239))
+					result = await client(functions.messages.GetBotCallbackAnswerRequest(  # src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
+					peer=m.peer_id,
+					msg_id=m.id,
+					game=False,  # idk why it works only when it false... 0_o
+					data=m.reply_markup.rows[0].buttons[0].data
+					))
+					print('trying eat patient')
+					if result.message:
+						print(f'avocado says: {result.message}')
 		
 		
 		####################################################################
@@ -784,12 +779,13 @@ async def main():
 				if ch_id < 0:
 					kuda = ch_id # слать в чат # навіть якщо удалось в лс бота. 
 					if get_config_key("farm"):
-						await asyncio.sleep(3.53)	# ждем
+						rs=random.uniform(2.2,3.3)	# random
+						await asyncio.sleep(rs)	# ждем rs секунд
 						await client.send_message(ch_id,'Ферма')
 				else:
 					kuda = 6333102398 # якщо чат не задано
 				print(m.text) # показать в консолі текст
-				rs=random.uniform(14401,14464)	# random
+				rs=random.uniform(14402,14464)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(kuda,'Майн')
 		
