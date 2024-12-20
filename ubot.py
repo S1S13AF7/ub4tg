@@ -55,8 +55,6 @@ if is_termux:
 		#Але тоді буде проблемно запускать кілька копій бота з телефону з різними авторизаціями, 
 		#В тому плані, що прийшлось би редагувать код, але тоді мінус оновлення через git pull, 
 		#Тому хай валяється рядом з ботом. так можна просто копіювать і не редагуючи код запуск
-		from add import updatenotif # украв там: https://code.criminallycute.fi/bioeb_org/ub4tg
-		asyncio.ensure_future(updatenotif.git_notifications_update())
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
