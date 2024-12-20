@@ -727,7 +727,7 @@ async def main():
 		@client.on(events.NewMessage(pattern='🌡 У вас горячка вызванная'))
 		async def need_h(event):
 			m = event.message
-			if m.sender_id=6333102398: 
+			if m.sender_id==6333102398: 
 				if m.mentioned or m.chat_id == 6333102398:
 					if get_config_key("a_h"): # читаємо із файла. 
 						ah = await message_q(f"Хил",6333102398,mark_read=True)
