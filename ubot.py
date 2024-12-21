@@ -562,7 +562,7 @@ async def main():
 				r= re.findall(r'([0-9]{6,10})',h)
 				if r:
 					# є ід юзера якого невдалось заразить
-					uid=r[0] # ну власне ід
+					uid=int(r[0]) # ну власне ід
 					if db_pymysql:
 						try:
 							#DELETE FROM `tg_iris_zarazy` WHERE `tg_iris_zarazy`.`user_id` = 0;
@@ -682,7 +682,7 @@ async def main():
 					rs_max = 3.13
 					ch = f'.ч {id}' # повідомлення.
 					rs = float(random.uniform(rs_min,rs_max))
-					print(f'{ch} and wait {rs}')
+					print(f'⏳ {ch} and wait {rs}')
 					m=await event.reply(ch)
 					await asyncio.sleep(rs)
 				
