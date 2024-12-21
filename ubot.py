@@ -712,6 +712,7 @@ async def main():
 		
 		@client.on(events.NewMessage(pattern='.+ ЗАБРАЛ у тебя'))
 		async def ЗАБРАЛ(event):
+			m = event.message
 			if m.sender_id ==6333102398:
 				if m.mentioned or m.chat_id == 6333102398:
 					r= re.findall(r'([0-9]{1,})',m.raw_text)
@@ -726,6 +727,7 @@ async def main():
 		
 		@client.on(events.NewMessage(pattern='.+ подогнал тебе'))
 		async def подогнал(event):
+			m = event.message
 			if m.sender_id ==6333102398:
 				if m.mentioned or m.chat_id == 6333102398:
 					r= re.findall(r'([0-9]{1,2})',m.raw_text)
