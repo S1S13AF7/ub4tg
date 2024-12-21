@@ -719,7 +719,7 @@ async def main():
 					if r:
 						global ostalos_pt
 						print(m.raw_text)
-						ostalos_pt-=r[0]
+						ostalos_pt-=int(r[0])
 		
 		
 		####################################################################
@@ -734,7 +734,7 @@ async def main():
 					if r:
 						global ostalos_pt
 						print(m.raw_text)
-						ostalos_pt+=r[0]
+						ostalos_pt+=int(r[0])
 		
 		
 		####################################################################
