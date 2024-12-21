@@ -720,7 +720,20 @@ async def main():
 						print(m.raw_text)
 						ostalos_pt-=r[0]
 		
-				
+		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(pattern='.+ подогнал тебе'))
+		async def подогнал(event):
+			if m.sender_id ==6333102398:
+				if m.mentioned or m.chat_id == 6333102398:
+					r= re.findall(r'([0-9]{1,2})',m.raw_text)
+					if r:
+						global ostalos_pt
+						print(m.raw_text)
+						ostalos_pt+=r[0]
+		
 		
 		####################################################################
 		
