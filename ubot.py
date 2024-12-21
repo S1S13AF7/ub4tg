@@ -178,6 +178,8 @@ async def main():
 		
 		if os.name == 'nt':
 			win32api.SetConsoleTitle(f'{my_id}')
+		elif os.name == 'posix':
+			print(f'\33]0;{my_id}\a', end='', flush=True)
 		
 		if db_pymysql:
 			
