@@ -1,9 +1,0 @@
-# requirements.txt
-
-loguru
-aiohttp==3.9.0b0
-Telethon-Mod
-#aiosqlite
-asyncio
-pymysql
-emoji
