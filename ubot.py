@@ -486,23 +486,25 @@ async def main():
 									global ostalos_pt
 									ostalos_pt=int(re.sub(r' ','',re.findall(r'\| Осталось: ([0-9\ ]+) шт.',t)[0]))
 								
-								if db_sqlite3 and u1id==my_id:
-									try:
-										c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",(int(u2id),int(when),int(exp_int),int(do_int),str(do_txt))); conn.commit()
-									except:
+								if db_sqlite3:
+									
+									if u1id==my_id:
 										try:
-											c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh; AND expr_int <= :end;", {"wh":int(when),"xpi":int(exp_int),"end":int(do_int),"do":str(do_txt),"z":int(u2id)}); conn.commit()
-										except Exception as Err:
-											print(f'err: {Err} avocado')
-								elif db_sqlite3 and u2id!=my_id and u2id not in noeb:
-									try:
-										c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(u2id),int(when),int(exp_int),int(0))); conn.commit()# save not my pacients
-									except:
+											c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",(int(u2id),int(when),int(exp_int),int(do_int),str(do_txt))); conn.commit()
+										except:
+											try:
+												c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh; AND expr_int <= :end;", {"wh":int(when),"xpi":int(exp_int),"end":int(do_int),"do":str(do_txt),"z":int(u2id)}); conn.commit()
+											except Exception as Err:
+												print(f'err: {Err} avocado')
+									elif u2id!=my_id and u2id not in noeb:
 										try:
-											c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND expr_int < :wh;", {"wh":int(when),"xpi":int(exp_int),"z":int(u2id)}); conn.commit()
-										except Exception as Err:
-											print(f'err: {Err} avocado upd not my')
-											#pass
+											c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(u2id),int(when),int(exp_int),int(0))); conn.commit()# save not my pacients
+										except:
+											try:
+												c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND expr_int < :wh;", {"wh":int(when),"xpi":int(exp_int),"z":int(u2id)}); conn.commit()
+											except Exception as Err:
+												print(f'err: {Err} avocado upd not my')
+												#pass
 									
 								if db_pymysql:
 									try:
