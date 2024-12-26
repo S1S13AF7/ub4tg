@@ -78,7 +78,6 @@ if not os.path.exists(CONFIG_PATH):
 	'farm': False,
 	'mine': False,
 	'i2a': False,
-	'i_f': False,
 	'a_h': a_h,
 	'ch_id': 0
 	}
@@ -288,7 +287,7 @@ async def main():
 						if user_entity.id:
 							user_id = int(user_entity.id)
 							user_fn = user_entity.first_name or ''
-							print(f'ok:{url}/@{user_id}')
+							print(f'✅ ok: {url} @{user_id}')
 							if db_pymysql:
 								try:
 									d.execute("INSERT INTO `tg_users_url` (`when_int`,`user_id`,`u_link`,`f_name`) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE user_id = VALUES (user_id),u_link = VALUES (u_link),f_name = VALUES (f_name),when_int = VALUES (when_int);", (int(time.time()),int(user_id),str(url),str(user_fn))); con.commit()
@@ -407,7 +406,6 @@ async def main():
 								if db_pymysql:
 									try:
 										d.execute("INSERT INTO `tg_iris_zarazy` (`who_id`, `user_id`, `when_int`, `bio_str`, `bio_int`, `expr_int`, `expr_str`, `u_link`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE when_int=VALUES (when_int),bio_str=VALUES (bio_str),bio_int=VALUES (bio_int),expr_int=VALUES (expr_int),expr_str=VALUES (expr_str),u_link = VALUES (u_link);", (int(u1id),int(u2id),int(when),str(experience), int(exp_int), int(do_int),str(do_txt),str(u2url))); con.commit()
-										#print(f"\nINSERT INTO .... ON DUPLICATE KEY UPDATE # [@{u1id}] => [@{u2id}]\n")
 									except Exception as Err:
 										print(f'err: {Err} /localhost')
 										#pass
@@ -424,7 +422,7 @@ async def main():
 										except:
 											pass
 								
-								print(f'🍬 @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
+								print(f'ℹ️ @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
 								
 								if u2id!=my_id:
 									a_404_p=get_config_key("a_404_p") # A_Click
@@ -505,7 +503,6 @@ async def main():
 									try:
 										# from_infect 	who_id 	user_id 	profit 	until_infect 	until_str
 										d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `from_infect`, `profit`, `until_infect`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE from_infect=VALUES(from_infect),profit=VALUES(profit),until_infect=VALUES(until_infect),until_str=VALUES(until_str);",(int(u1id),int(u2id),int(when),int(exp_int),int(do_int),str(do_txt))); con.commit()
-										#print(f"\nINSERT INTO .... ON DUPLICATE KEY UPDATE # [@{u1id}] => [@{u2id}]\n")
 									except Exception as Err:
 										print(f'err: {Err} (tg_bio_attack)')
 										#pass
@@ -762,11 +759,6 @@ async def main():
 						await asyncio.sleep(random.uniform(1.3,3))
 						if user_id > 0 and user_id!=my_id and user_id not in noeb:
 							ch=f'.ч {user_id}'
-							if db_sqlite3:
-								try:
-									c.execute("INSERT INTO zarazy(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (int(user_id),int(w),str(1),int(1),int(0))); conn.commit()
-								except:
-									pass
 						if ch_id == 0 or ch_id == event.chat_id:
 							m = await event.reply(ch)
 							kuda = event.chat_id
