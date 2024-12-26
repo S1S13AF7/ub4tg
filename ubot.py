@@ -636,7 +636,7 @@ async def main():
 							print(f'err: {Err} in DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {uid}')
 					if db_sqlite3:
 						try:
-							c.execute("DELETE FROM zarazy WHERE user_id = {uid};"); conn.commit() # rm 404 id
+							c.execute("DELETE FROM zarazy WHERE user_id = %d" % int(uid)); conn.commit()
 						except Exception as Err:
 							print(f'err: {Err} in DELETE FROM zarazy WHERE `user_id` = {uid}')
 		
