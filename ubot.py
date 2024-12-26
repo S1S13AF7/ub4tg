@@ -415,13 +415,10 @@ async def main():
 								if db_sqlite3:
 									if u1id==my_id:
 										try:
-											c.execute("INSERT INTO zarazy(user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?,?)",(int(u2id),int(when),str(experience),int(exp_int),int(do_int),str(do_txt))); conn.commit()
-										except:
-											try:
-												c.execute("UPDATE zarazy SET when_int = :wh, bio_str = :xp, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh;", {"wh":int(when),"xp":str(experience),"xpi":int(exp_int),"end":int(do_int),"do":str(do_txt),"z":int(u2id)}); conn.commit()
-											except Exception as Err:
-												print(f'err: {Err} zarazy')
-									else:
+											c.execute("INSERT OR REPLACE INTO zarazy (user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?,?)",(int(u2id),int(when),str(experience),int(exp_int),int(do_int),str(do_txt))); conn.commit()
+										except Exception as Err:
+											print(f'err: {Err} zarazy')
+									elif u2id!=my_id:
 										try:
 											c.execute("INSERT INTO zarazy(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (int(u2id),int(when),str(experience),int(exp_int),int(0))); conn.commit()
 										except:
@@ -490,12 +487,10 @@ async def main():
 									
 									if u1id==my_id:
 										try:
-											c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",(int(u2id),int(when),int(exp_int),int(do_int),str(do_txt))); conn.commit()
-										except:
-											try:
-												c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :end, expr_str = :do WHERE user_id = :z AND when_int <= :wh; AND expr_int <= :end;", {"wh":int(when),"xpi":int(exp_int),"end":int(do_int),"do":str(do_txt),"z":int(u2id)}); conn.commit()
-											except Exception as Err:
-												print(f'err: {Err} avocado')
+											c.execute("INSERT OR REPLACE INTO avocado (user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",
+											(int(u2id),int(when),int(exp_int),int(do_int),str(do_txt))); conn.commit()
+										except Exception as Err:
+											print(f'err: {Err} avocado')
 									elif u2id!=my_id and u2id not in noeb:
 										try:
 											c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(u2id),int(when),int(exp_int),int(0))); conn.commit()# save not my pacients
