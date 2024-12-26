@@ -386,7 +386,7 @@ async def main():
 							u1id = int(await get_id(u1url) or 0)
 							u2id = int(await get_id(u2url) or 0)
 							when=int(datetime.timestamp(m.date))
-							days=int(re.sub(r' ','',re.findall(r' (на|for|ещё) ([0-9\ ]+) (д|d).*', t)[0][1]))
+							days=int(re.sub(r' ','',re.findall(r' на ([0-9\ ]+) д.*', t)[0]))
 							a=datetime.fromtimestamp(when)+timedelta(days=int(days), hours=3)
 							do_int=datetime.timestamp(a)
 							do_txt=str(a.strftime("%d.%m.%y"))
@@ -464,12 +464,10 @@ async def main():
 							#print(h)
 							exp_int=1
 							experience=1
-							#u1url=r1[0][0]
-							#u2url=r1[0][1]
 							u1id =int(r[0][0])
 							u2id =int(r[0][1])
 							when=int(datetime.timestamp(m.date))
-							days=int(re.sub(r' ','',re.findall(r' (на|for|ещё) ([0-9\ ]+) (д|d).*', t)[0][1]))
+							days=int(re.sub(r' ','',re.findall(r'([0-9]+) (д|d).*', t)[0][0]))
 							a=datetime.fromtimestamp(when)+timedelta(days=int(days), hours=3)
 							do_int=datetime.timestamp(a)
 							do_txt=str(a.strftime("%d.%m.%y"))
@@ -726,7 +724,8 @@ async def main():
 							bf_mode='Fast'
 							rs_max = 33
 						if ostalos_pt > 90:
-							rs_max = 22
+							rs_min = 6.666
+							rs_max = 9.999
 							bf_mode='Turbo'
 						if os.name == 'nt':
 							win32api.SetConsoleTitle(f'{my_id}#{bf_mode}')
@@ -901,7 +900,7 @@ async def main():
 				else:
 					kuda = 6333102398 # якщо чат не задано
 				print(m.text) # показать в консолі текст
-				rs=random.uniform(14404,14464)	# random
+				rs=random.uniform(7201,7222)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(kuda,'Майн')
 		
