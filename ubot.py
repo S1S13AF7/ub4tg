@@ -499,7 +499,7 @@ async def main():
 										c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(u2id),int(when),int(exp_int),int(0))); conn.commit()# save not my pacients
 									except:
 										try:
-											c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND when_int < :wh AND expr_int < :wh;", {"wh":int(when),"xpi":int(exp_int),"z":int(u2id)}); conn.commit()
+											c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND expr_int < :wh;", {"wh":int(when),"xpi":int(exp_int),"z":int(u2id)}); conn.commit()
 										except Exception as Err:
 											print(f'err: {Err} avocado upd not my')
 											#pass
@@ -556,7 +556,7 @@ async def main():
 									added+=1
 								except:
 									try:
-										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expri, expr_str = :exprs WHERE user_id = :z AND when_int < :wh AND expr_int < :expri;", {"wh":int(when),"xpi":int(profit),"expri":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
+										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expr, expr_str = :exprs WHERE user_id = :z AND expr_int < :expr;", {"wh":int(when),"xpi":int(profit),"expr":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
 									except Exception as Err:
 										print(f'err: {Err} avocado backup')
 										# pass
