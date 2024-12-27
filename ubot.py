@@ -39,6 +39,7 @@ if is_termux:
 	print('Prevent killing termux by android, getting wakelock...')
 	os.system('termux-wake-lock')
 	print('This can cause battery drain!')
+	termux_api = os.system('termux-api-start') #	та штука для сповіщеннь.
 	if (os.environ.get('TERMUX_APP__APK_RELEASE') or os.environ.get('TERMUX_APK_RELEASE')) not in ('F_DROID', 'GITHUB'):
 		print('You use not f-droid/github apk release, it may have problems...')
 		print('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
@@ -527,7 +528,7 @@ async def main():
 				file_path = await m.download_media(file=f"{default_directory}")
 				print(f'📃 backup file saved to {file_path}')
 				count=0
-				added=0
+				saved=0
 				updtd=0
 				mysql=0
 				errrs=0
@@ -552,7 +553,7 @@ async def main():
 								try:
 									c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",(int(u_id),int(when),int(profit),int(expr),str(do))); conn.commit()
 									print(f'''[@{u_id}] +{profit}''')# показать
-									added+=1
+									saved+=1
 								except:
 									try:
 										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expr, expr_str = :exprs WHERE user_id = :z AND expr_int < :expr;", {"wh":int(when),"xpi":int(profit),"expr":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
@@ -573,10 +574,10 @@ async def main():
 						info = ''
 						if count > 0:
 							info = f'count: {count}'
-						if added > 0:
-							info = f'{info}\nadded: {added}'
+						if saved > 0:
+							info = f'{info}\nsaved: {saved}'
 						if updtd > 0:
-							info = f'{info}\nupdtd? {updtd}'
+							info = f'{info}\nupdtd: {updtd}'
 						if mysql > 0:
 							info = f'{info}\nMySQL: {mysql}'
 						if errrs > 0:
