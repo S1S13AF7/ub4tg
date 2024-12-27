@@ -526,7 +526,11 @@ async def main():
 				# відаправник Авокадо і це приват з Авокадо. перестрахувавсь?
 				file_path = await m.download_media(file=f"{default_directory}")
 				print(f'📃 backup file saved to {file_path}')
-				added = 0
+				count=0
+				added=0
+				updtd=0
+				mysql=0
+				errrs=0
 				victims = None
 				raw_victims = None
 				file_format = None
@@ -537,6 +541,7 @@ async def main():
 						my_victims_ids = []
 						added = 0
 						for v in victims:
+							count+=1
 							u_id = int(v['user_id'])
 							profit=int(v['profit'])
 							when = int(v['from_infect'])
@@ -551,16 +556,38 @@ async def main():
 								except:
 									try:
 										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expr, expr_str = :exprs WHERE user_id = :z AND expr_int < :expr;", {"wh":int(when),"xpi":int(profit),"expr":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
+										updtd+=1
 									except Exception as Err:
 										print(f'err: {Err} avocado backup')
+										errrs+=1
 										# pass
 							if db_pymysql:
 								try:
 									d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `from_infect`, `profit`, `until_infect`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE from_infect=VALUES (from_infect),profit=VALUES (profit),until_infect=VALUES (until_infect),until_str = VALUES (until_str);", (int(my_id),int(u_id),int(when),str(profit), int(expr),str(do))); con.commit()
+									mysql+=1
 								except Exception as Err:
 									print(f'err: {Err} (tg_bio_attack) (backup)')
+									errrs+=1
 						del victims# free memory
-						print(f'added: {added}')
+						
+						info = ''
+						if count > 0:
+							info = f'count: {count}'
+						if added > 0:
+							info = f'{info}\nadded: {added}'
+						if updtd > 0:
+							info = f'{info}\nupdtd? {updtd}'
+						if mysql > 0:
+							info = f'{info}\nMySQL: {mysql}'
+						if errrs > 0:
+							info = f'{info}\nerrrs: {errrs}'
+						print(info)
+						
+						if is_termux and len (info) > 0:
+							if termux_api == 0:
+								os.system(
+								f"termux-notification --title '{my_id}' --content '{info}'"
+								)
 		
 		
 		####################################################################
