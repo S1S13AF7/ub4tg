@@ -171,7 +171,7 @@ try:
 	with open(noeb_file, "r") as read_file:
 		noeb = json.load(read_file)
 except:
-	noeb =[707693258,5137994780,5226378684,5443619563,5434504334,6333102398]
+	noeb=[707693258,5137994780,5226378684,5434504334,5443619563]
 	with open(noeb_file, "w", encoding="utf-8") as write_file:
 		json.dump(noeb, write_file,ensure_ascii=False, indent='	')
 
