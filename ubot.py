@@ -30,6 +30,8 @@ noeb_file = "noeb.json"		# кого ненада заражать айдішки
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
+termux_api = False # там нижче буде перевизначено якщо is_termux == True
+
 treat_as_true = ('true','1','t','y','yes','yeah','yup')# все інше False
 
 if is_termux:
@@ -528,7 +530,7 @@ async def main():
 				file_path = await m.download_media(file=f"{default_directory}")
 				print(f'📃 backup file saved to {file_path}')
 				count=0
-				saved=0
+				added=0
 				updtd=0
 				mysql=0
 				errrs=0
@@ -553,7 +555,7 @@ async def main():
 								try:
 									c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",(int(u_id),int(when),int(profit),int(expr),str(do))); conn.commit()
 									print(f'''[@{u_id}] +{profit}''')# показать
-									saved+=1
+									added+=1
 								except:
 									try:
 										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expr, expr_str = :exprs WHERE user_id = :z AND expr_int < :expr;", {"wh":int(when),"xpi":int(profit),"expr":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
@@ -574,10 +576,10 @@ async def main():
 						info = ''
 						if count > 0:
 							info = f'count: {count}'
-						if saved > 0:
-							info = f'{info}\nsaved: {saved}'
+						if added > 0:
+							info = f'{info}\nadded: {added}'
 						if updtd > 0:
-							info = f'{info}\nupdtd: {updtd}'
+							info = f'{info}\nupdtd? {updtd}'
 						if mysql > 0:
 							info = f'{info}\nMySQL: {mysql}'
 						if errrs > 0:
@@ -601,42 +603,90 @@ async def main():
 			await event.edit('Downloading file...')
 			file_path = await reply.download_media(file=f"{default_directory}")
 			print(f'📃 backup file saved to {file_path}')
+			await asyncio.sleep(random.uniform(0.1,0.7))
+			count=0
+			added=0
+			noadd=0
+			updtd=0
+			mysql=0
+			errrs=0
+			errors = ''
 			victims = None
 			raw_victims = None
 			file_format = None
 			with open(file_path, 'r') as stealed_backup:
 				if file_path.lower().endswith('.json'):
 					victims = json.load(stealed_backup)
-					file_format = 'json'
+					await asyncio.sleep(random.uniform(0.2,1.111))
 					await event.edit('Processing json victims...')
-				else:
-					await event.edit('Format not supported.')
-					return
-
-			added = 0
-			if file_format == 'json':
-				for v in victims:
-					if v['user_id']:
-						#print(v)# захламляємо ?
-						u_id = int(v['user_id'])
-						profit=int(v['profit'] or 1)
-						when = int(v['from_infect'] or 0)
-						if u_id!=my_id and u_id not in noeb:
-							try:
-								c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(u_id),int(when),int(profit),int(0))); conn.commit()# save not my pacients
-								added+= 1
-							except:
-								if profit > 1 and when > 0:
-									# якщо є сенс оновлювати?
+					await asyncio.sleep(random.uniform(0.2,1.111))
+					for v in victims:
+						if v['user_id']:
+							#print(v)# захламляємо ?
+							u_id = int(v['user_id'])
+							profit=int(v['profit'] or 1)
+							when = int(v['from_infect'] or 0)
+							if u_id!=my_id and u_id not in noeb:
+								if db_sqlite3:
 									try:
-										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND when_int < :wh AND expr_int < :mtime;", {"wh":int(when),"xpi":int(profit),"mtime":int(mtime),"z":int(u_id)}); conn.commit()
-									except Exception as Err:
-										print(f'err: {Err} avocado backup json')
-				ok=f'✅ Success added {added}'
-				await event.edit(ok)
-				print(ok)
-			del victims  # free memory
-			del raw_victims
+										c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(u_id),int(when),int(profit),int(0))); conn.commit()# save not my pacients
+										added+= 1
+									except:
+										if profit > 1 and when > 0:
+											# якщо є сенс оновлювати?
+											try:
+												c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND when_int < :wh AND expr_int < :mtime;", {"wh":int(when),"xpi":int(profit),"mtime":int(mtime),"z":int(u_id)}); conn.commit()
+												updtd+=1
+											except Exception as Err:
+												print(f'err: {Err} avocado backup json')
+												errors=f'{errors}\n{Err}' # там неповинно буть?!
+												errrs+=1
+										else:
+											noadd+=1
+								else:
+									errors=f'Алоу db_sqlite3 is False, куда сохранять?!' #
+									errrs+=1
+									noadd+=1
+							else: # if u_id==my_id [and/or] u_id in noeb: [dnt add]
+								noadd+=1
+					# end of victims
+					info = ''
+					if added > 0 or updtd > 0 or errrs > 0: # якщо вобще є інфа?!
+						if count > 0:
+							info = f'count: {count}'
+						if added > 0:
+							info = f'{info}\nadded: {added}'
+						if updtd > 0:
+							info = f'{info}\nupdtd? {updtd}'
+						if noadd > 0:
+							info = f'{info}\nskipd: {noadd}'
+						if errrs > 0:
+							info = f'{info}\nerrrs: {errrs}'
+						if errors!='':
+							info = f'{info}\n{errors}'
+						
+						print(info)
+						
+						if is_termux and len (info) > 0:
+							if termux_api == 0:
+								os.system(
+								f"termux-notification --title '{my_id}' --content '{info}'"
+								)
+						
+						await asyncio.sleep(random.uniform(0.1,2))
+						await event.edit(info)
+					else:
+						await asyncio.sleep(random.uniform(0.1,2))
+						await event.edit(f'?!?!?!?') # інфа нема?!
+					# end of victims
+					del victims  # free memory
+					del raw_victims
+					del errors
+					del info
+				else:
+					await asyncio.sleep(random.uniform(1, 2))
+					await event.edit('Format not supported.')
+					#return
 		
 		
 		####################################################################
