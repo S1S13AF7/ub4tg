@@ -74,6 +74,7 @@ if not os.path.exists(CONFIG_PATH):
 	'api_hash': api_hash,
 	'db_pymysql': False,
 	'db_sqlite3': True,
+	'wakelock': False,
 	'a_404_p': a_404_p,
 	'farm': False,
 	'mine': False,
@@ -81,7 +82,11 @@ if not os.path.exists(CONFIG_PATH):
 	'a_h': a_h,
 	'ch_id': 0
 	}
-	
+	# api_id & api_hash - обов'язкові параметри; 
+	# db_pymysql - чи юзать MySQL? (default: False); 
+	# a_404_p - автоматично сожрать пацієнта якщо не знайдено; 
+	# ch_id - ід чата де відбувається магія. виставиться само якщо був 0; 
+	# wakelock - чи юзать wakelock (у мене від нього нема толку); 
 	with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
 		json.dump(new_config, configfile,ensure_ascii=False, indent='	')
 
@@ -94,11 +99,15 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	api_hash = config['api_hash']
 	
 	db_pymysql = bool(config['db_pymysql'] or False)
-	db_sqlite3 = bool(config['db_sqlite3'] or True)
+	db_sqlite3 = bool(True) # Always true; або змініть.
 	
 	a_404_p = bool(config['a_404_p'] or False)
 	ch_id = int(config['ch_id'] or 0)  # id чата
 	mine= bool(config['mine'] or False)# вмикать майн?
+	
+	if ch_id > 0:
+		ch_id=0
+		save_config_key('ch_id',ch_id)
 
 ########################################################################
 
@@ -181,6 +190,13 @@ async def main():
 		elif os.name == 'posix':
 			print(f'\33]0;{my_id}\a', end='', flush=True)
 		
+		if is_termux:
+			if get_config_key("wakelock"):
+				# якщо у конфіґу "wakelock": true,
+				print('Prevent killing termux by android, getting wakelock...')
+				os.system('termux-wake-lock')
+				print('This can cause battery drain!')
+
 		if db_pymysql:
 			
 			import pymysql
