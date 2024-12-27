@@ -598,27 +598,116 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biobackup$'))
 		async def bio_steal_backup(event):
-			mtime = int(datetime.timestamp(event.message.date))
-			await asyncio.sleep(random.uniform(0.4,0.8)) # думаю тут нада да?
-			reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+			mtime = int(datetime.timestamp(event.message.date)) # 	when (int)
+			await asyncio.sleep(random.uniform(0.1111,0.55555)) # 	чуток ждем
+			count = 0
+			added = 0
+			noadd = 0
+			updtd = 0
+			mysql = 0
+			errrs = 0
+			errors = ''
+			victims = None
+			raw_victims = None
+			file_format = None
+			await asyncio.sleep(random.uniform(0.2,0.4)) # думаю тут нада да?
+			
+			reply = await client.get_messages(
+			event.peer_id, 
+			ids=event.reply_to.reply_to_msg_id)
+			
+			await asyncio.sleep(random.uniform(0.2,0.4)) # думаю тут нада да?
 			if reply is None:
-				wtf = 'не змогли отримать повідомлення'
+				wtf = 'не змогли отримать повідомлення' # або трабл апі або нема
+				await asyncio.sleep(0.21) # ждем,
 				await event.edit(wtf)
 				print(wtf)
 				return
-			else:
-				await asyncio.sleep(0.111) # тут нада?
-				await event.edit('Downloading file...')
-				file_path = await reply.download_media(file=f"{default_directory}")
-				if file_path is None:
-					wtf = 'file_path is None' # wtf?!
-					await asyncio.sleep(0.21) # ждем,
-					await event.edit(wtf)
-					print(wtf)
-					return
+			await asyncio.sleep(0.111) # тут нада?
+			await event.edit('Downloading file...')
+			file_path = await reply.download_media(file=f"{default_directory}")
+			if file_path is None:
+				wtf = 'Error: файл не завантажено.' # wtf?! А чи був вобще файл?
+				await asyncio.sleep(0.21) # ждем,
+				await event.edit(wtf)
+				print(wtf)
+				return
+			#else:
+			print(f'📃 backup file saved to {file_path}')
+			await asyncio.sleep(random.uniform(0.1,0.3))
+			with open(file_path, 'r') as stealed_backup:
+				if file_path.lower().endswith('.json'):
+					victims = json.load(stealed_backup)
+					await asyncio.sleep(random.uniform(0.3,1.111))
+					await event.edit('Processing json victims...')
+					await asyncio.sleep(random.uniform(0.3,1.111))
+					for v in victims:
+						if v['user_id']:
+							print(v)# захламляємо ?
+							u_id = int(v['user_id'])
+							profit=int(v['profit'] or 1)
+							when = int(v['from_infect'] or 0)
+							if u_id!=my_id and u_id not in noeb:
+								if db_sqlite3:
+									try:
+										c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(u_id),int(when),int(profit),int(0))); conn.commit()# save not my pacients
+										added+= 1
+									except:
+										if profit > 1 and when > 0:
+											# якщо є сенс оновлювати?
+											try:
+												c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND when_int < :wh AND expr_int < :mtime;", {"wh":int(when),"xpi":int(profit),"mtime":int(mtime),"z":int(u_id)}); conn.commit()
+												updtd+=1
+											except Exception as Err:
+												print(f'err: {Err} avocado backup json')
+												errors=f'{errors}\n{Err}' # там неповинно буть?!
+												errrs+=1
+										else:
+											noadd+=1
+								else:
+									errors=f'Алоу db_sqlite3 is False, куда сохранять?!' #
+									errrs+=1
+									noadd+=1
+							else: # if u_id==my_id [and/or] u_id in noeb: [dnt add]
+								noadd+=1
+					# end of victims
+					info = ''
+					if added > 0 or updtd > 0 or errrs > 0: # якщо вобще є інфа?!
+						if count > 0:
+							info = f'count: {count}'
+						if added > 0:
+							info = f'{info}\nadded: {added}'
+						if noadd > 0:
+							info = f'{info}\nnoadd: {noadd}'
+						if updtd > 0:
+							info = f'{info}\nupdtd: {updtd}'
+						if errrs > 0:
+							info = f'{info}\nerrrs: {errrs}'
+						if errors!='':
+							info = f'{info}\n{errors}'
+						
+						print(info)
+						
+						if is_termux and len (info) > 0:
+							if termux_api == 0:
+								os.system(
+								f"termux-notification --title '{my_id}' --content '{info}'"
+								)
+						
+						await asyncio.sleep(random.uniform(0.1,2))
+						await event.edit(info)
+					else:
+						await asyncio.sleep(random.uniform(0.1,2))
+						await event.edit(f'?!?!?!?') # інфа нема?!
+					# end of victims
+					del victims  # free memory
+					del raw_victims
+					del errors
+					del info
 				else:
-					print(f'📃 backup file saved to {file_path}')
-					# хоч сюда дойде?
+					await asyncio.sleep(random.uniform(1, 2))
+					await event.edit('Format not supported.')
+					#return
 		
 		
 		####################################################################
