@@ -643,7 +643,8 @@ async def main():
 					await asyncio.sleep(random.uniform(0.3,1.111))
 					for v in victims:
 						if v['user_id']:
-							print(v)# захламляємо ?
+							count+=1
+							#print(v)# захламляємо ?
 							u_id = int(v['user_id'])
 							profit=int(v['profit'] or 1)
 							when = int(v['from_infect'] or 0)
@@ -673,14 +674,8 @@ async def main():
 					# end of victims
 					info = ''
 					if added > 0 or updtd > 0 or errrs > 0: # якщо вобще є інфа?!
-						if count > 0:
-							info = f'count: {count}'
 						if added > 0:
 							info = f'{info}\nadded: {added}'
-						if noadd > 0:
-							info = f'{info}\nnoadd: {noadd}'
-						if updtd > 0:
-							info = f'{info}\nupdtd: {updtd}'
 						if errrs > 0:
 							info = f'{info}\nerrrs: {errrs}'
 						if errors!='':
@@ -785,7 +780,7 @@ async def main():
 			c.execute(f"SELECT * FROM `avocado` WHERE expr_int < {when}"); 
 			e_info=c.fetchall()
 			count = len(e_info)
-			if count < len(noeb)+2: # +2, так як, теоретично, там можуть всі вони + свій айді, тому жрать нема
+			if count < len(noeb)+2: # так як, теоретично, там можуть всі вони + свій айді, тому жрать нема
 				nema=f'🤷 рандом хавай.'
 				await event.edit(nema) # ред.
 				print(nema)
@@ -830,9 +825,16 @@ async def main():
 						await client.delete_messages(event.chat_id,m.id)
 						await asyncio.sleep(rs)
 				bf_run = False	# dnt edit this.				# це якщо всьо уже.
+				info='end of biofuck; Try again?'				# це якщо всьо уже.
 				if os.name == 'nt':
 					win32api.SetConsoleTitle(f'{my_id}')	# заголовк: мій_ід.
-				
+				elif is_termux:
+					if termux_api == 0:
+						os.system(
+						f"termux-notification --title '{my_id}' --content '{info}'"
+						) # показать сповіщення 'end of biofuck; Try again?'
+				print(info)
+		
 		
 		####################################################################
 		
