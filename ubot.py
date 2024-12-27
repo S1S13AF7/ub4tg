@@ -579,7 +579,7 @@ async def main():
 						if added > 0:
 							info = f'{info}\nadded: {added}'
 						if updtd > 0:
-							info = f'{info}\nupdtd? {updtd}'
+							info = f'{info}\nupdtd: {updtd}'
 						if mysql > 0:
 							info = f'{info}\nMySQL: {mysql}'
 						if errrs > 0:
@@ -595,7 +595,30 @@ async def main():
 		
 		####################################################################
 		
-		# ця фігня що тут чомусь не працює. тут потом.
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biobackup$'))
+		async def bio_steal_backup(event):
+			mtime = int(datetime.timestamp(event.message.date))
+			await asyncio.sleep(random.uniform(0.4,0.8)) # думаю тут нада да?
+			reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+			if reply is None:
+				wtf = 'не змогли отримать повідомлення'
+				await event.edit(wtf)
+				print(wtf)
+				return
+			else:
+				await asyncio.sleep(0.111) # тут нада?
+				await event.edit('Downloading file...')
+				file_path = await reply.download_media(file=f"{default_directory}")
+				if file_path is None:
+					wtf = 'file_path is None' # wtf?!
+					await asyncio.sleep(0.21) # ждем,
+					await event.edit(wtf)
+					print(wtf)
+					return
+				else:
+        	print(f'📃 backup file saved to {file_path}')
+        	# хоч сюда дойде?
 		
 		
 		####################################################################
