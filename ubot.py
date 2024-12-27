@@ -629,7 +629,7 @@ async def main():
 				await event.edit(wtf)
 				print(wtf)
 				return
-			#else:
+			
 			print(f'📃 backup file saved to {file_path}')
 			await asyncio.sleep(random.uniform(0.1,0.3))
 			with open(file_path, 'r') as stealed_backup:
@@ -680,18 +680,10 @@ async def main():
 						
 						print(info)
 						
-						if is_termux and len (info) > 0:
-							if termux_api == 0:
-								os.system(
-								f"termux-notification --title '{my_id}' --content '{info}'"
-								)
-						
-						await asyncio.sleep(random.uniform(0.1,2))
-						await event.edit(info)
 					else:
-						await asyncio.sleep(random.uniform(0.1,2))
-						await event.edit(f'?!?!?!?') # інфа нема?!
-					# end of victims
+						info = '🤷 інфа нема.' # інфа нема?!
+					await asyncio.sleep(random.uniform(0.1,2))
+					await event.edit(info)
 					del victims  # free memory
 					del raw_victims
 					del errors
@@ -759,7 +751,7 @@ async def main():
 								print(f'err: {Err} in DELETE FROM `tg_bio_users` WHERE `user_id` = {id}')
 						if db_sqlite3:
 							try:
-								c.execute("DELETE FROM avocado WHERE user_id = %d" % int(id)); conn.commit() # rm 404 id
+								c.execute("DELETE FROM avocado WHERE user_id = %d" % int(id)); conn.commit()
 							except Exception as Err:
 								print(f'err: {Err} in DELETE FROM avocado WHERE `user_id` = {id}')
 		
