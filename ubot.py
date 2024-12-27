@@ -599,11 +599,20 @@ async def main():
 		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biobackup$'))
 		async def bio_steal_backup(event):
 			mtime = int(datetime.timestamp(event.message.date))
+			await asyncio.sleep(random.uniform(0.1,0.3))
 			reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+			await asyncio.sleep(random.uniform(0.1,0.3))
 			await event.edit('Downloading file...')
+			await asyncio.sleep(random.uniform(0.1,0.3))
 			file_path = await reply.download_media(file=f"{default_directory}")
+			if file_path is None: 
+				e = 'file_path is None' # wtf?!
+				await asyncio.sleep(random.uniform(0.2,1.111))
+				await event.edit(e)
+				print(e)
+				return
 			print(f'📃 backup file saved to {file_path}')
-			await asyncio.sleep(random.uniform(0.1,0.7))
+			await asyncio.sleep(random.uniform(0.1,0.3))
 			count=0
 			added=0
 			noadd=0
