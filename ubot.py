@@ -298,6 +298,7 @@ async def main():
 					except:
 							pass
 				if user_id==0:
+					return user_id # fucking limit # розкоментуйте щоб резольвить.
 					try:
 						user_entity = await client.get_entity(url)
 						if user_entity.id:
