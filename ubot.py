@@ -255,6 +255,8 @@ async def main():
 			if is_termux:
 				conn = sqlite3.connect(f"{default_directory}/{my_id}.sqlite")
 			
+			c = conn.cursor()
+			
 			c.execute('''CREATE TABLE IF NOT EXISTS avocado	(
 			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
 			when_int	INTEGER NOT NULL DEFAULT 0,
@@ -713,6 +715,11 @@ async def main():
 							con.query(f"DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {uid};");
 						except Exception as Err:
 							print(f'err: {Err} in DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {uid}')
+					
+						try:
+							con.query(f"DELETE FROM `tg_users_url` WHERE `user_id` = {uid};");
+						except Exception as Err:
+							print(f'err: {Err} in DELETE FROM `tg_users_url` WHERE `user_id` = {uid}')
 		
 		
 		####################################################################
@@ -740,6 +747,17 @@ async def main():
 								con.query(f"DELETE FROM `tg_bio_users` WHERE `user_id` = {id};"); # нафіг.
 							except Exception as Err:
 								print(f'err: {Err} in DELETE FROM `tg_bio_users` WHERE `user_id` = {id}')
+							
+							try:
+								con.query(f"DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {id};");
+							except Exception as Err:
+								print(f'err: {Err} in DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {id}')
+					
+							try:
+								con.query(f"DELETE FROM `tg_users_url` WHERE `user_id` = {id};");
+							except Exception as Err:
+								print(f'err: {Err} in DELETE FROM `tg_users_url` WHERE `user_id` = {id}')
+						
 						if db_sqlite3:
 							try:
 								c.execute("DELETE FROM avocado WHERE user_id = %d" % int(id)); conn.commit()
