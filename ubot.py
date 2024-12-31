@@ -171,7 +171,7 @@ try:
 	with open(noeb_file, "r") as read_file:
 		noeb = json.load(read_file)
 except:
-	
+	noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398]
 	with open(noeb_file, "w", encoding="utf-8") as write_file:
 		json.dump(noeb, write_file,ensure_ascii=False, indent='	')
 
@@ -290,7 +290,7 @@ async def main():
 					except:
 							pass
 				if user_id==0:
-					return user_id # fucking limit # розкоментуйте щоб резольвить.
+					#return user_id # fucking limit # розкоментуйте щоб не резолв.
 					try:
 						user_entity = await client.get_entity(url)
 						if user_entity.id:
@@ -320,55 +320,6 @@ async def main():
 						if mark_read:
 								await conv.mark_read()
 						return response
-		
-		####################################################################
-		
-		
-		@client.on(events.NewMessage(outgoing=True,pattern=r'\.п'))
-		async def cmd_п(event):
-			mess = event.message
-			text = mess.raw_text
-			if text =='.п' or text=='.патоген':
-				#FIX! А то спрацьовувало на .п(ередать,овысить,огладить,,,,,,,%)
-				l_r = await message_q( # отправляет сообщение боту и возвращает
-				f"/лаб в лс",
-				5443619563,
-				mark_read=True,
-				delete=False,
-				)
-				h=utils.sanitize_parse_mode('html').unparse(l_r.message,l_r.entities)
-				lab_lines = h.splitlines() # текст с лабой, разбитый на строки
-				new = ""
-				if "🔬 Досье лаборатории" not in lab_lines[0]:
-					pass
-				else:
-					
-					for i in lab_lines: # цикл for по всем строкам в тексте лабы
-						if "🧪 Готовых патогенов:" in i:
-							s = i.replace("🧪 Готовых патогенов:", "🧪 ")
-							s = s.replace("из", "із")
-							new+=f'{s}\n' # add \n
-
-						if "☣️ Био-опыт:" in i:
-							s = i.replace("☣️ Био-опыт:", "☣️ ")
-							new+=f'{s}\n' # add \n
-						if "🧬 Био-ресурс:" in i:
-							s = i.replace("🧬 Био-ресурс:", "🧬 ")
-							new+=f'{s}\n' # add \n
-
-						if "❗️ Руководитель в состоянии горячки ещё" in i:
-							s = i.replace("❗️ Руководитель в состоянии горячки ещё", "🤬 ")
-							new+=f'{s}\n' # add \n
-						if "вызванной болезнью" in i:
-							#	❗️ Руководитель в состоянии горячки, вызванной болезнью «%s», ещё 
-							#s = i.replace("❗️ Руководитель в состоянии горячки, вызванной болезнью ", "🤬 ")
-							b = re.findall(r'вызванной болезнью «(.+)»',i)[0]#назва тої хєрні якою заразили
-							s = i.replace(f"❗️ Руководитель в состоянии горячки, болезнью «{b}», ещё ", 
-							f"🤬 <code>{b}</code>\n⏳ ")# копіпабельно для пошуку
-					if not 'горячки' in l_r.message:
-						new+='✅ ok\n'
-					await event.edit(new) # ред.
-		
 		
 		####################################################################
 		
@@ -418,7 +369,6 @@ async def main():
 									except Exception as Err:
 										print(f'err: {Err} /localhost')
 										#pass
-								
 								
 								print(f'ℹ️ @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
 								
@@ -716,6 +666,10 @@ async def main():
 						except Exception as Err:
 							print(f'err: {Err} in DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {uid}')
 					
+						try:
+							con.query(f"DELETE FROM `tg_users_url` WHERE `user_id` = {uid};");
+						except Exception as Err:
+							print(f'err: {Err} in DELETE FROM `tg_users_url` WHERE `user_id` = {uid}')
 		
 		
 		####################################################################
@@ -744,6 +698,15 @@ async def main():
 							except Exception as Err:
 								print(f'err: {Err} in DELETE FROM `tg_bio_users` WHERE `user_id` = {id}')
 							
+							try:
+								con.query(f"DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {id};");
+							except Exception as Err:
+								print(f'err: {Err} in DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {id}')
+					
+							try:
+								con.query(f"DELETE FROM `tg_users_url` WHERE `user_id` = {id};");
+							except Exception as Err:
+								print(f'err: {Err} in DELETE FROM `tg_users_url` WHERE `user_id` = {id}')
 						
 						if db_sqlite3:
 							try:
@@ -944,8 +907,8 @@ async def main():
 			t = m.raw_text
 			if m.chat_id == 6333102398:	# крч від неудачних будем лише в лс бота
 				r=re.findall(r'⏱ Следующая попытка — через ([0-9]{1,3}) минут',t)
-				Майн=get_config_key("mine")
-				if r and Майн:
+				mine=get_config_key("mine")
+				if r and mine:
 					print(t)
 					if ch_id < 0:
 						kuda = ch_id # слать в чат
@@ -960,11 +923,11 @@ async def main():
 		
 		
 		@client.on(events.NewMessage(pattern='.+(удалось намайнить|успешно намайнил)'))
-		async def удачнаяпопыткамайнинга(event):
+		async def mine_ok(event):
 			c = event.chat_id
 			m = event.message
-			Майн=get_config_key("mine")
-			if m.sender_id == 6333102398 and (c == 6333102398 or (c == ch_id and m.mentioned)) and Майн:
+			mine=get_config_key("mine")
+			if m.sender_id == 6333102398 and (c == 6333102398 or (c == ch_id and m.mentioned)) and mine:
 				#save_config_key('mine',int(datetime.timestamp(m.date)))	# when
 				if ch_id < 0:
 					kuda = ch_id # слать в чат # навіть якщо удалось в лс бота. 
@@ -977,7 +940,7 @@ async def main():
 				print(m.text) # показать в консолі текст
 				rs=random.uniform(7201,7222)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
-				await client.send_message(kuda,'Майн')
+				await client.send_message(kuda,'Mine')
 		
 		
 		####################################################################
