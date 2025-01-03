@@ -827,7 +827,7 @@ async def main():
 					rs = float(random.uniform(rs_min,rs_max))# random
 					eb = f'Биоеб' # повідомлення.
 					print(f'⏳ {eb} and wait {rs}')
-					m=await event.reply(eb)
+					m=await client.send_message(ch_id,'Биоеб')
 					await asyncio.sleep(random.uniform(2.0001, 3.3))
 					await client.delete_messages(event.chat_id,m.id)
 					await asyncio.sleep(rs)
@@ -839,7 +839,6 @@ async def main():
 		@client.on(events.NewMessage(pattern='.+Служба безопасности лаборатории'))
 		# Организатор заражения: нада биоебнуть?
 		async def iris_sb(event):
-			
 			m = event.message
 			t = m.raw_text
 			if m.sender_id in irises and m.entities:
