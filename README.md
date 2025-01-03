@@ -39,7 +39,6 @@ https://t.me/bio_attacker_bot?start=NzA3NTg2OTY3OA<br/>
 створив чат, хз чи він кому треба, 
 навіть кілька чатів, ща крч якось так:<br/>
 
-https://t.me/avocado_victims - там для новачків (крім того можете скидать свої)<br/>
 https://t.me/misc_games - наш ігровий (не лише біо)<br/>
 https://t.me/ub4tg - тіпа чат бота
 
