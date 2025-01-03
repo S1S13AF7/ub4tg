@@ -326,7 +326,7 @@ async def main():
 		
 		@client.on(events.NewMessage(pattern='.*подверг(ла)? заражению.*'))
 		async def podverg(event):
-			# iris off bio 31.12.24
+			
 			m = event.message
 			t = m.raw_text
 			when = int(datetime.timestamp(m.date))
@@ -647,7 +647,7 @@ async def main():
 		
 		@client.on(events.NewMessage(pattern='📝 .+'))
 		async def iris_404(event):
-			# iris off bio 31.12.24
+			
 			m = event.message
 			t = m.raw_text or ''
 			if m.sender_id not in irises:
@@ -787,10 +787,59 @@ async def main():
 		####################################################################
 		
 		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'.biofuck_r$'))
+		async def cmd_bfr(event):			# крч акуратно з цим,вдруг шо я нічо
+			global ch_id, bf_mode, bf_run, ostalos_pt
+			m = event.message
+			text = m.raw_text
+			if bf_run:
+				pong='✅ вже працює...' # ok.
+				await event.edit(pong) # ред.
+			elif event.chat_id > 0:
+				pong='Алоу це не чат!' #wtf?!
+				await event.edit(pong) # ред.
+			else:
+				bf_run = True
+				pong='✅ погнали...'
+				await event.edit(pong) # ред.
+				if ch_id != event.chat_id:
+					ch_id = event.chat_id
+					save_config_key('ch_id',ch_id)
+				while bf_run:
+					#	✅ погнали...
+					if ostalos_pt < 7:
+						rs_min = 1000	# якщо осталось мало хай підзбираються.
+						rs_max = 3600	# if Влад забрал у тебя 49 патогенов...
+						bf_mode='Slow'	# тепер це лише для заголовка консолі.
+					if ostalos_pt > 6:
+						rs_min = 11
+						rs_max = 99
+						bf_mode='Normal'
+					if ostalos_pt > 60:
+						bf_mode='Fast'
+						rs_max = 33
+					if ostalos_pt > 90:
+						rs_min = 6.666
+						rs_max = 9.999
+						bf_mode='Turbo'
+					if os.name == 'nt':
+						win32api.SetConsoleTitle(f'{my_id}#{bf_mode}')
+					rs = float(random.uniform(rs_min,rs_max))# random
+					eb = f'Биоеб' # повідомлення.
+					print(f'⏳ {eb} and wait {rs}')
+					m=await event.reply(eb)
+					await asyncio.sleep(random.uniform(2.0001, 3.3))
+					await client.delete_messages(event.chat_id,m.id)
+					await asyncio.sleep(rs)
+		
+		
+		####################################################################
+		
+		
 		@client.on(events.NewMessage(pattern='.+Служба безопасности лаборатории'))
 		# Организатор заражения: нада биоебнуть?
 		async def iris_sb(event):
-			# iris off bio 31.12.24
+			
 			m = event.message
 			t = m.raw_text
 			if m.sender_id in irises and m.entities:
