@@ -265,6 +265,10 @@ async def main():
 			expr_str	VARCHAR NOT NULL DEFAULT 0
 			)''');
 			conn.commit()
+			
+			# https://www.sqlite.org/pragma.html
+			c.execute('PRAGMA optimize=0x10002')
+			c.execute('VACUUM')
 		
 		if mine:
 			await client.send_message(6333102398,'Майн')
@@ -988,7 +992,7 @@ async def main():
 				print(m.text) # показать в консолі текст
 				rs=random.uniform(7201,7222)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
-				await client.send_message(kuda,'Mine')
+				await client.send_message(kuda,'Майн')
 		
 		
 		####################################################################
