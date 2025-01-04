@@ -1029,9 +1029,25 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern='.help'))
 		async def cmd_help(event):
-			help_message = f'''📃 код і є документація 😈'''
-			await asyncio.sleep(random.uniform(0.01,1.01))
-			await event.edit(help_message) # злобный смехх
+			help_message = f'''
+			<quote>📃 код і є документація 😈</quote>
+			
+			<quote>
+			<code>.ping</code> Say "pong!", delete 2 mssgs (bot is working?)
+			<code>.biofuck</code> – run auto 'биоеб' in chat (where sent)
+			<code>.biofuck_r</code> – run auto 'биоеб' in chat
+			<code>.biofuck_p</code> – run auto 'биоеб +'
+			<code>.biofuck_m</code> – run auto 'биоеб -'
+			<code>.biobackup</code> – (replay) import (not my) victims.json
+			<u>/backup</u> – import my backup (automatically)
+			<code>.help</code> – <u>you are here</u>
+			</quote>
+			
+			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
+			href="https://github.com/S1S13AF7/ub4tg">code</a>;
+			'''
+			await asyncio.sleep(random.uniform(0.3,1))
+			await event.edit(help_message) # ладно,от.
 		
 		####################################################################
 		
