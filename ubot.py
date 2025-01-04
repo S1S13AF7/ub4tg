@@ -1033,18 +1033,20 @@ async def main():
 			<quote>📃 код і є документація 😈</quote>
 			
 			<quote>
-			<code>.ping</code> Say "pong!", delete 2 mssgs (bot is working?)
-			<code>.biofuck</code> – run auto 'биоеб' in chat (where sent)
+			<code>.ping</code> Say "pong!", delete 2 mssgs
+			<code>.biofuck</code> – run auto 'биоеб' in chat
 			<code>.biofuck_r</code> – run auto 'биоеб' in chat
 			<code>.biofuck_p</code> – run auto 'биоеб +'
 			<code>.biofuck_m</code> – run auto 'биоеб -'
-			<code>.biobackup</code> – (replay) import (not my) victims.json
-			<u>/backup</u> – import my backup (automatically)
+			<code>.biobackup</code> – import victims.json
+			<u>/backup</u> – import my backup (auto)
 			<code>.help</code> – <u>you are here</u>
 			</quote>
 			
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
 			href="https://github.com/S1S13AF7/ub4tg">code</a>;
+			
+			💬 <u>@ub4tg</u>
 			'''
 			await asyncio.sleep(random.uniform(0.3,1))
 			await event.edit(help_message) # ладно,от.
