@@ -521,6 +521,10 @@ async def main():
 									print(f'err: {Err} (tg_bio_attack) (backup)')
 									errrs+=1
 						del victims# free memory
+
+
+						if db_sqlite3:
+							c.execute('PRAGMA optimize')
 						
 						info = ''
 						if count > 0:
@@ -621,6 +625,12 @@ async def main():
 							else: # if u_id==my_id [and/or] u_id in noeb: [dnt add]
 								noadd+=1
 					# end of victims
+					
+					if db_sqlite3:
+						c.execute('PRAGMA optimize')
+					
+					# end of victims
+					
 					info = ''
 					if added > 0 or updtd > 0 or errrs > 0: # якщо вобще є інфа?!
 						if added > 0:
@@ -703,11 +713,6 @@ async def main():
 								print(f'err: {Err} in DELETE FROM `tg_bio_users` WHERE `user_id` = {id}')
 							
 							try:
-								con.query(f"DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {id};");
-							except Exception as Err:
-								print(f'err: {Err} in DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {id}')
-					
-							try:
 								con.query(f"DELETE FROM `tg_users_url` WHERE `user_id` = {id};");
 							except Exception as Err:
 								print(f'err: {Err} in DELETE FROM `tg_users_url` WHERE `user_id` = {id}')
@@ -785,6 +790,7 @@ async def main():
 						os.system(
 						f"termux-notification --title '{my_id}' --content '{info}'"
 						) # показать сповіщення 'end of biofuck; Try again?'
+				c.execute('PRAGMA optimize')
 				print(info)
 		
 		
@@ -944,6 +950,7 @@ async def main():
 			m = event.message
 			if m.sender_id == 6333102398:
 				if m.mentioned or m.chat_id == 6333102398:
+					c.execute('PRAGMA optimize')
 					global bf_mode,ostalos_pt
 					bf_mode = 'Slow'
 					ostalos_pt=0
