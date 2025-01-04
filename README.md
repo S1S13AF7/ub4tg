@@ -80,5 +80,5 @@ https://t.me/bio_attacker_bot?start=NzA3NTg2OTY3OA<br/>
 <br/>
 
 https://t.me/misc_games - ігровий<br/>
-https://t.me/ub4tg - тіпа чат бота
+https://t.me/ub4tg - чат цього бота
 
