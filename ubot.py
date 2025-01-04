@@ -38,13 +38,15 @@ if is_termux:
 	import sys
 	# майже все що для термукса я вкрав з форка бота.
 	print('Termux detected, checking permissions...')
-	termux_api = os.system('termux-api-start') #	та штука для сповіщеннь.
+	termux_api = os.system('termux-api-start') == 0 #	штука для сповіщеннь.
 	if (os.environ.get('TERMUX_APP__APK_RELEASE') or os.environ.get('TERMUX_APK_RELEASE')) not in ('F_DROID', 'GITHUB'):
 		print('You use not f-droid/github apk release, it may have problems...')
 		print('F-droid termux release here: https://f-droid.org/en/packages/com.termux/')
 		print('Github termux release here: https://github.com/termux/termux-app/releases')
 	if float(os.environ.get('TERMUX_VERSION')[:5]) < 0.118:
 		print('You use old version of termux, highly recommended that you update to v0.119.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
+	if termux_api:
+		print('✅ termux API works')
 	if os.access('/sdcard', os.W_OK):
 		print('✅ дозвіл на запис надано')
 		default_directory = '/sdcard/ub4tg'
@@ -269,6 +271,13 @@ async def main():
 			# https://www.sqlite.org/pragma.html
 			c.execute('PRAGMA optimize=0x10002')
 			c.execute('VACUUM')
+			
+			async def optimize_sqlite_db():
+				while True:
+					c.execute('PRAGMA optimize')
+					#print('database optimized')
+					await asyncio.sleep(6*60*60)	#	6h
+					asyncio.ensure_future(optimize_sqlite_db())
 		
 		if mine:
 			await client.send_message(6333102398,'Майн')
@@ -542,7 +551,7 @@ async def main():
 						print(info)
 						
 						if is_termux and len (info) > 0:
-							if termux_api == 0:
+							if termux_api:
 								os.system(
 								f"termux-notification --title '{my_id}' --content '{info}'"
 								)
@@ -788,7 +797,7 @@ async def main():
 				if os.name == 'nt':
 					win32api.SetConsoleTitle(f'{my_id}')	# заголовк: мій_ід.
 				elif is_termux:
-					if termux_api == 0:
+					if termux_api:
 						os.system(
 						f"termux-notification --title '{my_id}' --content '{info}'"
 						) # показать сповіщення 'end of biofuck; Try again?'
@@ -1059,6 +1068,11 @@ async def main():
 			m = await event.reply('pong!')
 			await asyncio.sleep(5)
 			await client.delete_messages(event.chat_id, [event.id, m.id])
+		
+		####################################################################
+		
+		if termux_api:
+			os.system("termux-toast -b black -c green 'bot started'")
 		
 		####################################################################
 		
