@@ -818,7 +818,7 @@ async def main():
 					bioeb = 'Биоеб +'
 				if 'm' in text:# m,minus
 					bioeb = 'Биоеб -'
-				pong = '✅ {bioeb}'
+				pong = f'✅ {bioeb}'
 				await event.edit(pong) # ред.
 				if ch_id != event.chat_id:
 					ch_id = event.chat_id
