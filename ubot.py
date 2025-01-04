@@ -1033,7 +1033,7 @@ async def main():
 			<quote>📃 код і є документація 😈</quote>
 			
 			<quote>
-			<code>.ping</code> Say "pong!", delete 2 mssgs
+			<code>.ping</code> – Say "pong!", delete 2 mssgs
 			<code>.biofuck</code> – run auto 'биоеб' in chat
 			<code>.biofuck_r</code> – run auto 'биоеб' in chat
 			<code>.biofuck_p</code> – run auto 'биоеб +'
