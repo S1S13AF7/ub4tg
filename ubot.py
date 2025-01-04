@@ -311,6 +311,8 @@ async def main():
 						#pass
 			return user_id
 		
+		####################################################################
+		
 		async def message_q( # спизжено
 				text: str,
 				user_id: int,
@@ -797,8 +799,9 @@ async def main():
 		####################################################################
 		
 		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'.biofuck_r$'))
-		async def cmd_bfr(event):			# крч акуратно з цим,вдруг шо я нічо
+		@client.on(events.NewMessage(outgoing=True, 
+		pattern=r'.biofuck_(r|p|m|plus|minus|random)$'))
+		async def cmd_bfrpm(event):	
 			global ch_id, bf_mode, bf_run, ostalos_pt
 			m = event.message
 			text = m.raw_text
@@ -810,7 +813,12 @@ async def main():
 				await event.edit(pong) # ред.
 			else:
 				bf_run = True
-				pong='✅ погнали...'
+				bioeb = 'Биоеб'# message
+				if 'p' in text:# p,plus
+					bioeb = 'Биоеб +'
+				if 'm' in text:# m,minus
+					bioeb = 'Биоеб -'
+				pong = '✅ {bioeb}'
 				await event.edit(pong) # ред.
 				if ch_id != event.chat_id:
 					ch_id = event.chat_id
@@ -833,11 +841,10 @@ async def main():
 						rs_max = 9.999
 						bf_mode='Turbo'
 					if os.name == 'nt':
-						win32api.SetConsoleTitle(f'{my_id}#{bf_mode}')
+						win32api.SetConsoleTitle(f'{my_id} {bioeb} {bf_mode}')
 					rs = float(random.uniform(rs_min,rs_max))# random
-					eb = f'Биоеб' # повідомлення.
-					print(f'⏳ {eb} and wait {rs}')
-					m=await client.send_message(ch_id,'Биоеб')
+					print(f'⏳ {bioeb} and wait {rs}')
+					m=await client.send_message(ch_id,bioeb)# message
 					await asyncio.sleep(random.uniform(2.0001, 3.3))
 					await client.delete_messages(event.chat_id,m.id)
 					await asyncio.sleep(rs)
