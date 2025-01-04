@@ -1027,6 +1027,13 @@ async def main():
 		
 		####################################################################
 		
+		@client.on(events.NewMessage(outgoing=True, pattern='.help'))
+		async def cmd_help(event):
+			help_message = f'''📃 код і є документація 😈'''
+			await asyncio.sleep(random.uniform(0.01,1.01))
+			await event.edit(help_message) # злобный смехх
+		
+		####################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
 		async def cmd_ping(event):
@@ -1035,6 +1042,10 @@ async def main():
 			await asyncio.sleep(5)
 			await client.delete_messages(event.chat_id, [event.id, m.id])
 		
+		####################################################################
+		
 		await client.run_until_disconnected()
-
+		
+		####################################################################
+		
 asyncio.run(main())
