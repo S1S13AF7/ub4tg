@@ -46,9 +46,9 @@ if is_termux:
 	if float(os.environ.get('TERMUX_VERSION')[:5]) < 0.118:
 		print('You use old version of termux, highly recommended that you update to v0.119.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
 	if termux_api:
-		print('✅ termux API works')
+		print('✅ termux API work')
 	if os.access('/sdcard', os.W_OK):
-		print('✅ дозвіл на запис надано')
+		print('✅ дозвіл на запис')
 		default_directory = '/sdcard/ub4tg'
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # положить файл в доступну без рута теку.
