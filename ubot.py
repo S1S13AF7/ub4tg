@@ -1070,7 +1070,7 @@ async def main():
 		####################################################################
 		
 		if termux_api:
-			os.system("termux-toast -b black -c green 'bot started'")
+			os.system("termux-toast -b black -c green '✅ bot started'")
 		
 		####################################################################
 		
