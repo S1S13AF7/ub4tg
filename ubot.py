@@ -1036,21 +1036,19 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern='.help'))
+		@client.on(events.NewMessage(outgoing=True, 
+		pattern=r'.(h(e)?lp|х(е)?лп)'))
 		async def cmd_help(event):
 			help_message = f'''
 			<blockquote>📃 код і є документація 😈</blockquote>
 			
-			<blockquote>
-			<code>.ping</code> – Say "pong!", delete 2 mssgs
-			<code>.biofuck</code> – run auto 'биоеб' in chat
-			<code>.biofuck_r</code> – run auto 'биоеб' in chat
-			<code>.biofuck_p</code> – run auto 'биоеб +'
-			<code>.biofuck_m</code> – run auto 'биоеб -'
-			<code>.biobackup</code> – import victims.json
-			<u>/backup</u> – import my backup (auto)
+			<code>.ping</code> – "pong!", del.
+			<code>.biofuck</code> – run 'биоеб'
+			<code>.biofuck_r</code> – run 'биоеб'
+			<code>.biofuck_p</code> – run 'биоеб +'
+			<code>.biofuck_m</code> – run 'биоеб -'
+			<code>.biobackup</code> – import .json
 			<code>.help</code> – <u>you are here</u>
-			</blockquote>
 			
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
 			href="https://github.com/S1S13AF7/ub4tg">code</a>;
