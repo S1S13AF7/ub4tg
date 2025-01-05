@@ -1039,9 +1039,9 @@ async def main():
 		@client.on(events.NewMessage(outgoing=True, pattern='.help'))
 		async def cmd_help(event):
 			help_message = f'''
-			<quote>📃 код і є документація 😈</quote>
+			<blockquote>📃 код і є документація 😈</blockquote>
 			
-			<quote>
+			<blockquote>
 			<code>.ping</code> – Say "pong!", delete 2 mssgs
 			<code>.biofuck</code> – run auto 'биоеб' in chat
 			<code>.biofuck_r</code> – run auto 'биоеб' in chat
@@ -1050,7 +1050,7 @@ async def main():
 			<code>.biobackup</code> – import victims.json
 			<u>/backup</u> – import my backup (auto)
 			<code>.help</code> – <u>you are here</u>
-			</quote>
+			</blockquote>
 			
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
 			href="https://github.com/S1S13AF7/ub4tg">code</a>;
