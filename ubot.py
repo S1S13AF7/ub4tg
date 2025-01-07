@@ -744,7 +744,7 @@ async def main():
 			m = event.message
 			text = m.raw_text
 			when = int(datetime.timestamp(m.date))
-			await asyncio.sleep(random.uniform(0.3,1))	#	чуток ждем
+			await asyncio.sleep(random.uniform(0.4567,1))	# ждем
 			def get_some_patients(limit:int=1000,when:int=time.time()):
 				query=f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY when_int ASC LIMIT {limit}"
 				users=list(c.execute(query).fetchall())
@@ -759,7 +759,10 @@ async def main():
 				bf_run = True
 				sndmsgs= 0#++
 				pong='✅ погнали...'
-				await event.edit(pong) # ред.
+				try:
+					await event.edit(pong) # ред.
+				except Exception as wtf:
+					print(wtf)	#	print
 				if ch_id != event.chat_id:
 					ch_id = event.chat_id
 					save_config_key('ch_id',ch_id)
@@ -767,13 +770,16 @@ async def main():
 					#	✅ погнали?
 					count=int(c.execute(f"SELECT COUNT(*) FROM `avocado` WHERE expr_int<{when}").fetchone()[0])
 					if count< len(noeb)+2: # так як, теоретично, там можуть всі вони + свій айді, тому жрать нема
-						await asyncio.sleep(random.uniform(0.3,1))	#	чуток ждем
+						await asyncio.sleep(random.uniform(0.567,2))	#	чуток ждем
 						bf_run = False
 						if sndmsgs==0:
 							info = '🤷 нема'
 						else:
-							info = f'✅ {sndmsgs}'#how?
-						await event.edit(info) # ред.
+							info = f'✅ {sndmsgs}'
+						try:
+							await event.edit(info)
+						except Exception as wtf:
+							print(wtf) #print why?
 						if os.name == 'nt':
 							win32api.SetConsoleTitle(f'{my_id}')	# заголовк: мій_ід.
 						elif is_termux and termux_api:
@@ -784,7 +790,7 @@ async def main():
 						print(info)
 						break
 					print(f'📃 є {count} потенційних пацієнтів. Пробуєм сожрать')
-					e_info=get_some_patients(limit=100,when=int(time.time()))
+					e_info=get_some_patients(limit=int(random.randint(100,1000)))
 					random.shuffle(e_info)	# перетасувать?
 					for row in e_info:
 						if ostalos_pt < 7:
@@ -810,11 +816,15 @@ async def main():
 							rs = float(random.uniform(rs_min,rs_max))# random
 							eb = f'Биоеб {row[0]}' # повідомлення.
 							print(f'⏳ {eb} and wait {rs}')
-							m=await event.reply(eb)
-							sndmsgs+=1	#	рахуємо к-сть (спроб) (надісланих)
-							await asyncio.sleep(random.uniform(2.0001, 3.3))
-							await client.delete_messages(event.chat_id,m.id)
-							await asyncio.sleep(rs)
+							try:
+								m=await event.reply(eb)
+								sndmsgs+=1	# рахуємо к-сть (надісланих)
+								await asyncio.sleep(random.uniform(2.0001, 3.3))
+								await client.delete_messages(event.chat_id,m.id)
+								await asyncio.sleep(rs)
+							except Exception as wtf:
+								print(wtf) #why?
+					print(f'✅ {sndmsgs}') # how
 					c.execute('PRAGMA optimize')
 		
 		
@@ -870,6 +880,20 @@ async def main():
 					await asyncio.sleep(random.uniform(2.0001, 3.3))
 					await client.delete_messages(event.chat_id,m.id)
 					await asyncio.sleep(rs)
+		
+		
+		####################################################################
+		
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biofuck(_| )stop$'))
+		async def stop_bioeb(event):
+			global bf_run
+			if bf_run:
+				bf_run = False
+				info = 'Trying stop...'
+			else:
+				info = 'Не запущено ж?'
+			await event.edit(info)  # ред
 		
 		
 		####################################################################
