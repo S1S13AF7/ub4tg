@@ -544,7 +544,7 @@ async def main():
 						
 						if br:
 							bf_run = True
-							print('✅ bf')
+							#print('✅ bf')
 						
 						info = ''
 						if count > 0:
@@ -678,7 +678,7 @@ async def main():
 					
 					if br:
 						bf_run = True
-						print('✅ bf')
+						#print('✅ bf')
 					
 				else:
 					await asyncio.sleep(random.uniform(1, 2))
