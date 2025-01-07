@@ -489,6 +489,8 @@ async def main():
 				# відаправник Авокадо і це приват з Авокадо. перестрахувавсь?
 				file_path = await m.download_media(file=f"{default_directory}")
 				print(f'📃 backup file saved to {file_path}')
+				global bf_run	# будемо ставить на паузу
+				br=bf_run	# запам'ятає
 				count=0
 				added=0
 				updtd=0
@@ -503,6 +505,9 @@ async def main():
 						file_format = 'json'
 						my_victims_ids = []
 						added = 0
+						if br:
+							bf_run = False
+							#print('paused')
 						for v in victims:
 							count+=1
 							u_id = int(v['user_id'])
@@ -537,6 +542,10 @@ async def main():
 						if db_sqlite3:
 							c.execute('PRAGMA optimize')
 						
+						if br:
+							bf_run = True
+							print('✅ bf')
+						
 						info = ''
 						if count > 0:
 							info = f'count: {count}'
@@ -564,6 +573,8 @@ async def main():
 		async def bio_steal_backup(event):
 			mtime = int(datetime.timestamp(event.message.date)) # 	when (int)
 			await asyncio.sleep(random.uniform(0.1111,0.55555)) # 	чуток ждем
+			global bf_run	# будемо ставить на паузу
+			br=bf_run	# запам'ятає
 			count = 0
 			added = 0
 			noadd = 0
@@ -605,6 +616,9 @@ async def main():
 					await asyncio.sleep(random.uniform(0.3,1.111))
 					await event.edit('Processing json victims...')
 					await asyncio.sleep(random.uniform(0.3,1.111))
+					if br:
+						bf_run = False
+						#print('paused')
 					for v in victims:
 						if v['user_id']:
 							count+=1
@@ -661,6 +675,11 @@ async def main():
 					del raw_victims
 					del errors
 					del info
+					
+					if br:
+						bf_run = True
+						print('✅ bf')
+					
 				else:
 					await asyncio.sleep(random.uniform(1, 2))
 					await event.edit('Format not supported.')
