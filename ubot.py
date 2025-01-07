@@ -743,16 +743,13 @@ async def main():
 			global ch_id, bf_mode, bf_run, ostalos_pt
 			m = event.message
 			text = m.raw_text
-			when=int(datetime.timestamp(m.date))
-			msg='🤷' # якщо нема кого то жри рандом.
-			c.execute(f"SELECT * FROM `avocado` WHERE expr_int < {when}"); 
-			e_info=c.fetchall()
-			count = len(e_info)
-			if count < len(noeb)+2: # так як, теоретично, там можуть всі вони + свій айді, тому жрать нема
-				nema=f'🤷 рандом хавай.'
-				await event.edit(nema) # ред.
-				print(nema)
-			elif bf_run:
+			when = int(datetime.timestamp(m.date))
+			await asyncio.sleep(random.uniform(0.3,1))	#	чуток ждем
+			def get_some_patients(limit:int=1000,when:int=time.time()):
+				query=f"SELECT * FROM `avocado` WHERE expr_int <= {when} ORDER BY when_int ASC LIMIT {limit}"
+				users=list(c.execute(query).fetchall())
+				return users
+			if bf_run:
 				pong='✅ вже працює...' # ok.
 				await event.edit(pong) # ред.
 			elif event.chat_id > 0:
@@ -760,14 +757,36 @@ async def main():
 				await event.edit(pong) # ред.
 			else:
 				bf_run = True
+				sndmsgs= 0#++
 				pong='✅ погнали...'
 				await event.edit(pong) # ред.
 				if ch_id != event.chat_id:
 					ch_id = event.chat_id
 					save_config_key('ch_id',ch_id)
-				print(f'📃 є {count} потенційних пацієнтів. Пробуєм сожрать')
-				for row in e_info:
-					if row[0]!=my_id:				#	❌ Нельзя заразить самого себя.
+				while bf_run:
+					#	✅ погнали?
+					count=int(c.execute(f"SELECT COUNT(*) FROM `avocado` WHERE expr_int<{when}").fetchone()[0])
+					if count< len(noeb)+2: # так як, теоретично, там можуть всі вони + свій айді, тому жрать нема
+						await asyncio.sleep(random.uniform(0.3,1))	#	чуток ждем
+						bf_run = False
+						if sndmsgs==0:
+							info = '🤷 нема'
+						else:
+							info = f'✅ {sndmsgs}'#how?
+						await event.edit(info) # ред.
+						if os.name == 'nt':
+							win32api.SetConsoleTitle(f'{my_id}')	# заголовк: мій_ід.
+						elif is_termux and termux_api:
+							os.system(
+							f"termux-toast -b black -c green '{my_id}, {info}'"
+							)
+						bf_run = False
+						print(info)
+						break
+					print(f'📃 є {count} потенційних пацієнтів. Пробуєм сожрать')
+					e_info=get_some_patients(limit:int=100,when:int=time.time())
+					random.shuffle(e_info)	# перетасувать?
+					for row in e_info:
 						if ostalos_pt < 7:
 							rs_min = 1000	# якщо осталось мало хай підзбираються.
 							rs_max = 3600	# if Влад забрал у тебя 49 патогенов...
@@ -785,24 +804,18 @@ async def main():
 							bf_mode='Turbo'
 						if os.name == 'nt':
 							win32api.SetConsoleTitle(f'{my_id}#{bf_mode}')
-						rs = float(random.uniform(rs_min,rs_max))# random
-						eb = f'Биоеб {row[0]}' # повідомлення.
-						print(f'⏳ {eb} and wait {rs}')
-						m=await event.reply(eb)
-						await asyncio.sleep(random.uniform(2.0001, 3.3))
-						await client.delete_messages(event.chat_id,m.id)
-						await asyncio.sleep(rs)
-				bf_run = False	# dnt edit this.				# це якщо всьо уже.
-				info='end of biofuck; Try again?'				# це якщо всьо уже.
-				if os.name == 'nt':
-					win32api.SetConsoleTitle(f'{my_id}')	# заголовк: мій_ід.
-				elif is_termux:
-					if termux_api:
-						os.system(
-						f"termux-notification --title '{my_id}' --content '{info}'"
-						) # показать сповіщення 'end of biofuck; Try again?'
-				c.execute('PRAGMA optimize')
-				print(info)
+						if row[0] not in noeb and row[0]!=my_id:
+							#	👺 Неможна йобнути бота!
+							#	❌ Нельзя заразить самого себя
+							rs = float(random.uniform(rs_min,rs_max))# random
+							eb = f'Биоеб {row[0]}' # повідомлення.
+							print(f'⏳ {eb} and wait {rs}')
+							m=await event.reply(eb)
+							sndmsgs+=1	#	рахуємо к-сть (спроб) (надісланих)
+							await asyncio.sleep(random.uniform(2.0001, 3.3))
+							await client.delete_messages(event.chat_id,m.id)
+							await asyncio.sleep(rs)
+					c.execute('PRAGMA optimize')
 		
 		
 		####################################################################
