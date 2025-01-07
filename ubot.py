@@ -784,7 +784,7 @@ async def main():
 						print(info)
 						break
 					print(f'📃 є {count} потенційних пацієнтів. Пробуєм сожрать')
-					e_info=get_some_patients(limit:int=100,when:int=time.time())
+					e_info=get_some_patients(limit=100,when=int(time.time()))
 					random.shuffle(e_info)	# перетасувать?
 					for row in e_info:
 						if ostalos_pt < 7:
