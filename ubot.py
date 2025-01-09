@@ -269,13 +269,12 @@ async def main():
 			conn.commit()
 			
 			# https://www.sqlite.org/pragma.html
-			c.execute('PRAGMA optimize=0x10002')
-			c.execute('VACUUM')
+			c.execute('PRAGMA optimize=0x10002'); conn.commit()
+			c.execute('VACUUM'); conn.commit()
 			
 			async def optimize_sqlite_db():
 				while True:
-					c.execute('PRAGMA optimize')
-					#print('database optimized')
+					c.execute('PRAGMA optimize'); conn.commit()
 					await asyncio.sleep(6*60*60)	#	6h
 					asyncio.ensure_future(optimize_sqlite_db())
 		
@@ -540,7 +539,7 @@ async def main():
 
 
 						if db_sqlite3:
-							c.execute('PRAGMA optimize')
+							c.execute('PRAGMA optimize'); conn.commit()
 						
 						if br:
 							bf_run = True
@@ -652,7 +651,7 @@ async def main():
 					# end of victims
 					
 					if db_sqlite3:
-						c.execute('PRAGMA optimize')
+						c.execute('PRAGMA optimize'); conn.commit()
 					
 					# end of victims
 					
@@ -844,7 +843,7 @@ async def main():
 							except Exception as wtf:
 								print(wtf) #why?
 					print(f'✅ {sndmsgs}') # how
-					c.execute('PRAGMA optimize')
+					c.execute('PRAGMA optimize'); conn.commit()
 		
 		
 		####################################################################
@@ -1022,7 +1021,7 @@ async def main():
 			m = event.message
 			if m.sender_id == 6333102398:
 				if m.mentioned or m.chat_id == 6333102398:
-					c.execute('PRAGMA optimize')
+					c.execute('PRAGMA optimize'); conn.commit()
 					global bf_mode,ostalos_pt
 					bf_mode = 'Slow'
 					ostalos_pt=0
@@ -1099,8 +1098,8 @@ async def main():
 			if db_sqlite3: # А вона у нас завжди True
 				try:
 					c.execute("UPDATE avocado SET when_int = 0, expr_int = 0;"); conn.commit()
-					c.execute('PRAGMA optimize')
-					c.execute('VACUUM')
+					c.execute('PRAGMA optimize'); conn.commit()
+					c.execute('VACUUM'); conn.commit()
 					await asyncio.sleep(1)
 					try:
 						await event.edit('ok')
