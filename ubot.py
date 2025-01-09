@@ -1092,6 +1092,30 @@ async def main():
 		
 		####################################################################
 		
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'.reset$'))
+		async def cmd_reset(event):
+			# обнуляємо дати (наприклад після трансферу)
+			if db_sqlite3: # А вона у нас завжди True
+				try:
+					c.execute("UPDATE avocado SET when_int = 0, expr_int = 0;"); conn.commit()
+					c.execute('PRAGMA optimize')
+					c.execute('VACUUM')
+					await asyncio.sleep(1)
+					await event.edit('ok')
+					await asyncio.sleep(1)
+				except Exception as Err:
+					print(f'err: {Err} avocado reset_db')
+			if db_pymysql: # А там видалить, бо хз куда трансфер
+				try:
+					con.query(f"DELETE FROM `tg_bio_attack` WHERE `who_id` = {my_id};");
+				except Exception as Err:
+					print(f'err: {Err} in DELETE FROM `tg_bio_attack` WHERE `who_id` = {my_id}')
+			await client.send_message(6333102398,'/backup')	# зберегти у базі.
+			
+		
+		####################################################################
+		
 		@client.on(events.NewMessage(outgoing=True, 
 		pattern=r'.(h(e)?lp|х(е)?лп)'))
 		async def cmd_help(event):
@@ -1104,6 +1128,7 @@ async def main():
 			<code>.biofuck_p</code> – run 'биоеб +'
 			<code>.biofuck_m</code> – run 'биоеб -'
 			<code>.biobackup</code> – import .json
+			<code>.reset</code> – set dates as '0'
 			<code>.help</code> – <u>you are here</u>
 			
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
