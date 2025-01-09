@@ -338,6 +338,55 @@ async def main():
 		####################################################################
 		
 		
+		@client.on(events.NewMessage(outgoing=True,pattern=r'\.п'))
+		async def cmd_п(event):
+			mess = event.message
+			text = mess.raw_text
+			if text =='.п' or text=='.патоген':
+				#FIX! А то спрацьовувало на .п(ередать,овысить,огладить,,,,,,,%)
+				l_r = await message_q( # отправляет сообщение боту и возвращает
+				f"/лаб в лс",
+				5443619563,
+				mark_read=True,
+				delete=False,
+				)
+				h=utils.sanitize_parse_mode('html').unparse(l_r.message,l_r.entities)
+				lab_lines = h.splitlines() # текст с лабой, разбитый на строки
+				new = ""
+				if "🔬 Досье лаборатории" not in lab_lines[0]:
+					pass
+				else:
+					
+					for i in lab_lines: # цикл for по всем строкам в тексте лабы
+						if "🧪 Готовых патогенов:" in i:
+							s = i.replace("🧪 Готовых патогенов:", "🧪 ")
+							s = s.replace("из", "із")
+							new+=f'{s}\n' # add \n
+
+						if "☣️ Био-опыт:" in i:
+							s = i.replace("☣️ Био-опыт:", "☣️ ")
+							new+=f'{s}\n' # add \n
+						if "🧬 Био-ресурс:" in i:
+							s = i.replace("🧬 Био-ресурс:", "🧬 ")
+							new+=f'{s}\n' # add \n
+
+						if "❗️ Руководитель в состоянии горячки ещё" in i:
+							s = i.replace("❗️ Руководитель в состоянии горячки ещё", "🤬 ")
+							new+=f'{s}\n' # add \n
+						if "вызванной болезнью" in i:
+							#	❗️ Руководитель в состоянии горячки, вызванной болезнью «%s», ещё 
+							#s = i.replace("❗️ Руководитель в состоянии горячки, вызванной болезнью ", "🤬 ")
+							b = re.findall(r'вызванной болезнью «(.+)»',i)[0]#назва тої хєрні якою заразили
+							s = i.replace(f"❗️ Руководитель в состоянии горячки, болезнью «{b}», ещё ", 
+							f"🤬 <code>{b}</code>\n⏳ ")# копіпабельно для пошуку
+					if not 'горячки' in l_r.message:
+						new+='✅ ok\n'
+					await event.edit(new) # ред.
+					print(h)
+		
+		####################################################################
+		
+		
 		@client.on(events.NewMessage(pattern='.*подверг(ла)? заражению.*'))
 		async def podverg(event):
 			
@@ -383,6 +432,18 @@ async def main():
 									except Exception as Err:
 										print(f'err: {Err} /localhost')
 										#pass
+								
+								if db_sqlite3:
+									if u1id==my_id:
+										try:
+											c.execute("INSERT OR REPLACE INTO zarazy (user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?,?)",(int(u2id),int(when),str(experience),int(exp_int),int(do_int),str(do_txt))); conn.commit()
+										except Exception as Err:
+											print(f'err: {Err} zarazy')
+									elif u2id!=my_id:
+										try:
+											c.execute("INSERT INTO zarazy(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (int(u2id),int(when),str(experience),int(exp_int),int(0))); conn.commit()
+										except:
+											pass
 								
 								print(f'ℹ️ @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
 								
@@ -713,6 +774,11 @@ async def main():
 							con.query(f"DELETE FROM `tg_users_url` WHERE `user_id` = {uid};");
 						except Exception as Err:
 							print(f'err: {Err} in DELETE FROM `tg_users_url` WHERE `user_id` = {uid}')
+					if db_sqlite3:
+						try:
+							c.execute("DELETE FROM zarazy WHERE user_id = %d" % int(uid)); conn.commit()
+						except Exception as Err:
+							print(f'err: {Err} in DELETE FROM zarazy WHERE `user_id` = {uid}')
 		
 		
 		####################################################################
