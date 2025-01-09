@@ -1102,7 +1102,10 @@ async def main():
 					c.execute('PRAGMA optimize')
 					c.execute('VACUUM')
 					await asyncio.sleep(1)
-					await event.edit('ok')
+					try:
+						await event.edit('ok')
+					except Exception as err:
+						print(err) # показать
 					await asyncio.sleep(1)
 				except Exception as Err:
 					print(f'err: {Err} avocado reset_db')
