@@ -433,6 +433,18 @@ async def main():
 										print(f'err: {Err} /localhost')
 										#pass
 								
+								if db_sqlite3:
+									if u1id==my_id:
+										try:
+											c.execute("INSERT OR REPLACE INTO zarazy (user_id,when_int,bio_str,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?,?)",(int(u2id),int(when),str(experience),int(exp_int),int(do_int),str(do_txt))); conn.commit()
+										except Exception as Err:
+											print(f'err: {Err} zarazy')
+									elif u2id!=my_id:
+										try:
+											c.execute("INSERT INTO zarazy(user_id,when_int,bio_str,bio_int,expr_int) VALUES (?, ?, ?, ?, ?)", (int(u2id),int(when),str(experience),int(exp_int),int(0))); conn.commit()
+										except:
+											pass
+								
 								print(f'ℹ️ @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
 								
 								if u2id!=my_id:
@@ -762,6 +774,11 @@ async def main():
 							con.query(f"DELETE FROM `tg_users_url` WHERE `user_id` = {uid};");
 						except Exception as Err:
 							print(f'err: {Err} in DELETE FROM `tg_users_url` WHERE `user_id` = {uid}')
+					if db_sqlite3:
+						try:
+							c.execute("DELETE FROM zarazy WHERE user_id = %d" % int(uid)); conn.commit()
+						except Exception as Err:
+							print(f'err: {Err} in DELETE FROM zarazy WHERE `user_id` = {uid}')
 		
 		
 		####################################################################
@@ -1202,7 +1219,7 @@ async def main():
 		####################################################################
 		
 		if termux_api:
-			os.system("termux-toast -b black -c green '✅ bot started'")
+			os.system(f"termux-toast -b black -c green '✅ {my_id} started'")
 		
 		####################################################################
 		
