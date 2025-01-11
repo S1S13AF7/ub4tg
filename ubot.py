@@ -272,14 +272,11 @@ async def main():
 			c.execute('PRAGMA optimize=0x10002'); conn.commit()
 			c.execute('VACUUM'); conn.commit()
 			
-			async def optimize_sqlite_db():
-				while True:
-					c.execute('PRAGMA optimize'); conn.commit()
-					await asyncio.sleep(6*60*60)	#	6h
-					asyncio.ensure_future(optimize_sqlite_db())
-		
 		if mine:
-			await client.send_message(6333102398,'Майн')
+			try:
+				await client.send_message(6333102398,'Майн')
+			except Exception as wtf:
+				print(wtf)	#	print
 		
 		####################################################################
 		
