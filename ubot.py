@@ -522,7 +522,17 @@ async def main():
 										#pass
 								
 								print(f'🥑 @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
-			
+						else:
+							r= re.findall(r'<a href="tg://openmessage\?user_id=([0-9]{6,10})">.*</a>',h)
+							if r:
+								uid=int(r[0])
+								if uid==my_id:
+									try:
+										await asyncio.sleep(random.uniform(0.71,1.333))
+										await client.send_message(6333102398,'/backup')
+									except:
+										pass
+		
 		
 		####################################################################
 		
