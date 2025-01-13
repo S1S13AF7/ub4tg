@@ -705,8 +705,8 @@ async def main():
 							bf_mode='Fast'
 							rs_max = 33
 						if ostalos_pt > 90:
-							rs_min = 2.002
-							rs_max = 9.999
+							rs_min = 3.333	# це низький інтервал, але якщо патів дофіга
+							rs_max = 7.777	# це низький інтервал, але якщо патів дофіга
 							bf_mode='Turbo'
 						if os.name == 'nt':
 							win32api.SetConsoleTitle(f'{my_id}#{bf_mode}')
@@ -767,8 +767,8 @@ async def main():
 						bf_mode='Fast'
 						rs_max = 33
 					if ostalos_pt > 90:
-						rs_min = 2.345	# це низький інтервал, але якщо патів дофіга
-						rs_max = 9.999
+						rs_min = 3.333	# це низький інтервал, але якщо патів дофіга
+						rs_max = 7.777	# це низький інтервал, але якщо патів дофіга
 						bf_mode='Turbo'
 					if os.name == 'nt':
 						win32api.SetConsoleTitle(f'{my_id} {bf_mode}')
