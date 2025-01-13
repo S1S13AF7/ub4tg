@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# https://docs-python.ru/packages/telegram-klient-telethon-python/	<-info
 
 import asyncio
 
@@ -51,12 +50,8 @@ if is_termux:
 		print('✅ дозвіл на запис')
 		default_directory = '/sdcard/ub4tg'
 		os.system(f'mkdir -p {default_directory}')
-		CONFIG_PATH = f'{default_directory}/conf.json' # положить файл в доступну без рута теку.
-		noeb_file = f'{default_directory}/{noeb_file}' # положить файл в доступну без рута теку.
-		#sessdb = f'{default_directory}/{sessdb}' # * спершу я думав просто положить в доступну, 
-		#Але тоді буде проблемно запускать кілька копій бота з телефону з різними авторизаціями, 
-		#В тому плані, що прийшлось би редагувать код, але тоді мінус оновлення через git pull, 
-		#Тому хай валяється рядом з ботом. так можна просто копіювать і не редагуючи код запуск
+		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
+		noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -80,7 +75,6 @@ if not os.path.exists(CONFIG_PATH):
 	'a_404_p': a_404_p,
 	'farm': False,
 	'mine': False,
-	'i2a': False,
 	'a_h': a_h,
 	'ch_id': 0
 	}
@@ -173,7 +167,6 @@ try:
 	with open(noeb_file, "r") as read_file:
 		noeb = json.load(read_file)
 except:
-	noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398]
 	with open(noeb_file, "w", encoding="utf-8") as write_file:
 		json.dump(noeb, write_file,ensure_ascii=False, indent='	')
 
@@ -211,18 +204,6 @@ async def main():
 			charset='utf8mb4',
 			cursorclass=pymysql.cursors.DictCursor)
 			d = con.cursor()
-			d.execute('''CREATE TABLE IF NOT EXISTS `tg_iris_zarazy` (
-			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`u_link` varchar(500) NOT NULL DEFAULT '',
-			`bio_str` varchar(11) NOT NULL DEFAULT '1',
-			`bio_int` int(11) unsigned NOT NULL DEFAULT '1',
-			`expr_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`expr_str` varchar(11) NOT NULL DEFAULT '0',
-			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
-			);''');
-			con.commit()
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_attack` (
 			`from_infect` int(11) unsigned NOT NULL DEFAULT '0',
 			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
@@ -332,124 +313,7 @@ async def main():
 								await conv.mark_read()
 						return response
 		
-		####################################################################
-		
-		
-		@client.on(events.NewMessage(outgoing=True,pattern=r'\.п'))
-		async def cmd_п(event):
-			mess = event.message
-			text = mess.raw_text
-			if text =='.п' or text=='.патоген':
-				#FIX! А то спрацьовувало на .п(ередать,овысить,огладить,,,,,,,%)
-				l_r = await message_q( # отправляет сообщение боту и возвращает
-				f"/лаб в лс",
-				5443619563,
-				mark_read=True,
-				delete=False,
-				)
-				h=utils.sanitize_parse_mode('html').unparse(l_r.message,l_r.entities)
-				lab_lines = h.splitlines() # текст с лабой, разбитый на строки
-				new = ""
-				if "🔬 Досье лаборатории" not in lab_lines[0]:
-					pass
-				else:
-					
-					for i in lab_lines: # цикл for по всем строкам в тексте лабы
-						if "🧪 Готовых патогенов:" in i:
-							s = i.replace("🧪 Готовых патогенов:", "🧪 ")
-							s = s.replace("из", "із")
-							new+=f'{s}\n' # add \n
-
-						if "☣️ Био-опыт:" in i:
-							s = i.replace("☣️ Био-опыт:", "☣️ ")
-							new+=f'{s}\n' # add \n
-						if "🧬 Био-ресурс:" in i:
-							s = i.replace("🧬 Био-ресурс:", "🧬 ")
-							new+=f'{s}\n' # add \n
-
-						if "❗️ Руководитель в состоянии горячки ещё" in i:
-							s = i.replace("❗️ Руководитель в состоянии горячки ещё", "🤬 ")
-							new+=f'{s}\n' # add \n
-						if "вызванной болезнью" in i:
-							#	❗️ Руководитель в состоянии горячки, вызванной болезнью «%s», ещё 
-							#s = i.replace("❗️ Руководитель в состоянии горячки, вызванной болезнью ", "🤬 ")
-							b = re.findall(r'вызванной болезнью «(.+)»',i)[0]#назва тої хєрні якою заразили
-							s = i.replace(f"❗️ Руководитель в состоянии горячки, болезнью «{b}», ещё ", 
-							f"🤬 <code>{b}</code>\n⏳ ")# копіпабельно для пошуку
-					if not 'горячки' in l_r.message:
-						new+='✅ ok\n'
-					await event.edit(new) # ред.
-					print(h)
-		
-		####################################################################
-		
-		
-		@client.on(events.NewMessage(pattern='.*подверг(ла)? заражению.*'))
-		async def podverg(event):
-			
-			m = event.message
-			t = m.raw_text
-			when = int(datetime.timestamp(m.date))
-			if m.sender_id in irises:
-				if m.entities:
-					if len(m.entities) > 1:
-						h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
-						r = re.findall(r'🦠 <a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">.*</a> подверг.+<a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
-						
-						if r:
-							#print(h)
-							exp_int=1
-							experience=1
-							u1url=r[0][0]
-							u2url=r[0][1]
-							u1id = int(await get_id(u1url) or 0)
-							u2id = int(await get_id(u2url) or 0)
-							when=int(datetime.timestamp(m.date))
-							days=int(re.sub(r' ','',re.findall(r' на ([0-9\ ]+) д.*', t)[0]))
-							a=datetime.fromtimestamp(when)+timedelta(days=int(days), hours=3)
-							do_int=datetime.timestamp(a)
-							do_txt=str(a.strftime("%d.%m.%y"))
-							
-							experience=re.findall(r"\+([0-9\.\,k]+) био-опыта", t)[0]
-							
-							if ',' in experience:
-								experience=re.sub(r',', r'.',experience)
-							if 'k' in experience:
-								exp_int=int(float(re.sub('k', '',experience)) * 1000)
-							else:
-								exp_int=int(experience)
-							if 'Объект ещё не подвергался заражению вашим патогеном' in event.raw_text:
-								exp_int=int(re.sub(r' ','',re.findall(r'по ([0-9\ ]+) ед.*',event.raw_text)[0]))
-							
-							if u1id > 0 and u2id > 0 and u1id != u2id:
-								
-								if db_pymysql:
-									try:
-										d.execute("INSERT INTO `tg_iris_zarazy` (`who_id`, `user_id`, `when_int`, `bio_str`, `bio_int`, `expr_int`, `expr_str`, `u_link`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE when_int=VALUES (when_int),bio_str=VALUES (bio_str),bio_int=VALUES (bio_int),expr_int=VALUES (expr_int),expr_str=VALUES (expr_str),u_link = VALUES (u_link);", (int(u1id),int(u2id),int(when),str(experience), int(exp_int), int(do_int),str(do_txt),str(u2url))); con.commit()
-									except Exception as Err:
-										print(f'err: {Err} /localhost')
-										#pass
-								
-								print(f'ℹ️ @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
-								
-								if u2id!=my_id:
-									a_404_p=get_config_key("a_404_p") # A_Click
-									i2a=get_config_key("i2a") # Iris => Avocado
-									ch = f'.ч {u2id}'							#повідомлення
-									if a_404_p and i2a and u2id not in noeb:
-										await asyncio.sleep(random.uniform(3,5))
-										if ch_id == 0 or ch_id == event.chat_id:
-											m = await event.reply(ch)
-											kuda = event.chat_id
-										else:
-											kuda = ch_id
-											m=await client.send_message(kuda,ch)
-										await asyncio.sleep(random.uniform(3,5))
-										await client.delete_messages(kuda, m.id)
-		
-		
-		####################################################################
-		
+		####################################################################		
 		
 		@client.on(events.NewMessage(pattern=
 		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|насрал).*'))
@@ -533,9 +397,7 @@ async def main():
 									except:
 										pass
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='.+Резервная копия жертв'))
 		async def bio_backup(event):
@@ -591,15 +453,14 @@ async def main():
 								except Exception as Err:
 									print(f'err: {Err} (tg_bio_attack) (backup)')
 									errrs+=1
+						
 						del victims# free memory
-
-
+						
 						if db_sqlite3:
 							c.execute('PRAGMA optimize'); conn.commit()
 						
 						if br:
 							bf_run = True
-							#print('✅ bf')
 						
 						info = ''
 						if count > 0:
@@ -620,9 +481,7 @@ async def main():
 								f"termux-notification --title '{my_id}' --content '{info}'"
 								)
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biobackup$'))
 		async def bio_steal_backup(event):
@@ -704,6 +563,7 @@ async def main():
 									noadd+=1
 							else: # if u_id==my_id [and/or] u_id in noeb: [dnt add]
 								noadd+=1
+					
 					# end of victims
 					
 					if db_sqlite3:
@@ -740,39 +600,7 @@ async def main():
 					await event.edit('Format not supported.')
 					#return
 		
-		
 		####################################################################
-		
-		
-		@client.on(events.NewMessage(pattern='📝 .+'))
-		async def iris_404(event):
-			
-			m = event.message
-			t = m.raw_text or ''
-			if m.sender_id not in irises:
-				pass
-			elif (t=='📝 Заражать можно только пользователей' or t == '📝 Объект отказался от участия в игре' or 'Объект ещё не создал свою лабораторию' in t) and event.reply_to:
-				reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
-				t = reply.raw_text or ''
-				if reply.entities:
-					t=utils.sanitize_parse_mode('html').unparse(t,reply.entities)
-				r= re.findall(r'([0-9]{6,10})',t)
-				if r:
-					uid=int(r[0])
-					if db_pymysql:
-						try:
-							con.query(f"DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {uid};");
-						except Exception as Err:
-							print(f'err: {Err} in DELETE FROM `tg_iris_zarazy` WHERE `user_id` = {uid}')
-					
-						try:
-							con.query(f"DELETE FROM `tg_users_url` WHERE `user_id` = {uid};");
-						except Exception as Err:
-							print(f'err: {Err} in DELETE FROM `tg_users_url` WHERE `user_id` = {uid}')
-		
-		
-		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='👺 Юзер не знайдений!'))
 		async def avocado_404(event):
@@ -808,9 +636,7 @@ async def main():
 							except Exception as Err:
 								print(f'err: {Err} in DELETE FROM avocado WHERE `user_id` = {id}')
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biofuck$'))
 		async def cmd_bf(event):			# крч акуратно з цим,вдруг шо я нічо
@@ -879,7 +705,7 @@ async def main():
 							bf_mode='Fast'
 							rs_max = 33
 						if ostalos_pt > 90:
-							rs_min = 6.666
+							rs_min = 2.002
 							rs_max = 9.999
 							bf_mode='Turbo'
 						if os.name == 'nt':
@@ -901,9 +727,7 @@ async def main():
 					print(f'✅ {sndmsgs}') # how
 					c.execute('PRAGMA optimize'); conn.commit()
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(outgoing=True, 
 		pattern=r'.biofuck_(r|p|m|plus|minus|random)$'))
@@ -943,11 +767,11 @@ async def main():
 						bf_mode='Fast'
 						rs_max = 33
 					if ostalos_pt > 90:
-						rs_min = 6.666
+						rs_min = 2.345	# це низький інтервал, але якщо патів дофіга
 						rs_max = 9.999
 						bf_mode='Turbo'
 					if os.name == 'nt':
-						win32api.SetConsoleTitle(f'{my_id} {bioeb} {bf_mode}')
+						win32api.SetConsoleTitle(f'{my_id} {bf_mode}')
 					rs = float(random.uniform(rs_min,rs_max))# random
 					print(f'⏳ {bioeb} and wait {rs}')
 					m=await client.send_message(ch_id,bioeb)# message
@@ -955,56 +779,42 @@ async def main():
 					await client.delete_messages(event.chat_id,m.id)
 					await asyncio.sleep(rs)
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biofuck(_| )stop$'))
 		async def stop_bioeb(event):
 			global bf_run
 			if bf_run:
 				bf_run = False
-				info = 'Trying stop...'
+				info = '⏹ stop.'
 			else:
-				info = 'Не запущено ж?'
+				info = 'Не запущено.'
 			await event.edit(info)  # ред
 		
-		
 		####################################################################
 		
-		
-		@client.on(events.NewMessage(pattern='.+Служба безопасности лаборатории'))
-		# Организатор заражения: нада биоебнуть?
-		async def iris_sb(event):
+		@client.on(events.NewMessage(
+		pattern=r'.+(Була|Была|Спроба|(П|п)опыт(о)?к(а)?)'))
+		# Була|Была|Спроба|Попытка выебать|обмануть|...
+		async def try_eb(event):
 			m = event.message
 			t = m.raw_text
-			if m.sender_id in irises and m.entities:
-				w=int(datetime.timestamp(m.date)) # when
-				a_404_p=get_config_key("a_404_p") # A_Click
-				i2a=get_config_key("i2a") # Iris => Avocado
-				if a_404_p and i2a and len(m.entities) > 1:
-					h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
-					r= re.findall(r'Организатор заражения: <a href="(tg://openmessage\?user_id=\d+|https://t\.me/\w+)">',h)
-					if r:
-						user_url=r[0]
-						ch=f'.ч {user_url}'
-						await asyncio.sleep(random.uniform(1.3,3))
-						user_id = int(await get_id(user_url) or 0)
-						await asyncio.sleep(random.uniform(1.3,3))
-						if user_id > 0 and user_id!=my_id and user_id not in noeb:
-							ch=f'.ч {user_id}'
-						if ch_id == 0 or ch_id == event.chat_id:
-							m = await event.reply(ch)
-							kuda = event.chat_id
-						else:
-							kuda = ch_id
-							m=await client.send_message(kuda,ch)
-						await asyncio.sleep(random.uniform(2,5))
-						await client.delete_messages(kuda, m.id)
-		
+			if m.sender_id == 6333102398 and len(m.entities) > 1:
+				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
+				r= re.findall(
+				r'(Аферист|Злочинець|Организатор.*|Порноактер): <a href="tg://openmessage\?user_id=(\d+)">',h)	#	здається там ще більше варіантів
+				if r:
+					u_id=int(r[0][1])
+					if u_id!=my_id:
+						if db_sqlite3:
+							try:
+								c.execute("INSERT INTO avocado(user_id) VALUES (?)", 
+								(int(u_id))); conn.commit()	#	try save from try.
+							except:
+								# Але швидше за все у базі вже є
+								pass
 		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='⏱?🚫 Жертва'))
 		async def infection_not_found(event):
@@ -1012,7 +822,8 @@ async def main():
 			if m.sender_id == 6333102398 and m.mentioned:
 				if get_config_key("a_404_p"): # A_Click enabled?
 					await asyncio.sleep(random.uniform(1.111,2.239))
-					result = await client(functions.messages.GetBotCallbackAnswerRequest(  # src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
+					result = await client(functions.messages.GetBotCallbackAnswerRequest(
+					# src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
 					peer=m.peer_id,
 					msg_id=m.id,
 					game=False,  # idk why it works only when it false... 0_o
@@ -1022,9 +833,7 @@ async def main():
 					if result.message:
 						print(f'avocado says: {result.message}')
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='.+ ЗАБРАЛ у тебя'))
 		async def ЗАБРАЛ(event):
@@ -1037,9 +846,7 @@ async def main():
 						#print(m.raw_text)
 						ostalos_pt-=int(r[0])
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='.+ подогнал тебе'))
 		async def подогнал(event):
@@ -1052,9 +859,7 @@ async def main():
 						#print(m.raw_text)
 						ostalos_pt+=int(r[0])
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='🌡 У вас горячка вызванная'))
 		async def need_h(event):
@@ -1067,10 +872,8 @@ async def main():
 					else:
 						global ostalos_pt
 						ostalos_pt=1 # => 'Slow'. <= тобто 'костиль', да.
-				
 		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='👺 Чекай нових патогенів!'))
 		async def need_p(event):
@@ -1082,9 +885,7 @@ async def main():
 					bf_mode = 'Slow'
 					ostalos_pt=0
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='📉 Неудачная попытка майнинга!'))
 		async def Неудачнаяпопыткамайнинга(event):
@@ -1104,9 +905,7 @@ async def main():
 					await asyncio.sleep(m)	# ждем
 					await client.send_message(kuda,'Майн')
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern='.+(удалось намайнить|успешно намайнил)'))
 		async def mine_ok(event):
@@ -1128,9 +927,7 @@ async def main():
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(kuda,'Майн')
 		
-		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(pattern=r'✅ (ВДАЛО|ЗАЧЁТ)'))
 		async def ферма(event):
@@ -1140,13 +937,9 @@ async def main():
 				if ch_id < 0 and get_config_key("farm"):
 					rs=random.uniform(3.53,5.11)	# random
 					await asyncio.sleep(rs)	# ждем rs секунд
-					await client.send_message(ch_id,'''.таймер 4 часа
-.ферма''') # спробуєм ще так. \
-						# бо з цими оновленнями у мене вони не працюють і по 4 часа.
-				
+					await client.send_message(ch_id,'''.таймер 4 часа\n.ферма''')
 		
 		####################################################################
-		
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'.reset$'))
 		async def cmd_reset(event):
@@ -1158,19 +951,13 @@ async def main():
 					c.execute('VACUUM'); conn.commit()
 					await asyncio.sleep(1)
 					try:
-						await event.edit('ok')
+						await event.edit('жмяк /backup щоб зберегти у базі')	#	ред.
 					except Exception as err:
 						print(err) # показать
 					await asyncio.sleep(1)
 				except Exception as Err:
-					print(f'err: {Err} avocado reset_db')
-			if db_pymysql: # А там видалить, бо хз куда трансфер
-				try:
-					con.query(f"DELETE FROM `tg_bio_attack` WHERE `who_id` = {my_id};");
-				except Exception as Err:
-					print(f'err: {Err} in DELETE FROM `tg_bio_attack` WHERE `who_id` = {my_id}')
-			await client.send_message(6333102398,'/backup')	# зберегти у базі.
-			
+					print(f'err: {Err} in reset')
+					await event.edit(Err)	#	ред.
 		
 		####################################################################
 		
@@ -1178,8 +965,6 @@ async def main():
 		pattern=r'.(h(e)?lp|х(е)?лп)'))
 		async def cmd_help(event):
 			help_message = f'''
-			<blockquote>📃 код і є документація 😈</blockquote>
-			
 			<code>.ping</code> – "pong!", del.
 			<code>.biofuck</code> – run 'биоеб'
 			<code>.biofuck_r</code> – run 'биоеб'
@@ -1195,7 +980,7 @@ async def main():
 			💬 <u>@ub4tg</u>
 			'''
 			await asyncio.sleep(random.uniform(0.3,1))
-			await event.edit(help_message) # ладно,от.
+			await event.edit(help_message) # ред.
 		
 		####################################################################
 		
@@ -1205,11 +990,6 @@ async def main():
 			m = await event.reply('pong!')
 			await asyncio.sleep(5)
 			await client.delete_messages(event.chat_id, [event.id, m.id])
-		
-		####################################################################
-		
-		if termux_api:
-			os.system(f"termux-toast -b black -c green '✅ {my_id} started'")
 		
 		####################################################################
 		
