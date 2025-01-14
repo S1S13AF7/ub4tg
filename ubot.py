@@ -205,11 +205,11 @@ async def main():
 			cursorclass=pymysql.cursors.DictCursor)
 			d = con.cursor()
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_attack` (
-			`from_infect` int(11) unsigned NOT NULL DEFAULT '0',
+			`date` int(11) unsigned NOT NULL DEFAULT '0',
 			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`profit` int(11) unsigned NOT NULL DEFAULT '1',
-			`until_infect` int(11) unsigned NOT NULL DEFAULT '0',
+			`until_int` int(11) unsigned NOT NULL DEFAULT '0',
 			`until_str` varchar(11) NOT NULL DEFAULT '0',
 			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
 			);''');
@@ -373,8 +373,8 @@ async def main():
 									
 								if db_pymysql:
 									try:
-										# from_infect 	who_id 	user_id 	profit 	until_infect 	until_str
-										d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `from_infect`, `profit`, `until_infect`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE from_infect=VALUES(from_infect),profit=VALUES(profit),until_infect=VALUES(until_infect),until_str=VALUES(until_str);",(int(u1id),int(u2id),int(when),int(exp_int),int(do_int),str(do_txt))); con.commit()
+										# date 	who_id 	user_id 	profit 	until_int 	until_str
+										d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `date`, `profit`, `until_int`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE date=VALUES(date),profit=VALUES(profit),until_int=VALUES(until_int),until_str=VALUES(until_str);",(int(u1id),int(u2id),int(when),int(exp_int),int(do_int),str(do_txt))); con.commit()
 									except Exception as Err:
 										print(f'err: {Err} (tg_bio_attack)')
 										#pass
@@ -448,7 +448,7 @@ async def main():
 										# pass
 							if db_pymysql:
 								try:
-									d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `from_infect`, `profit`, `until_infect`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE from_infect=VALUES (from_infect),profit=VALUES (profit),until_infect=VALUES (until_infect),until_str = VALUES (until_str);", (int(my_id),int(u_id),int(when),str(profit), int(expr),str(do))); con.commit()
+									d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `date`, `profit`, `until_int`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE date=VALUES (date),profit=VALUES (profit),until_int=VALUES (until_int),until_str = VALUES (until_str);", (int(my_id),int(u_id),int(when),str(profit), int(expr),str(do))); con.commit()
 									mysql+=1
 								except Exception as Err:
 									print(f'err: {Err} (tg_bio_attack) (backup)')
