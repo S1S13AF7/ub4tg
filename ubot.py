@@ -705,8 +705,8 @@ async def main():
 							bf_mode='Fast'
 							rs_max = 33
 						if ostalos_pt > 90:
-							rs_min = 3.333	# це низький інтервал, але якщо патів дофіга
-							rs_max = 7.777	# це низький інтервал, але якщо патів дофіга
+							rs_min = 3.333
+							rs_max = 9.999
 							bf_mode='Turbo'
 						if os.name == 'nt':
 							win32api.SetConsoleTitle(f'{my_id}#{bf_mode}')
@@ -813,6 +813,8 @@ async def main():
 							except:
 								# Але швидше за все у базі вже є
 								pass
+						if db_pymysql:
+							con.query(f"INSERT IGNORE `tg_bio_users`(`user_id`) VALUES ('{u_id}');")
 		
 		####################################################################
 		
