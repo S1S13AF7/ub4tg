@@ -424,11 +424,17 @@ async def main():
 		@client.on(events.NewMessage(pattern='.+Резервная копия жертв'))
 		async def bio_backup(event):
 			m = event.message
-			if m.sender_id == 6333102398 and event.chat_id == 6333102398:
-				file_path=bfrnm(await m.download_media(file=default_directory))
-				print(f'📃 backup file saved:{file_path}') # невлізало в рядок
+			s = m.sender_id
+			if m.fwd_from:
+				s=m.fwd_from.from_id.user_id
+			if s == 6333102398: #	from Авокадо
+				file=bfrnm(await m.download_media(file=default_directory))
+				print(f'📃 backup file saved:{file}') # невлізало в рядок
 				global bf_run	# будемо ставить на паузу
-				br=bf_run	# запам'ятає
+				br=bf_run	# запам'ятає чи запущено?
+				id=re.findall(r'([0-9]+)\.json',file)[0]
+				wh=int(datetime.timestamp(m.date))
+				my=event.chat_id==6333102398
 				count=0
 				added=0
 				updtd=0
@@ -437,9 +443,9 @@ async def main():
 				victims = None
 				raw_victims = None
 				file_format = None
-				with open(file_path, 'r') as stealed_backup:
-					if file_path.lower().endswith('.json'):
-						victims = json.load(stealed_backup)
+				with open(file, 'r') as backup:
+					if file.lower().endswith('.json'):
+						victims = json.load(backup)
 						file_format = 'json'
 						if br:
 							bf_run = False
@@ -449,9 +455,13 @@ async def main():
 							u_id = int(v['user_id'])
 							profit=int(v['profit'] or 1)
 							when = int(v['from_infect'])
-							expr = int(v['until_infect'])
-							a=datetime.fromtimestamp(expr)
-							do=str(a.strftime("%d.%m.%y"))
+							expr = int(0) # для несвоїх
+							if my: # якщо це свій бекап
+								expr = int(v['until_infect'])
+								a=datetime.fromtimestamp(expr)
+								do=str(a.strftime("%d.%m.%y"))
+							else:
+								do=''
 							if db_sqlite3:
 								try:
 									c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",(int(u_id),int(when),int(profit),int(expr),str(do))); conn.commit()
@@ -459,7 +469,7 @@ async def main():
 									added+=1
 								except:
 									try:
-										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expr, expr_str = :exprs WHERE user_id = :z AND expr_int < :expr;", {"wh":int(when),"xpi":int(profit),"expr":int(expr),"exprs":str(do),"z":int(u_id)}); conn.commit()
+										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi, expr_int = :expr, expr_str = :exprs WHERE user_id = :z AND expr_int < :whxpr;", {"wh":int(when),"xpi":int(profit),"expr":int(expr),"exprs":str(do),"z":int(u_id),"whxpr":int(expr if my else wh)}); conn.commit()
 										updtd+=1
 									except Exception as Err:
 										print(f'err: {Err} avocado backup')
@@ -467,7 +477,7 @@ async def main():
 										# pass
 							if db_pymysql:
 								try:
-									d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `date`, `profit`, `until_int`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE date=VALUES (date),profit=VALUES (profit),until_int=VALUES (until_int),until_str = VALUES (until_str);", (int(my_id),int(u_id),int(when),str(profit), int(expr),str(do))); con.commit()
+									d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `date`, `profit`, `until_int`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE date=VALUES (date),profit=VALUES (profit),until_int=VALUES (until_int),until_str = VALUES (until_str);", (int(id),int(u_id),int(when),str(profit), int(expr),str(do))); con.commit()
 									mysql+=1
 								except Exception as Err:
 									print(f'err: {Err} (tg_bio_attack) (backup)')
