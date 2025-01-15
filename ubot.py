@@ -330,7 +330,7 @@ async def main():
 								await conv.mark_read()
 						return response
 		
-		####################################################################		
+		####################################################################
 		
 		@client.on(events.NewMessage(pattern=
 		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|насрал).*'))
@@ -418,16 +418,6 @@ async def main():
 											print(f'err: {Err} (tg_bio_users)')
 								
 								print(f'🥑 @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
-						else:
-							r= re.findall(r'<a href="tg://openmessage\?user_id=([0-9]{6,10})">.*</a>',h)
-							if r:
-								uid=int(r[0])
-								if uid==my_id:
-									try:
-										await asyncio.sleep(random.uniform(0.71,1.333))
-										await client.send_message(6333102398,'/backup')
-									except:
-										pass
 		
 		####################################################################
 		
@@ -451,15 +441,13 @@ async def main():
 					if file_path.lower().endswith('.json'):
 						victims = json.load(stealed_backup)
 						file_format = 'json'
-						my_victims_ids = []
-						added = 0
 						if br:
 							bf_run = False
 							#print('paused')
 						for v in victims:
 							count+=1
 							u_id = int(v['user_id'])
-							profit=int(v['profit'])
+							profit=int(v['profit'] or 1)
 							when = int(v['from_infect'])
 							expr = int(v['until_infect'])
 							a=datetime.fromtimestamp(expr)
@@ -484,7 +472,12 @@ async def main():
 								except Exception as Err:
 									print(f'err: {Err} (tg_bio_attack) (backup)')
 									errrs+=1
-						
+								try:
+									query=f"INSERT IGNORE `tg_bio_users`(`user_id`) VALUES ('{u_id}');"
+									con.query(query)
+								except Exception as Err:
+									print(f'err: {Err} (tg_bio_users)')
+									errrs+=1
 						del victims# free memory
 						
 						if db_sqlite3:
@@ -505,8 +498,7 @@ async def main():
 						if errrs > 0:
 							info = f'{info}\nerrrs: {errrs}'
 						print(info)
-						
-						if is_termux and len (info) > 0:
+						if len (info) > 0:
 							if termux_api:
 								os.system(
 								f"termux-notification --title '{my_id}' --content '{info}'"
