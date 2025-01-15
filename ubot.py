@@ -17,6 +17,7 @@ import json
 
 import sqlite3
 
+import shutil
 import typing
 
 if os.name == 'nt':
@@ -118,6 +119,22 @@ irises = [707693258,5137994780,5226378684,5434504334,5443619563]
 
 ########################################################################
 
+def bfrnm(p=None):
+	if p is None:
+		return p
+	r=re.findall(r'([0-9]+)_victims_([0-9]+)_([0-9]+)\.json',p)
+	if r:
+		id=r[0][1]#	чій бекап
+		fn=re.sub(f'{r[0][0]}_victims_{r[0][1]}_{r[0][2]}',id,p)
+		if os.path.exists(fn):
+			os.remove(fn)
+		shutil.copy2(p, fn)
+		os.remove(p)
+		return fn
+	return
+
+########################################################################
+
 def get_config_key(key: str) -> typing.Union[str, bool]:
 	"""
 	Parse and return key from config
@@ -216,8 +233,8 @@ async def main():
 			con.commit()
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_users` (
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
 			`profit` int(11) unsigned NOT NULL DEFAULT '1',
+			`virus` varchar(200) NOT NULL DEFAULT '',
 			UNIQUE KEY `user_id` (`user_id`)
 			);''');
 			con.commit()
@@ -327,6 +344,7 @@ async def main():
 					if len(m.entities) > 1:
 						h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
 						r= re.findall(r'<a href="tg://openmessage\?user_id=([0-9]{6,10})">.*</a>.+<a href="tg://openmessage\?user_id=([0-9]{6,10})">',h)
+						p= re.findall(r'«(.+)»',t)	#	патогеном
 						if r:
 							#print(h)
 							exp_int=1
@@ -352,6 +370,11 @@ async def main():
 								if u1id==my_id:
 									global ostalos_pt
 									ostalos_pt=int(re.sub(r' ','',re.findall(r'\| Осталось: ([0-9\ ]+) шт.',t)[0]))
+								
+								if p:
+									p=str(p[0])
+								else:
+									p=''
 								
 								if db_sqlite3:
 									
@@ -379,11 +402,20 @@ async def main():
 										print(f'err: {Err} (tg_bio_attack)')
 										#pass
 									try:
-										# user_id 	when 	profit
-										d.execute("INSERT INTO `tg_bio_users` (`user_id`, `when_int`, `profit`) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE when_int=VALUES (when_int),profit=VALUES (profit);", (int(u2id),int(when),str(experience))); con.commit()
+										# user_id	profit	virus
+										d.execute("INSERT INTO `tg_bio_users` (`user_id`, `profit`) VALUES (%s,%s) ON DUPLICATE KEY UPDATE profit=VALUES (profit);", (int(u2id),str(experience))); con.commit()
 									except Exception as Err:
 										print(f'err: {Err} (tg_bio_users)')
 										#pass
+									if p:
+										#print(p)
+										try:
+											d.execute('''INSERT INTO `tg_bio_users` 
+											(`user_id`, `virus`) VALUES (%s,%s) 
+											ON DUPLICATE KEY UPDATE virus=VALUES(virus)''', 
+											(int(u1id),str(p))); con.commit()
+										except Exception as Err:
+											print(f'err: {Err} (tg_bio_users)')
 								
 								print(f'🥑 @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
 						else:
@@ -403,8 +435,7 @@ async def main():
 		async def bio_backup(event):
 			m = event.message
 			if m.sender_id == 6333102398 and event.chat_id == 6333102398:
-				# відаправник Авокадо і це приват з Авокадо. перестрахувавсь?
-				file_path = await m.download_media(file=f"{default_directory}")
+				file_path=bfrnm(await m.download_media(file=default_directory))
 				print(f'📃 backup file saved to {file_path}')
 				global bf_run	# будемо ставить на паузу
 				br=bf_run	# запам'ятає
@@ -514,7 +545,7 @@ async def main():
 				return
 			await asyncio.sleep(0.111) # тут нада?
 			await event.edit('Downloading file...')
-			file_path = await reply.download_media(file=f"{default_directory}")
+			file_path=bfrnm(await reply.download_media(file=default_directory))
 			if file_path is None:
 				wtf = 'Error: файл не завантажено.' # wtf?! А чи був вобще файл?
 				await asyncio.sleep(0.21) # ждем,
@@ -801,11 +832,14 @@ async def main():
 			t = m.raw_text
 			if m.sender_id == 6333102398 and len(m.entities) > 1:
 				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
+				p= re.findall(r'«(.+)»',t)	#	патогеном
 				r= re.findall(
 				r'(Аферист|Злочинець|Организатор.*|Порноактер): <a href="tg://openmessage\?user_id=(\d+)">',h)	#	здається там ще більше варіантів
 				if r:
 					u_id=int(r[0][1])
 					if u_id!=my_id:
+						if p:
+							p=str(p[0])
 						if db_sqlite3:
 							try:
 								c.execute("INSERT INTO avocado(user_id) VALUES (?)", 
@@ -814,7 +848,17 @@ async def main():
 								# Але швидше за все у базі вже є
 								pass
 						if db_pymysql:
-							con.query(f"INSERT IGNORE `tg_bio_users`(`user_id`) VALUES ('{u_id}');")
+							query=f"INSERT IGNORE `tg_bio_users`(`user_id`) VALUES ('{u_id}');"
+							if p:
+								try:
+									d.execute('''INSERT INTO `tg_bio_users` 
+									(`user_id`, `virus`) VALUES (%s,%s) 
+									ON DUPLICATE KEY UPDATE virus=VALUES(virus)''', 
+									(int(u_id),str(p))); con.commit()
+								except Exception as Err:
+									print(f'err: {Err} (tg_bio_users)')
+							else:
+								con.query(query)
 		
 		####################################################################
 		
