@@ -429,12 +429,15 @@ async def main():
 				s=m.fwd_from.from_id.user_id
 			if s == 6333102398: #	from Авокадо
 				file=bfrnm(await m.download_media(file=default_directory))
+				if file is None:
+					return
 				print(f'📃 backup file saved:{file}') # невлізало в рядок
 				global bf_run	# будемо ставить на паузу
 				br=bf_run	# запам'ятає чи запущено?
 				id=re.findall(r'([0-9]+)\.json',file)[0]
 				wh=int(datetime.timestamp(m.date))
 				my=event.chat_id==6333102398
+				ou=m.sender_id==my_id # out?
 				count=0
 				added=0
 				updtd=0
@@ -501,14 +504,21 @@ async def main():
 							info = f'count: {count}'
 						if added > 0:
 							info = f'{info}\nadded: {added}'
-						if updtd > 0:
-							info = f'{info}\nupdtd: {updtd}'
-						if mysql > 0:
-							info = f'{info}\nMySQL: {mysql}'
 						if errrs > 0:
 							info = f'{info}\nerrrs: {errrs}'
 						print(info)
 						if len (info) > 0:
+							if not my:
+								if ou:
+									try:
+										await event.edit(info)
+									except:
+										pass
+								elif added > 0:
+									try:
+										await event.reply(info)
+									except:
+										pass
 							if termux_api:
 								os.system(
 								f"termux-notification --title '{my_id}' --content '{info}'"
@@ -899,7 +909,6 @@ async def main():
 			<code>.biofuck_r</code> – run 'биоеб'
 			<code>.biofuck_p</code> – run 'биоеб +'
 			<code>.biofuck_m</code> – run 'биоеб -'
-			<code>.biobackup</code> – import .json
 			<code>.reset</code> – set dates as '0'
 			<code>.help</code> – <u>you are here</u>
 			
