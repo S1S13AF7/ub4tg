@@ -426,7 +426,7 @@ async def main():
 			m = event.message
 			if m.sender_id == 6333102398 and event.chat_id == 6333102398:
 				file_path=bfrnm(await m.download_media(file=default_directory))
-				print(f'📃 backup file saved to {file_path}')
+				print(f'📃 backup file saved: {file_path}') # невлізало в рядок
 				global bf_run	# будемо ставить на паузу
 				br=bf_run	# запам'ятає
 				count=0
@@ -511,7 +511,7 @@ async def main():
 			mtime = int(datetime.timestamp(event.message.date)) # 	when (int)
 			await asyncio.sleep(random.uniform(0.1111,0.55555)) # 	чуток ждем
 			global bf_run	# будемо ставить на паузу
-			br=bf_run	# запам'ятає
+			br=bf_run	# запам'ятає чи запущено
 			count = 0
 			added = 0
 			noadd = 0
@@ -537,7 +537,7 @@ async def main():
 				return
 			await asyncio.sleep(0.111) # тут нада?
 			await event.edit('Downloading file...')
-			file_path=bfrnm(await reply.download_media(file=default_directory))
+			file_path=await reply.download_media(file=default_directory)
 			if file_path is None:
 				wtf = 'Error: файл не завантажено.' # wtf?! А чи був вобще файл?
 				await asyncio.sleep(0.21) # ждем,
@@ -545,7 +545,7 @@ async def main():
 				print(wtf)
 				return
 			
-			print(f'📃 backup file saved to {file_path}')
+			print(f'📃 backup file saved: {file_path}')
 			await asyncio.sleep(random.uniform(0.1,0.3))
 			with open(file_path, 'r') as stealed_backup:
 				if file_path.lower().endswith('.json'):
@@ -595,14 +595,14 @@ async def main():
 					# end of victims
 					
 					info = ''
-					if added > 0 or updtd > 0 or errrs > 0: # якщо вобще є інфа?!
-						if added > 0:
-							info = f'{info}\nadded: {added}'
-						if errrs > 0:
-							info = f'{info}\nerrrs: {errrs}'
-						if errors!='':
-							info = f'{info}\n{errors}'
-						
+					if count > 0:
+						info = f'count: {count}'
+					if added > 0:
+						info = f'{info}\nadded: {added}'
+					if errrs > 0:
+						info = f'{info}\nerrrs: {errrs}'
+					
+					if len (info) > 0:
 						print(info)
 						
 					else:
