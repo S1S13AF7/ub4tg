@@ -426,7 +426,7 @@ async def main():
 			m = event.message
 			if m.sender_id == 6333102398 and event.chat_id == 6333102398:
 				file_path=bfrnm(await m.download_media(file=default_directory))
-				print(f'📃 backup file saved: {file_path}') # невлізало в рядок
+				print(f'📃 backup file saved:{file_path}') # невлізало в рядок
 				global bf_run	# будемо ставить на паузу
 				br=bf_run	# запам'ятає
 				count=0
@@ -503,125 +503,6 @@ async def main():
 								os.system(
 								f"termux-notification --title '{my_id}' --content '{info}'"
 								)
-		
-		####################################################################
-		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biobackup$'))
-		async def bio_steal_backup(event):
-			mtime = int(datetime.timestamp(event.message.date)) # 	when (int)
-			await asyncio.sleep(random.uniform(0.1111,0.55555)) # 	чуток ждем
-			global bf_run	# будемо ставить на паузу
-			br=bf_run	# запам'ятає чи запущено
-			count = 0
-			added = 0
-			noadd = 0
-			updtd = 0
-			mysql = 0
-			errrs = 0
-			errors = ''
-			victims = None
-			raw_victims = None
-			file_format = None
-			await asyncio.sleep(random.uniform(0.2,0.4)) # думаю тут нада да?
-			
-			reply = await client.get_messages(
-			event.peer_id, 
-			ids=event.reply_to.reply_to_msg_id)
-			
-			await asyncio.sleep(random.uniform(0.2,0.4)) # думаю тут нада да?
-			if reply is None:
-				wtf = 'не змогли отримать повідомлення' # або трабл апі або нема
-				await asyncio.sleep(0.21) # ждем,
-				await event.edit(wtf)
-				print(wtf)
-				return
-			await asyncio.sleep(0.111) # тут нада?
-			await event.edit('Downloading file...')
-			file_path=await reply.download_media(file=default_directory)
-			if file_path is None:
-				wtf = 'Error: файл не завантажено.' # wtf?! А чи був вобще файл?
-				await asyncio.sleep(0.21) # ждем,
-				await event.edit(wtf)
-				print(wtf)
-				return
-			
-			print(f'📃 backup file saved: {file_path}')
-			await asyncio.sleep(random.uniform(0.1,0.3))
-			with open(file_path, 'r') as stealed_backup:
-				if file_path.lower().endswith('.json'):
-					victims = json.load(stealed_backup)
-					await asyncio.sleep(random.uniform(0.3,1.111))
-					await event.edit('Processing json victims...')
-					await asyncio.sleep(random.uniform(0.3,1.111))
-					if br:
-						bf_run = False
-						#print('paused')
-					for v in victims:
-						if v['user_id']:
-							count+=1
-							#print(v)# захламляємо ?
-							u_id = int(v['user_id'])
-							profit=int(v['profit'] or 1)
-							when = int(v['from_infect'] or 0)
-							if u_id!=my_id and u_id not in noeb:
-								if db_sqlite3:
-									try:
-										c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(u_id),int(when),int(profit),int(0))); conn.commit()# save not my pacients
-										added+= 1
-									except:
-										if profit > 1 and when > 0:
-											# якщо є сенс оновлювати?
-											try:
-												c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND when_int < :wh AND expr_int < :mtime;", {"wh":int(when),"xpi":int(profit),"mtime":int(mtime),"z":int(u_id)}); conn.commit()
-												updtd+=1
-											except Exception as Err:
-												print(f'err: {Err} avocado backup json')
-												errors=f'{errors}\n{Err}' # там неповинно буть?!
-												errrs+=1
-										else:
-											noadd+=1
-								else:
-									errors=f'Алоу db_sqlite3 is False, куда сохранять?!' #
-									errrs+=1
-									noadd+=1
-							else: # if u_id==my_id [and/or] u_id in noeb: [dnt add]
-								noadd+=1
-					
-					# end of victims
-					
-					if db_sqlite3:
-						c.execute('PRAGMA optimize'); conn.commit()
-					
-					# end of victims
-					
-					info = ''
-					if count > 0:
-						info = f'count: {count}'
-					if added > 0:
-						info = f'{info}\nadded: {added}'
-					if errrs > 0:
-						info = f'{info}\nerrrs: {errrs}'
-					
-					if len (info) > 0:
-						print(info)
-						
-					else:
-						info = '🤷 інфа нема.' # інфа нема?!
-					await asyncio.sleep(random.uniform(0.1,2))
-					await event.edit(info)
-					del victims  # free memory
-					del raw_victims
-					del errors
-					del info
-					
-					if br:
-						bf_run = True
-						#print('✅ bf')
-					
-				else:
-					await asyncio.sleep(random.uniform(1, 2))
-					await event.edit('Format not supported.')
-					#return
 		
 		####################################################################
 		
