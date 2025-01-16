@@ -115,6 +115,8 @@ ostalos_pt=10	# осталось. буде мінятись.
 rs_min= 11	# інтервал. буде мінятись. 
 rs_max=3600	# інтервал. буде мінятись. 
 
+my_days=10	# свій летал. виставиться коли бот "побачить".
+
 irises = [707693258,5137994780,5226378684,5434504334,5443619563]
 
 ########################################################################
@@ -368,8 +370,9 @@ async def main():
 							
 							if u1id > 0 and u2id > 0:
 								if u1id==my_id:
-									global ostalos_pt
+									global ostalos_pt,my_days
 									ostalos_pt=int(re.sub(r' ','',re.findall(r'\| Осталось: ([0-9\ ]+) шт.',t)[0]))
+									my_days=int(days)	# свій летал. для списків (там не пише на скільки д.)
 								
 								if p:
 									p=str(p[0])
@@ -418,6 +421,70 @@ async def main():
 											print(f'err: {Err} (tg_bio_users)')
 								
 								print(f'🥑 @{u1id} подверг(ла) @{u2id} +{experience}')	# показать
+		
+		####################################################################
+		
+		@client.on(events.MessageEdited(incoming=True,
+		pattern=r'🔬 Лаборатория .+ подвергла .+ списком:',
+		from_users=6333102398))	#	Авокадо
+		async def infect_list(event):
+			m = event.message
+			t = m.raw_text
+			if m.entities:
+				if len(m.entities) > 1:
+					w=int(datetime.timestamp(m.date))	#	when_int
+					h=utils.sanitize_parse_mode('html').unparse(t,m.entities)
+					u=int(re.findall(r'Лаборатория <a href="tg://openmessage\?user_id=([0-9]+)">',h)[0])	#	who
+					r=re.findall(r'<code>([0-9]+)</code> \| \+([0-9,k]+) оп.',h) # list of infect
+					if u==my_id:
+						global ostalos_pt
+						ostalos_pt=int(re.sub(r' ','',re.findall(r'Осталось: ([0-9\ ]+) шт.',t)[0]))#Осталось:
+					for v in r:
+						uid=int(v[0])
+						bio=str(v[1])
+						if ',' in bio:
+							bio=re.sub(r',', r'.',bio)
+						if 'k' in bio:
+							bio=int(float(re.sub('k', '',bio)) * 1000)
+						else:
+							bio=int(bio)
+						a=datetime.fromtimestamp(w)+timedelta(days=int(my_days))
+						do_int=int(datetime.timestamp(a))
+						do_txt=str(a.strftime("%d.%m.%y"))
+						if db_sqlite3:
+							if u==my_id:
+								try:
+									c.execute("INSERT OR REPLACE INTO avocado (user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",
+									(int(uid),int(w),int(bio),int(do_int),str(do_txt))); conn.commit()
+								except Exception as Err:
+									print(f'err: {Err} avocado')
+							elif uid!=my_id and uid not in noeb:
+								try:
+									c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(uid),int(w),int(bio),int(0))); conn.commit()# save not my pacients
+								except:
+									try:
+										c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND expr_int < :wh;", {"wh":int(w),"xpi":int(bio),"z":int(uid)}); conn.commit()
+									except Exception as Err:
+										print(f'err: {Err} avocado upd not my')
+										#pass
+									
+						if db_pymysql:
+							try:
+								# date 	who_id 	user_id 	profit 	until_int 	until_str
+								d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `date`, `profit`, `until_int`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE date=VALUES(date),profit=VALUES(profit),until_int=VALUES(until_int),until_str=VALUES(until_str);",(int(u),int(uid),int(w),int(bio),int(do_int),str(do_txt))); con.commit()
+							except Exception as Err:
+								print(f'err: {Err} (tg_bio_attack)')
+								#pass
+							try:
+								# user_id	profit	virus
+								d.execute("INSERT INTO `tg_bio_users` (`user_id`, `profit`) VALUES (%s,%s) ON DUPLICATE KEY UPDATE profit=VALUES (profit);", (int(uid),int(bio))); con.commit()
+							except Exception as Err:
+								print(f'err: {Err} (tg_bio_users)')
+								#pass
+						if u==my_id:
+							print(f'🆔 {uid} ➕{bio}') # показать в консолі
+					if db_sqlite3:
+						c.execute('PRAGMA optimize'); conn.commit()
 		
 		####################################################################
 		
