@@ -469,12 +469,11 @@ async def main():
 										#pass
 									
 						if db_pymysql:
-							try:
-								# date 	who_id 	user_id 	profit 	until_int 	until_str
-								d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `date`, `profit`, `until_int`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE date=VALUES(date),profit=VALUES(profit),until_int=VALUES(until_int),until_str=VALUES(until_str);",(int(u),int(uid),int(w),int(bio),int(do_int),str(do_txt))); con.commit()
-							except Exception as Err:
-								print(f'err: {Err} (tg_bio_attack)')
-								#pass
+							if u==my_id:
+								try:
+									d.execute("INSERT INTO `tg_bio_attack` (`who_id`, `user_id`, `date`, `profit`, `until_int`, `until_str`) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE date=VALUES(date),profit=VALUES(profit),until_int=VALUES(until_int),until_str=VALUES(until_str);",(int(u),int(uid),int(w),int(bio),int(do_int),str(do_txt))); con.commit()
+								except Exception as Err:
+									pass
 							try:
 								# user_id	profit	virus
 								d.execute("INSERT INTO `tg_bio_users` (`user_id`, `profit`) VALUES (%s,%s) ON DUPLICATE KEY UPDATE profit=VALUES (profit);", (int(uid),int(bio))); con.commit()
