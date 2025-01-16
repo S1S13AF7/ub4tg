@@ -898,18 +898,20 @@ async def main():
 		pattern=r'.(h(e)?lp|х(е)?лп)'))
 		async def cmd_help(event):
 			help_message = f'''
-	<code>.ping</code> – "pong!", del.
-	<code>.biofuck</code> – run 'биоеб'
-	<code>.biofuck_r</code> – run 'биоеб'
-	<code>.biofuck_p</code> – run 'биоеб +'
-	<code>.biofuck_m</code> – run 'биоеб -'
-	<code>.reset</code> – set dates as '0'
-	<code>.help</code> – <u>you are here</u>
-	
-	<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
-	href="https://github.com/S1S13AF7/ub4tg">code</a>;
-	
-	💬 <u>@ub4tg</u>
+			<blockquote>📃 код і є документація 😈</blockquote>
+			
+			<code>.ping</code> – "pong!", del.
+			<code>.biofuck</code> – run 'биоеб'
+			<code>.biofuck_r</code> – run 'биоеб'
+			<code>.biofuck_p</code> – run 'биоеб +'
+			<code>.biofuck_m</code> – run 'биоеб -'
+			<code>.reset</code> – set dates as '0'
+			<code>.help</code> – <u>you are here</u>
+			
+			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
+			href="https://github.com/S1S13AF7/ub4tg">code</a>;
+			
+			💬 <u>@ub4tg</u>
 			'''
 			await asyncio.sleep(random.uniform(0.3,1))
 			await event.edit(help_message) # ред.
