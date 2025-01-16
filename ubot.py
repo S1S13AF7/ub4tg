@@ -437,7 +437,6 @@ async def main():
 				id=re.findall(r'([0-9]+)\.json',file)[0]
 				wh=int(datetime.timestamp(m.date))
 				my=event.chat_id==6333102398
-				ou=m.sender_id==my_id # out?
 				count=0
 				added=0
 				updtd=0
@@ -509,12 +508,7 @@ async def main():
 						print(info)
 						if len (info) > 0:
 							if not my:
-								if ou:
-									try:
-										await event.edit(info)
-									except:
-										pass
-								elif added > 0:
+								if added > 0:
 									try:
 										await event.reply(info)
 									except:
@@ -846,7 +840,7 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(pattern='.+(удалось намайнить|успешно намайнил)'))
+		@client.on(events.NewMessage(incoming=True,pattern=r'.+намайн.+'))
 		async def mine_ok(event):
 			c = event.chat_id
 			m = event.message
@@ -904,18 +898,18 @@ async def main():
 		pattern=r'.(h(e)?lp|х(е)?лп)'))
 		async def cmd_help(event):
 			help_message = f'''
-			<code>.ping</code> – "pong!", del.
-			<code>.biofuck</code> – run 'биоеб'
-			<code>.biofuck_r</code> – run 'биоеб'
-			<code>.biofuck_p</code> – run 'биоеб +'
-			<code>.biofuck_m</code> – run 'биоеб -'
-			<code>.reset</code> – set dates as '0'
-			<code>.help</code> – <u>you are here</u>
-			
-			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
-			href="https://github.com/S1S13AF7/ub4tg">code</a>;
-			
-			💬 <u>@ub4tg</u>
+	<code>.ping</code> – "pong!", del.
+	<code>.biofuck</code> – run 'биоеб'
+	<code>.biofuck_r</code> – run 'биоеб'
+	<code>.biofuck_p</code> – run 'биоеб +'
+	<code>.biofuck_m</code> – run 'биоеб -'
+	<code>.reset</code> – set dates as '0'
+	<code>.help</code> – <u>you are here</u>
+	
+	<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
+	href="https://github.com/S1S13AF7/ub4tg">code</a>;
+	
+	💬 <u>@ub4tg</u>
 			'''
 			await asyncio.sleep(random.uniform(0.3,1))
 			await event.edit(help_message) # ред.
