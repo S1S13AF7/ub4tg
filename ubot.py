@@ -852,6 +852,62 @@ async def main():
 		
 		####################################################################
 		
+		@client.on(events.NewMessage(
+		from_users=6333102398,
+		pattern=r'🦠 Жертвы игрока'))
+		async def victims_list(event):
+			m = event.message
+			t = m.raw_text
+			if m.entities:
+				w=int(datetime.timestamp(m.date))	#	when_int
+				h=utils.sanitize_parse_mode('html').unparse(t,m.entities)
+				u=int(re.findall(r'<strong>🦠 Жертвы игрока </strong><a href="tg://openmessage\?user_id=([0-9]+)">.+</a>',h)[0])
+				r=re.findall(r'<a href="tg://openmessage\?user_id=([0-9]+)">.+</a> \| \+([0-9\ ]+) \| до ([0-9\.]+)',h) # v,b,d
+				for v in r:
+					z=int(v[0])
+					a=str(v[2]) # date '31.12.2024'
+					b=int(re.sub(' ','',str(v[1])))
+					d=int(datetime.timestamp(datetime.strptime(a,"%d.%m.%Y")))
+					
+					if db_sqlite3:
+						if u==my_id:
+							try:
+								c.execute("INSERT OR REPLACE INTO avocado (user_id,when_int,bio_int,expr_int,expr_str) VALUES (?,?,?,?,?)",
+								(int(z),int(w),int(b),int(d),str(a))); conn.commit()
+							except Exception as Err:
+								print(f'err: {Err} avocado')
+						elif z!=my_id and z not in noeb:
+							try:
+								c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(z),int(w),int(b),int(0))); conn.commit()# save not my pacients
+							except:
+								try:
+									c.execute("UPDATE avocado SET when_int = :wh, bio_int = :xpi WHERE user_id = :z AND expr_int < :wh;", {"wh":int(w),"xpi":int(b),"z":int(z)}); conn.commit()
+								except Exception as Err:
+									print(f'err: {Err} avocado upd not my')
+									#pass
+
+					if db_pymysql:
+						
+						try:
+							query=f"INSERT INTO `tg_bio_attack` (`date`, `who_id`, `user_id`, `profit`, `until_int`, `until_str`) VALUES ('{w}', '{u}', '{z}', '{b}', '{d}', '{a}') ON DUPLICATE KEY UPDATE date=VALUES(date),profit=VALUES(profit),until_int=VALUES(until_int),until_str=VALUES(until_str);"; 
+							con.query(query)
+						except Exception as Err:
+							print(f'err: {Err} (tg_bio_attack)')
+							#pass
+						try:
+							con.query(f"INSERT INTO `tg_bio_users` (`user_id`, `profit`) VALUES ('{z}', '{b}') ON DUPLICATE KEY UPDATE profit=VALUES (profit);")
+						except Exception as Err:
+							print(f'err: {Err} (tg_bio_users)')
+							#pass
+					
+					if u==my_id:
+						print(f'🆔 {z} ➕{b}') # показать в консолі
+				
+				if db_sqlite3:
+					c.execute('PRAGMA optimize'); conn.commit()
+		
+		####################################################################
+		
 		@client.on(events.NewMessage(pattern='⏱?🚫 Жертва'))
 		async def infection_not_found(event):
 			m = event.message
