@@ -334,7 +334,7 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(pattern=
+		@client.on(events.NewMessage(incoming=True,pattern=
 		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|насрал).*'))
 		async def infect(event):
 			# хто там кого того
@@ -354,7 +354,7 @@ async def main():
 							u1id =int(r[0][0])
 							u2id =int(r[0][1])
 							when=int(datetime.timestamp(m.date))
-							days=int(re.sub(r' ','',re.findall(r'([0-9]+) (д|d).*', t)[0][0]))
+							days=int(re.sub(r' ','',re.findall(r'([0-9]+) (д|d).*',t)[0][0]))
 							a=datetime.fromtimestamp(when)+timedelta(days=int(days), hours=3)
 							do_int=datetime.timestamp(a)
 							do_txt=str(a.strftime("%d.%m.%y"))
@@ -371,7 +371,7 @@ async def main():
 							if u1id > 0 and u2id > 0:
 								if u1id==my_id:
 									global ostalos_pt,my_days
-									ostalos_pt=int(re.sub(r' ','',re.findall(r'\| Осталось: ([0-9\ ]+) шт.',t)[0]))
+									ostalos_pt=int(re.sub(r' ','',re.findall(r' Осталось: ([0-9\ ]+) шт.',t)[0]))
 									my_days=int(days)	# свій летал. для списків (там не пише на скільки д.)
 								
 								if p:
@@ -765,7 +765,8 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'\.biofuck(_| )stop$'))
+		@client.on(events.NewMessage(outgoing=True, 
+		pattern=r'\.biofuck(_| )stop$'))
 		async def stop_bioeb(event):
 			global bf_run
 			if bf_run:
@@ -777,17 +778,17 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(
+		@client.on(events.NewMessage(from_users=6333102398,
 		pattern=r'.+(Була|Была|Спроба|(П|п)опыт(о)?к(а)?)'))
 		# Була|Была|Спроба|Попытка выебать|обмануть|...
 		async def try_eb(event):
 			m = event.message
 			t = m.raw_text
-			if m.sender_id == 6333102398 and len(m.entities) > 1:
+			if m.entities:
 				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
 				p= re.findall(r'«(.+)»',t)	#	патогеном
 				r= re.findall(
-				r'(Аферист|Злочинець|Организатор.*|Порноактер): <a href="tg://openmessage\?user_id=(\d+)">',h)	#	здається там ще більше варіантів
+				r'(Аферист|Злочинець|Организатор.*|Порноактер): <a href="tg://openmessage\?user_id=(\d+)">',h)
 				if r:
 					u_id=int(r[0][1])
 					if u_id!=my_id:
@@ -812,6 +813,42 @@ async def main():
 									print(f'err: {Err} (tg_bio_users)')
 							else:
 								con.query(query)
+		
+		####################################################################
+		
+		@client.on(events.NewMessage(
+		from_users=6333102398,
+		pattern=r'Болезни игрока'))
+		async def infect_list(event):
+			m = event.message
+			t = m.raw_text
+			if m.entities:
+				if len(m.entities) > 1:
+					w=int(datetime.timestamp(m.date))	#	when_int
+					h=utils.sanitize_parse_mode('html').unparse(t,m.entities)
+					r=re.findall(r'<a href="tg://openmessage\?user_id=([0-9]+)">(.+)</a> \|',h) # list of infect
+					for v in r:
+						u=int(v[0])
+						p=str(v[1])
+						if db_pymysql:
+							query=f"INSERT IGNORE `tg_bio_users`(`user_id`) VALUES ('{u}');"
+							if p!='Неизвестный патоген':
+								try:
+									d.execute('''INSERT INTO `tg_bio_users` 
+									(`user_id`, `virus`) VALUES (%s,%s) 
+									ON DUPLICATE KEY UPDATE virus=VALUES(virus)''', 
+									(int(u),str(p))); con.commit()
+								except Exception as Err:
+									print(f'err: {Err} (tg_bio_users)')
+							else:
+								con.query(query)
+						if db_sqlite3:
+							try:
+								c.execute("INSERT INTO avocado(user_id) VALUES (?)", 
+								(int(u_id))); conn.commit()
+							except:
+								# Але швидше за все у базі вже є
+								pass
 		
 		####################################################################
 		
@@ -886,7 +923,9 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(pattern='📉 Неудачная попытка майнинга!'))
+		@client.on(events.NewMessage(
+		incoming=True,from_users=6333102398,
+		pattern='📉 Неудачная попытка майнинга!'))
 		async def Неудачнаяпопыткамайнинга(event):
 			c = event.chat_id
 			m = event.message
