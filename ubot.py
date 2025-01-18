@@ -359,7 +359,11 @@ async def main():
 							do_int=datetime.timestamp(a)
 							do_txt=str(a.strftime("%d.%m.%y"))
 							
-							experience=re.findall(r": ([0-9\.\,k]+).+ \| ([\+|\-]([0-9\ ]+)|хз)",t)[0][0]
+							try:
+								experience=re.sub(' ','',re.findall(
+								r" ([0-9\.\,k\ ]+).+ \| ([\+|\-]([0-9\ ]+)|хз)",t)[0][0])
+							except Exception as Err:
+								print(f'Err: {Err} (experience)')
 							
 							if ',' in experience:
 								experience=re.sub(r',', r'.',experience)
