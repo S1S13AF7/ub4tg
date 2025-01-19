@@ -271,7 +271,10 @@ async def main():
 			# https://www.sqlite.org/pragma.html
 			c.execute('PRAGMA optimize=0x10002'); conn.commit()
 			c.execute('VACUUM'); conn.commit()
-			
+			def optimize():
+				c.execute('PRAGMA optimize'); conn.commit()
+				c.execute('VACUUM'); conn.commit()
+
 		if mine:
 			try:
 				await client.send_message(6333102398,'Майн')
@@ -563,7 +566,7 @@ async def main():
 						del victims# free memory
 						
 						if db_sqlite3:
-							c.execute('PRAGMA optimize'); conn.commit()
+							optimize()
 						
 						if br:
 							bf_run = True
@@ -792,7 +795,7 @@ async def main():
 				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
 				p= re.findall(r'«(.+)»',t)	#	патогеном
 				r= re.findall(
-				r'(Аферист|Злочинець|Организатор.*|Порноактер): <a href="tg://openmessage\?user_id=(\d+)">',h)
+				r'(Аферист|Злочинець|Организатор.*|Планировщик.*|Порноактер): <a href="tg://openmessage\?user_id=(\d+)">',h)
 				if r:
 					u_id=int(r[0][1])
 					if u_id!=my_id:
@@ -976,10 +979,10 @@ async def main():
 			m = event.message
 			if m.sender_id == 6333102398:
 				if m.mentioned or m.chat_id == 6333102398:
-					c.execute('PRAGMA optimize'); conn.commit()
 					global bf_mode,ostalos_pt
 					bf_mode = 'Slow'
 					ostalos_pt=0
+					optimize()
 		
 		####################################################################
 		
