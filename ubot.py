@@ -988,13 +988,13 @@ async def main():
 		
 		@client.on(events.NewMessage(
 		incoming=True,from_users=6333102398,
-		pattern='📉 Неудачная попытка майнинга!'))
+		pattern='👎🏻💔 Неудача!'))
 		async def Неудачнаяпопыткамайнинга(event):
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
 			if m.chat_id == 6333102398:	# крч від неудачних будем лише в лс бота
-				r=re.findall(r'⏱ Следующая попытка — через ([0-9]{1,3}) минут',t)
+				r=re.findall(r'Следующая попытка через ([0-9]{1,3}) минут',t)
 				mine=get_config_key("mine")
 				if r and mine:
 					print(t)
@@ -1008,7 +1008,7 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(incoming=True,pattern=r'.+намайн.+'))
+		@client.on(events.NewMessage(incoming=True,pattern=r'.+Намайн.+'))
 		async def mine_ok(event):
 			c = event.chat_id
 			m = event.message
