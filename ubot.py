@@ -621,10 +621,9 @@ async def main():
 					await event.edit('Downloading file...')
 				except Exception as wtf:
 					print(wtf)	#	print
-				#file_path = await reply.download_media(file=f"{default_directory}")
 				file=ffnof(await reply.download_media(file=default_directory))
 				if file is None:
-					e = '⚠️ file is None?! (WTF?)'
+					e = '⚠️ file is None?! (WTF?)' # хз чому так буває, але бува.
 					try:
 						await event.edit(e)
 					except Exception as wtf:
@@ -659,8 +658,6 @@ async def main():
 						return
 					count=0
 					added=0
-					updtd=0
-					mysql=0
 					errrs=0
 					for raw_v in raw_victims:
 						if raw_v == '':
@@ -669,7 +666,6 @@ async def main():
 						if not user_id:
 							continue
 						user_id = int(user_id[0][1])
-						#profit = re.findall(r' \| ([0-9\.\,k]+)', raw_v) # Всеодно то вже не так.
 						profit = 1 # Або більше.
 						if user_id:
 							print(raw_v)
@@ -686,7 +682,7 @@ async def main():
 									#errrs+=1
 									# швидше за все просто вже є, тому це не помилка навіть.
 					#rof
-					#c.execute('PRAGMA optimize'); conn.commit()
+					
 					if db_sqlite3:
 						optimize()
 						
