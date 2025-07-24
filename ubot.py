@@ -137,6 +137,20 @@ def bfrnm(p=None):
 
 ########################################################################
 
+def ffnof(p=None):
+	#FixFuckingNamesOfFiles
+	if p is None:
+		return p
+	sho = ' ()' # ті символи є в бекапах з інших ботів.
+	fn=re.sub(sho,'_',p) # ну так то вже ок?!
+	if os.path.exists(fn):
+		os.remove(fn)
+	shutil.copy2(p, fn)
+	os.remove(p)
+	return fn
+
+########################################################################
+
 def get_config_key(key: str) -> typing.Union[str, bool]:
 	"""
 	Parse and return key from config
@@ -360,11 +374,14 @@ async def main():
 							days=int(re.sub(r' ','',re.findall(r'([0-9]+) (д|d).*',t)[0][0]))
 							a=datetime.fromtimestamp(when)+timedelta(days=int(days), hours=3)
 							do_int=datetime.timestamp(a)
-							do_txt=str(a.strftime("%d.%m.%y"))
+							do_txt=str(a.strftime("%d.%m.%Y"))
 							
 							try:
 								experience=re.sub(' ','',re.findall(
 								r" ([0-9\.\,k\ ]+).+ \| ([\+|\-]([0-9\ ]+)|хз)",t)[0][0])
+								e=re.findall(r'([0-9]+)',experience)
+								if e==experience:
+									exp_int=int(e)
 							except Exception as Err:
 								print(f'Err: {Err} (experience)')
 							
@@ -457,7 +474,7 @@ async def main():
 							bio=int(bio)
 						a=datetime.fromtimestamp(w)+timedelta(days=int(my_days))
 						do_int=int(datetime.timestamp(a))
-						do_txt=str(a.strftime("%d.%m.%y"))
+						do_txt=str(a.strftime("%d.%m.%Y"))
 						if db_sqlite3:
 							if u==my_id:
 								try:
@@ -534,7 +551,7 @@ async def main():
 							if my: # якщо це свій бекап
 								expr = int(v['until_infect'])
 								a=datetime.fromtimestamp(expr)
-								do=str(a.strftime("%d.%m.%y"))
+								do=str(a.strftime("%d.%m.%Y"))
 							else:
 								do=''
 							if db_sqlite3:
@@ -590,6 +607,111 @@ async def main():
 								os.system(
 								f"termux-notification --title '{my_id}' --content '{info}'"
 								)
+		
+		####################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'\.fromtxt$'))
+		# крч я вже тупо всіх сожрав, переходимо на текстовички (beta)
+		async def cmd_bio_steal_backup_fromtxt(event):
+			ь = '⚠️ еррор бля'
+			m = event.message
+			if event.reply_to:
+				reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
+				try:
+					await event.edit('Downloading file...')
+				except Exception as wtf:
+					print(wtf)	#	print
+				#file_path = await reply.download_media(file=f"{default_directory}")
+				file=ffnof(await reply.download_media(file=default_directory))
+				if file is None:
+					e = '⚠️ file is None?! (WTF?)'
+					try:
+						await event.edit(e)
+					except Exception as wtf:
+							print(wtf)	#	print
+					print(e)
+					return
+				print(f'📃 saved:{file}') # кудя?
+				global bf_run	# будемо ставить на паузу
+				br=bf_run	# запам'ятає чи запущено?
+				print(f'📃 saved:{file}')
+				victims = None
+				raw_victims = None
+				file_format = None
+				with open(file,"r",encoding="utf-8") as f:
+					if file.lower().endswith('.txt'):
+						raw_victims = f.readlines()
+						file_format = 'txt'
+						print('✅ ok.')
+						if br:
+							bf_run = False
+							#print('paused')
+						try:
+							await event.edit('📝 Processing raw txt victims...')
+						except Exception as wtf:
+							print(wtf)	#	print
+					else:
+						try:
+							await event.edit('⚠️ Format 𝙣𝙤𝙩 supported.')
+						except Exception as wtf:
+							print(wtf)	#	print
+						print('⚠️ 𝙣𝙤𝙩 ok.')
+						return
+					count=0
+					added=0
+					updtd=0
+					mysql=0
+					errrs=0
+					for raw_v in raw_victims:
+						if raw_v == '':
+							continue
+						user_id = re.findall(r'(tg://openmessage\?user_id=|@)([0-9]{6,10})',raw_v)
+						if not user_id:
+							continue
+						user_id = int(user_id[0][1])
+						#profit = re.findall(r' \| ([0-9\.\,k]+)', raw_v) # Всеодно то вже не так.
+						profit = 1 # Або більше.
+						if user_id:
+							print(raw_v)
+							count +=1
+							id_user = user_id
+							bio_int = profit
+							when_int= 0
+							if db_sqlite3:
+								try:
+									c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(id_user),int(0),int(bio_int),int(0))); conn.commit()# save not my pacients
+									added+=1
+								except Exception as Err:
+									pass
+									#errrs+=1
+									# швидше за все просто вже є, тому це не помилка навіть.
+					#rof
+					#c.execute('PRAGMA optimize'); conn.commit()
+					if db_sqlite3:
+						optimize()
+						
+						if br:
+							bf_run = True
+						
+						info = ''
+						if count > 0:
+							info = f'count: {count}'
+						if added > 0:
+							info = f'{info}\nadded: {added}'
+						if errrs > 0:
+							info = f'{info}\nerrrs: {errrs}'
+						print(info)
+						if len (info) > 0:
+							try:
+								await event.reply(info)
+							except:
+								pass
+							if termux_api:
+								os.system(
+								f"termux-notification --title '{my_id}' --content '{info}'"
+								)
+					del victims  # free memory
+					del raw_victims
 		
 		####################################################################
 		
@@ -1008,7 +1130,7 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(incoming=True,pattern=r'.+Намайн.+'))
+		@client.on(events.NewMessage(incoming=True,pattern=r'.+Удачная попытка майнинга.+'))
 		async def mine_ok(event):
 			c = event.chat_id
 			m = event.message
