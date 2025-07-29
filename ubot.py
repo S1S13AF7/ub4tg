@@ -194,7 +194,7 @@ def save_config_key(key: str, value: str) -> bool:
 	return True
 
 ########################################################################
-noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398]
+noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398,7959200286]
 try:
 	#noeb_file = "noeb.json"
 	with open(noeb_file, "r") as read_file:
@@ -507,7 +507,7 @@ async def main():
 						if u==my_id:
 							print(f'🆔 {uid} ➕{bio}') # показать в консолі
 					if db_sqlite3:
-						c.execute('PRAGMA optimize'); conn.commit()
+						optimize()
 		
 		####################################################################
 		
@@ -1028,7 +1028,7 @@ async def main():
 						print(f'🆔 {z} ➕{b}') # показать в консолі
 				
 				if db_sqlite3:
-					c.execute('PRAGMA optimize'); conn.commit()
+					optimize()
 		
 		####################################################################
 		
