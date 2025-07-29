@@ -613,7 +613,6 @@ async def main():
 		@client.on(events.NewMessage(outgoing=True, pattern=r'\.fromtxt$'))
 		# крч я вже тупо всіх сожрав, переходимо на текстовички (beta)
 		async def cmd_bio_steal_backup_fromtxt(event):
-			ь = '⚠️ еррор бля'
 			m = event.message
 			if event.reply_to:
 				reply = await client.get_messages(event.peer_id, ids=event.reply_to.reply_to_msg_id)
@@ -834,7 +833,7 @@ async def main():
 							except Exception as wtf:
 								print(wtf) #why?
 					print(f'✅ {sndmsgs}') # how
-					c.execute('PRAGMA optimize'); conn.commit()
+					optimize()
 		
 		####################################################################
 		
@@ -1030,6 +1029,43 @@ async def main():
 				
 				if db_sqlite3:
 					c.execute('PRAGMA optimize'); conn.commit()
+		
+		####################################################################
+		
+		@client.on(events.NewMessage(
+		from_users=6333102398,
+		pattern=
+		r'.+(Слетевшие игроки лаборатории|Список последних слетевших игроков)'))
+		async def infect_list(event):
+			m = event.message
+			t = m.raw_text
+			if m.entities:
+				if len(m.entities) > 1:
+					w=int(datetime.timestamp(m.date))	#	when_int
+					h=utils.sanitize_parse_mode('html').unparse(t,m.entities)
+					r=re.findall(r'<a href="tg://openmessage\?user_id=([0-9]+)">.+</a> \| ([0-9\ ]+)',h) # v,
+					u=int(re.findall(r'«</strong><a href="tg://openmessage\?user_id=([0-9]+)">.+</a>',h)[0])
+					count=0
+					added=0
+					mysql=0
+					errrs=0
+				for v in r:
+					count+=1
+					z=int(v[0])
+					#b=int(re.sub(' ','',str(v[1]))) # інфа вобще неактуальна
+					if db_sqlite3 and z!=my_id and z not in noeb:
+						try:
+							c.execute("INSERT INTO avocado(user_id,when_int,bio_int,expr_int) VALUES (?,?,?,?)", (int(z),int(0),int(1),int(0))); conn.commit()# save pacients
+							added+=1
+						except:
+							pass
+				#rof
+				info = ''
+				if count > 0:
+					info = f'count: {count}'
+					if added > 0:
+						info = f'{info}\added: {added}'
+					print(info)
 		
 		####################################################################
 		
