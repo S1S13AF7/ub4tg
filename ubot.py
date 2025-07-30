@@ -194,7 +194,7 @@ def save_config_key(key: str, value: str) -> bool:
 	return True
 
 ########################################################################
-noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398,7959200286]
+noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398,7959200286,7135]
 try:
 	#noeb_file = "noeb.json"
 	with open(noeb_file, "r") as read_file:
@@ -282,10 +282,25 @@ async def main():
 			)''');
 			conn.commit()
 			
+			####################################################################
+			# трішки 'костилів' для тих айді які не знайдені, але десь взялись #
+			rmids=[7959200286,7135] # один бот, інший вобще хз де взявся ?? 
+			def rmbadids():
+				for id in rmids:
+					id=int(id)
+					#print(id)
+					try:
+						c.execute("DELETE FROM avocado WHERE user_id = %d" % int(id)); conn.commit()
+					except:
+						pass # ok
+			
+			####################################################################
+			
 			# https://www.sqlite.org/pragma.html
 			c.execute('PRAGMA optimize=0x10002'); conn.commit()
 			c.execute('VACUUM'); conn.commit()
 			def optimize():
+				rmbadids()
 				c.execute('PRAGMA optimize'); conn.commit()
 				c.execute('VACUUM'); conn.commit()
 
