@@ -54,6 +54,7 @@ if is_termux:
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
 		noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
+		chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -204,7 +205,7 @@ except:
 	with open(chts_file, "w", encoding="utf-8") as write_file:
 		json.dump(chts, write_file,ensure_ascii=False, indent='	')
 ########################################################################
-noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398,7959200286,7135]
+noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398,7959200286]
 try:
 	#noeb_file = "noeb.json"
 	with open(noeb_file, "r") as read_file:
@@ -748,6 +749,14 @@ async def main():
 					if r:
 						# є ід юзера якого невдалось
 						id=int(r[0]) # ну власне ід.
+						global noeb,rmids
+						if id not in noeb:
+							noeb.append(id)
+							with open(noeb_file, "w", encoding="utf-8") as write_file:
+								json.dump(noeb, write_file,ensure_ascii=False, indent='	')
+								# зберігаємо туда, на майбутнє, вдруг попадеться знов?
+						if id not in rmids:
+							rmids.append(id)
 						if db_pymysql:
 							try:
 								con.query(f"DELETE FROM `tg_bio_attack` WHERE `user_id` = {id};"); # нафіг.
