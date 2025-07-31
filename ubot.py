@@ -745,7 +745,7 @@ async def main():
 					t= reply.raw_text
 					if reply.entities:
 						t=utils.sanitize_parse_mode('html').unparse(t,reply.entities)
-					r= re.findall(r'([0-9]{6,10})',t)
+					r= re.findall(r'([0-9]{1,})',t)
 					if r:
 						# є ід юзера якого невдалось
 						id=int(r[0]) # ну власне ід.
