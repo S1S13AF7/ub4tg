@@ -27,6 +27,7 @@ sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 noeb_file = "noeb.json"		# кого ненада заражать айдішки
+chts_file = "chts.json"		# чати де працюватимуть "чіти"
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -193,6 +194,15 @@ def save_config_key(key: str, value: str) -> bool:
 	
 	return True
 
+########################################################################
+chts=[]
+try:
+	chts_file = "chts.json"		# чати:
+	with open(chts_file, "r") as read_file:
+		chts = json.load(read_file)
+except:
+	with open(chts_file, "w", encoding="utf-8") as write_file:
+		json.dump(chts, write_file,ensure_ascii=False, indent='	')
 ########################################################################
 noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398,7959200286,7135]
 try:
@@ -1228,6 +1238,51 @@ async def main():
 				except Exception as Err:
 					print(f'err: {Err} in reset')
 					await event.edit(Err)	#	ред.
+		
+		####################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
+		async def sv_cheats(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			global chts
+			pong = '??'
+			try:
+				with open(chts_file, "r") as read_file:
+					chts = json.load(read_file)
+			except Exception as Err:
+				print(Err)
+			if int(c) > 0:
+				pong='Алоу це не чат!' #wtf?!
+				await event.edit(pong) # ред.
+				print(pong)
+				return
+			if t=='+chts' or t=='-chts':
+				need_save=False
+				if '+' in t:
+					if c not in chts:
+						chts.append(c)
+						need_save=True
+					pong=f'✅ sv_cheats on {c}'
+				if '-' in t:
+					if c in chts:
+						chts.remove(c)
+						need_save=True
+					pong=f'❎ sv_cheats on {c}'
+				if need_save:
+					with open(chts_file, "w", encoding="utf-8") as write_file:
+						json.dump(chts,write_file,ensure_ascii=False,indent='	')
+			else:
+				if c in chts:
+					pong=f'✅ sv_cheats on {c}' # ok?!
+				if c not in chts:
+					pong=f'❎ sv_cheats on {c}' # off!
+			try:
+				await event.edit(pong) # ред.
+				print(pong)
+			except Exception as wtf:
+				print(wtf)	#	print
 		
 		####################################################################
 		
