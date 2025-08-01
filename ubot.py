@@ -295,15 +295,17 @@ async def main():
 			
 			####################################################################
 			# трішки 'костилів' для тих айді які не знайдені, але десь взялись #
-			rmids=[7959200286,7135] # один бот, інший вобще хз де взявся ?? 
+			rmids=[] # сюда можуть додаватись айдішки які потрібно буде видалити
 			def rmbadids():
-				for id in rmids:
-					id=int(id)
-					#print(id)
-					try:
-						c.execute("DELETE FROM avocado WHERE user_id = %d" % int(id)); conn.commit()
-					except:
-						pass # ok
+				if (len(rmids)):
+					for id in rmids:
+						id=int(id)
+						#print(id)
+						try:
+							c.execute("DELETE FROM avocado WHERE user_id = %d" % int(id)); 
+							conn.commit()
+						except:
+							pass # ok
 			
 			####################################################################
 			
@@ -857,6 +859,8 @@ async def main():
 							#	❌ Нельзя заразить самого себя
 							rs = float(random.uniform(rs_min,rs_max))# random
 							eb = f'Биоеб {row[0]}' # повідомлення.
+							if ostalos_pt > 90 or bf_mode=='Turbo':#одне і те ж.
+								eb = f'Биоеб 10 {row[0]}' # повідомлення.
 							print(f'⏳ {eb} and wait {rs}')
 							try:
 								m=await event.reply(eb)
