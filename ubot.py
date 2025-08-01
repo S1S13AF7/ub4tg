@@ -1273,20 +1273,20 @@ async def main():
 					if c not in chts:
 						chts.append(c)
 						need_save=True
-					pong=f'✅ sv_cheats on {c}'
+					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>'
 				if '-' in t:
 					if c in chts:
 						chts.remove(c)
 						need_save=True
-					pong=f'❎ sv_cheats on {c}'
+					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>'
 				if need_save:
 					with open(chts_file, "w", encoding="utf-8") as write_file:
 						json.dump(chts,write_file,ensure_ascii=False,indent='	')
 			else:
 				if c in chts:
-					pong=f'✅ sv_cheats on {c}' # ok?!
+					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>' # ok?!
 				if c not in chts:
-					pong=f'❎ sv_cheats on {c}' # off!
+					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>' # off!
 			try:
 				await event.edit(pong) # ред.
 				print(pong)
