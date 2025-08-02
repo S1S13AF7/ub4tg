@@ -754,9 +754,6 @@ async def main():
 						global noeb,rmids
 						if id not in noeb:
 							noeb.append(id)
-							with open(noeb_file, "w", encoding="utf-8") as write_file:
-								json.dump(noeb, write_file,ensure_ascii=False, indent='	')
-								# зберігаємо туда, на майбутнє, вдруг попадеться знов?
 						if id not in rmids:
 							rmids.append(id)
 						if db_pymysql:
@@ -812,7 +809,7 @@ async def main():
 					save_config_key('ch_id',ch_id)
 				while bf_run:
 					#	✅ погнали?
-					count=int(c.execute(f"SELECT COUNT(*) FROM `avocado` WHERE expr_int<{when}").fetchone()[0])
+					count=int(c.execute(f"SELECT COUNT(*) FROM `avocado` WHERE expr_int<{when} OR bio_int==1").fetchone()[0]) # рахуємо разом з одиничками, а то пише, що нема 🤷
 					if count< len(noeb)+2: # так як, теоретично, там можуть всі вони + свій айді, тому жрать нема
 						await asyncio.sleep(random.uniform(0.567,2))	#	чуток ждем
 						bf_run = False
