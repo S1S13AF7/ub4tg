@@ -28,6 +28,7 @@ default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 noeb_file = "noeb.json"		# кого ненада заражать айдішки
 chts_file = "chts.json"		# чати де працюватимуть "чіти"
+apis_file = "apis.json"		# API пока лише локальні
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -55,6 +56,7 @@ if is_termux:
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
 		noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
 		chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
+		apis_file = f'{default_directory}/{apis_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -195,6 +197,15 @@ def save_config_key(key: str, value: str) -> bool:
 	
 	return True
 
+########################################################################
+apis=["http://localhost/tg/","http://dell.lan/tg/","http://acer.lan/tg/"]
+try:
+	apis_file = "apis.json"		# апішки:
+	with open(apis_file, "r") as read_file:
+		apis = json.load(read_file)
+except:
+	with open(apis_file, "w", encoding="utf-8") as write_file:
+		json.dump(apis, write_file,ensure_ascii=False, indent='	')
 ########################################################################
 chts=[]
 try:
