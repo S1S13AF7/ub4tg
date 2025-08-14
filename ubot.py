@@ -27,8 +27,8 @@ sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 noeb_file = "noeb.json"		# кого ненада заражать айдішки
-chts_file = "chts.json"		# чати де працюватимуть "чіти"
-apis_file = "apis.json"		# API пока лише локальні
+#chts_file = "chts.json"		# чати де працюватимуть "чіти"
+#apis_file = "apis.json"		# API пока лише локальні
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -55,8 +55,8 @@ if is_termux:
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
 		noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
-		chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
-		apis_file = f'{default_directory}/{apis_file}' # в доступну без рута
+		#chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
+		#apis_file = f'{default_directory}/{apis_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -198,24 +198,6 @@ def save_config_key(key: str, value: str) -> bool:
 	return True
 
 ########################################################################
-apis=["http://localhost/tg/","http://dell.lan/tg/","http://acer.lan/tg/"]
-try:
-	apis_file = "apis.json"		# апішки:
-	with open(apis_file, "r") as read_file:
-		apis = json.load(read_file)
-except:
-	with open(apis_file, "w", encoding="utf-8") as write_file:
-		json.dump(apis, write_file,ensure_ascii=False, indent='	')
-########################################################################
-chts=[]
-try:
-	chts_file = "chts.json"		# чати:
-	with open(chts_file, "r") as read_file:
-		chts = json.load(read_file)
-except:
-	with open(chts_file, "w", encoding="utf-8") as write_file:
-		json.dump(chts, write_file,ensure_ascii=False, indent='	')
-########################################################################
 noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398,7959200286]
 try:
 	#noeb_file = "noeb.json"
@@ -304,27 +286,10 @@ async def main():
 			)''');
 			conn.commit()
 			
-			####################################################################
-			# трішки 'костилів' для тих айді які не знайдені, але десь взялись #
-			rmids=[] # сюда можуть додаватись айдішки які потрібно буде видалити
-			def rmbadids():
-				if (len(rmids)):
-					for id in rmids:
-						id=int(id)
-						#print(id)
-						try:
-							c.execute("DELETE FROM avocado WHERE user_id = %d" % int(id)); 
-							conn.commit()
-						except:
-							pass # ok
-			
-			####################################################################
-			
 			# https://www.sqlite.org/pragma.html
 			c.execute('PRAGMA optimize=0x10002'); conn.commit()
 			c.execute('VACUUM'); conn.commit()
 			def optimize():
-				rmbadids()
 				c.execute('PRAGMA optimize'); conn.commit()
 				c.execute('VACUUM'); conn.commit()
 
@@ -762,11 +727,9 @@ async def main():
 					if r:
 						# є ід юзера якого невдалось
 						id=int(r[0]) # ну власне ід.
-						global noeb,rmids
+						global noeb
 						if id not in noeb:
 							noeb.append(id)
-						if id not in rmids:
-							rmids.append(id)
 						if db_pymysql:
 							try:
 								con.query(f"DELETE FROM `tg_bio_attack` WHERE `user_id` = {id};"); # нафіг.
@@ -1259,51 +1222,6 @@ async def main():
 				except Exception as Err:
 					print(f'err: {Err} in reset')
 					await event.edit(Err)	#	ред.
-		
-		####################################################################
-		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
-		async def sv_cheats(event):
-			c = event.chat_id
-			m = event.message
-			t = m.raw_text
-			global chts
-			pong = '??'
-			try:
-				with open(chts_file, "r") as read_file:
-					chts = json.load(read_file)
-			except Exception as Err:
-				print(Err)
-			if int(c) > 0:
-				pong='Алоу це не чат!' #wtf?!
-				await event.edit(pong) # ред.
-				print(pong)
-				return
-			if t=='+chts' or t=='-chts':
-				need_save=False
-				if '+' in t:
-					if c not in chts:
-						chts.append(c)
-						need_save=True
-					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>'
-				if '-' in t:
-					if c in chts:
-						chts.remove(c)
-						need_save=True
-					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>'
-				if need_save:
-					with open(chts_file, "w", encoding="utf-8") as write_file:
-						json.dump(chts,write_file,ensure_ascii=False,indent='	')
-			else:
-				if c in chts:
-					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>' # ok?!
-				if c not in chts:
-					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>' # off!
-			try:
-				await event.edit(pong) # ред.
-				print(pong)
-			except Exception as wtf:
-				print(wtf)	#	print
 		
 		####################################################################
 		
