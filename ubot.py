@@ -1137,7 +1137,8 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(pattern='👺 Чекай нових патогенів!'))
+		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
+		pattern=r'(👺|📛) (Чекай нових патогенів|Жди новых патогенов)!'))
 		async def need_p(event):
 			m = event.message
 			if m.sender_id == 6333102398:
