@@ -355,8 +355,8 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(incoming=True,pattern=
-		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|насрал).*'))
+		@client.on(events.NewMessage(incoming=True,from_users=6333102398,pattern=
+		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|обмануло|поставила|рассмешил).*'))
 		async def infect(event):
 			# хто там кого того
 			m = event.message
@@ -366,7 +366,7 @@ async def main():
 				if m.entities:
 					if len(m.entities) > 1:
 						h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
-						r= re.findall(r'<a href="tg://openmessage\?user_id=([0-9]{6,10})">.*</a>.+<a href="tg://openmessage\?user_id=([0-9]{6,10})">',h)
+						r= re.findall(r'<a href="tg://openmessage\?user_id=([0-9]+)">.*</a>.+<a href="tg://openmessage\?user_id=([0-9]+)">',h)
 						p= re.findall(r'«(.+)»',t)	#	патогеном
 						if r:
 							#print(h)
@@ -665,7 +665,7 @@ async def main():
 					for raw_v in raw_victims:
 						if raw_v == '':
 							continue
-						user_id = re.findall(r'(tg://openmessage\?user_id=|@)([0-9]{6,10})',raw_v)
+						user_id = re.findall(r'(tg://openmessage\?user_id=|@)([0-9]{4,10})',raw_v)
 						if not user_id:
 							continue
 						user_id = int(user_id[0][1])
@@ -1243,6 +1243,7 @@ async def main():
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
 			href="https://github.com/S1S13AF7/ub4tg">code</a>;
 			
+			💬 <u>@misc_games</u>
 			💬 <u>@ub4tg</u>
 			'''
 			await asyncio.sleep(random.uniform(0.3,1))
