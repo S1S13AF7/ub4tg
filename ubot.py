@@ -3,7 +3,6 @@
 import asyncio
 
 from datetime import datetime, timedelta
-# from telethon.sync import TelegramClient
 from telethon import TelegramClient, events, functions, types, utils
 
 import os
@@ -11,9 +10,6 @@ import re
 import random
 import time
 import json
-
-#import pymysql
-#import pymysql.cursors
 
 import sqlite3
 
@@ -27,8 +23,6 @@ sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 noeb_file = "noeb.json"		# кого ненада заражать айдішки
-#chts_file = "chts.json"		# чати де працюватимуть "чіти"
-#apis_file = "apis.json"		# API пока лише локальні
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -55,8 +49,6 @@ if is_termux:
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
 		noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
-		#chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
-		#apis_file = f'{default_directory}/{apis_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -356,7 +348,7 @@ async def main():
 		####################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,pattern=
-		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|напугала|обмануло|поставила|рассмешил).*'))
+		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|инфицировал|напугала|обмануло|поставила|рассмешил).*'))
 		async def infect(event):
 			# хто там кого того
 			m = event.message
