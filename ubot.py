@@ -23,6 +23,7 @@ sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 noeb_file = "noeb.json"		# кого ненада заражать айдішки
+chts_file = "chts.json"		# чати де працюватимуть "чіти"
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -49,6 +50,7 @@ if is_termux:
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
 		noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
+		chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -189,6 +191,15 @@ def save_config_key(key: str, value: str) -> bool:
 	
 	return True
 
+########################################################################
+chts=[]
+try:
+	chts_file = "chts.json"		# чати:
+	with open(chts_file, "r") as read_file:
+		chts = json.load(read_file)
+except:
+	with open(chts_file, "w", encoding="utf-8") as write_file:
+		json.dump(chts, write_file,ensure_ascii=False, indent='	')
 ########################################################################
 noeb=[707693258,5137994780,5226378684,5434504334,5443619563,6333102398,7959200286]
 try:
@@ -348,7 +359,7 @@ async def main():
 		####################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,pattern=
-		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|инфицировал|напугала|обмануло|поставила|рассмешил).*'))
+		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|инфицировал|напугала|насрал|нокаутировал|обмануло|поставила|рассмешил).*'))
 		async def infect(event):
 			# хто там кого того
 			m = event.message
@@ -1218,8 +1229,76 @@ async def main():
 		
 		####################################################################
 		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
+		async def sv_cheats(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			global chts
+			pong = '??'
+			try:
+				with open(chts_file, "r") as read_file:
+					chts = json.load(read_file)
+			except Exception as Err:
+				print(Err)
+			if int(c) > 0:
+				pong='Алоу це не чат!' #wtf?!
+				await event.edit(pong) # ред.
+				print(pong)
+				return
+			if t=='+chts' or t=='-chts':
+				need_save=False
+				if '+' in t:
+					if c not in chts:
+						chts.append(c)
+						need_save=True
+					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>'
+				if '-' in t:
+					if c in chts:
+						chts.remove(c)
+						need_save=True
+					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>'
+				if need_save:
+					with open(chts_file, "w", encoding="utf-8") as write_file:
+						json.dump(chts,write_file,ensure_ascii=False,indent='	')
+			else:
+				if c in chts:
+					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>' # ok?!
+				if c not in chts:
+					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>' # off!
+			try:
+				await event.edit(pong) # ред.
+				print(pong)
+			except Exception as wtf:
+				print(wtf)	#	print
+		
+		####################################################################
+		
+		@client.on(events.NewMessage(pattern=r'\.х(ил)?$'))
+		async def cmd_х(event):
+			c = event.chat_id
+			m = event.message
+			s = m.sender_id
+			if c in chts:
+				h = await message_q(f"Хил",6333102398,mark_read=True)
+				t = h.raw_text
+				if s == my_id:
+					try:
+						await event.edit(t) # ред.
+					except Exception as wtf:
+						print(wtf)	#	print
+				else:
+					try:
+						m=await event.reply(t)
+						await asyncio.sleep(random.uniform(2.2,3.3))
+						await client.delete_messages(event.chat_id,m.id)
+					except Exception as wtf:
+						print(wtf) #why?
+
+		####################################################################
+		
 		@client.on(events.NewMessage(outgoing=True, 
-		pattern=r'.(h(e)?lp|х(е)?лп)'))
+		pattern=r'.(h(e)?lp|х(е)?лп)$'))
 		async def cmd_help(event):
 			help_message = f'''
 			<blockquote>📃 код і є документація 😈</blockquote>
