@@ -1279,6 +1279,13 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			s = m.sender_id
+			global chts
+			try:
+				with open(chts_file, "r") as read_file:
+					chts = json.load(read_file)
+			except Exception as Err:
+				print(Err)
+				#return
 			if c in chts:
 				h = await message_q(f"Хил",6333102398,mark_read=True)
 				t = h.raw_text
