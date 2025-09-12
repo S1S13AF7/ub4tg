@@ -1287,8 +1287,12 @@ async def main():
 				print(Err)
 				#return
 			if c in chts:
+				await asyncio.sleep(random.uniform(0.333,1))	# ждем
 				h = await message_q(f"Хил",6333102398,mark_read=True)
 				t = h.raw_text
+				r = re.findall(r'([0-9]+)',t)
+				if r:
+					t=re.sub(r,'||????||',t)
 				if s == my_id:
 					try:
 						await event.edit(t) # ред.
