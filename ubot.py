@@ -359,7 +359,7 @@ async def main():
 		####################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,pattern=
-		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|инфицировал|напугала|насрал|нокаутировал|обмануло|поставила|рассмешил).*'))
+		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|инфицировал|напугала|насрал|нокаутировал|обмануло|оглушил|поставила|рассмешил).*'))
 		async def infect(event):
 			# хто там кого того
 			m = event.message
@@ -668,7 +668,7 @@ async def main():
 					for raw_v in raw_victims:
 						if raw_v == '':
 							continue
-						user_id = re.findall(r'(tg://openmessage\?user_id=|@)([0-9]{4,10})',raw_v)
+						user_id = re.findall(r'(tg://openmessage\?user_id=|@)([0-9]{2,10})',raw_v)
 						if not user_id:
 							continue
 						user_id = int(user_id[0][1])
@@ -1274,7 +1274,7 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(pattern=r'\.х(ил)?$'))
+		@client.on(events.NewMessage(pattern=r'\.?хк?$'))
 		async def cmd_х(event):
 			c = event.chat_id
 			m = event.message
@@ -1305,7 +1305,7 @@ async def main():
 						await client.delete_messages(event.chat_id,m.id)
 					except Exception as wtf:
 						print(wtf) #why?
-
+		
 		####################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, 
