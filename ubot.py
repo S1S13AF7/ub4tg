@@ -359,7 +359,7 @@ async def main():
 		####################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,pattern=
-		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|инфицировал|напугала|насрал|нокаутировал|обмануло|оглушил|поставила|рассмешил).*'))
+		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|инфицировал|напугала|насрал|нокаутировал|обмануло|оглушил|поставила|рассмешил|угостила).*'))
 		async def infect(event):
 			# хто там кого того
 			m = event.message
@@ -1319,6 +1319,7 @@ async def main():
 			<code>.biofuck_r</code> – run 'биоеб'
 			<code>.biofuck_p</code> – run 'биоеб +'
 			<code>.biofuck_m</code> – run 'биоеб -'
+			<code>.fromtxt</code> – import ids.txt
 			<code>.reset</code> – set dates as '0'
 			<code>.help</code> – <u>you are here</u>
 			
