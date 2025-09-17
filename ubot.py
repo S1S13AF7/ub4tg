@@ -469,7 +469,8 @@ async def main():
 					r=re.findall(r'<code>([0-9]+)</code> \| \+([0-9,k]+) оп.',h) # list of infect
 					if u==my_id:
 						global ostalos_pt
-						ostalos_pt=int(re.sub(r' ','',re.findall(r'Осталось: ([0-9\ ]+) шт.',t)[0]))#Осталось:
+						ostalos_pt=int(re.sub(r' ','',re.findall(r'(Осталось|Remaining): ([0-9\ ]+)',t)[0][1]))
+						print(ostalos_pt)
 					for v in r:
 						uid=int(v[0])
 						bio=str(v[1])
