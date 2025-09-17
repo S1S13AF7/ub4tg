@@ -764,7 +764,7 @@ async def main():
 			when = int(datetime.timestamp(m.date))
 			await asyncio.sleep(random.uniform(0.4567,1))	# ждем
 			def get_some_patients(limit:int=1000,when:int=time.time()):
-				query=f"SELECT * FROM `avocado` WHERE expr_int <= {when} OR bio_int==1 ORDER BY expr_int ASC, when_int ASC LIMIT {limit}"
+				query=f"SELECT * FROM `avocado` WHERE expr_int <= {when} OR bio_int<=9 ORDER BY expr_int ASC, when_int ASC LIMIT {limit}"
 				users=list(c.execute(query).fetchall())
 				return users
 			if bf_run:
@@ -773,6 +773,10 @@ async def main():
 			elif event.chat_id > 0:
 				pong='Алоу це не чат!' #wtf?!
 				await event.edit(pong) # ред.
+			elif ch_id == -4202608983 or ch_id == -4228309319:
+				pong='👺 НЕ ТУТ!' # для того, хто плутає чати. 
+				await event.edit(pong) # ред.
+				return
 			else:
 				bf_run = True
 				sndmsgs= 0#++
@@ -861,6 +865,10 @@ async def main():
 			elif event.chat_id > 0:
 				pong='Алоу це не чат!' #wtf?!
 				await event.edit(pong) # ред.
+			elif ch_id == -4202608983 or ch_id == -4228309319:
+				pong='👺 НЕ ТУТ!' # для того, хто плутає чати. 
+				await event.edit(pong) # ред.
+				return
 			else:
 				bf_run = True
 				bioeb = 'Биоеб'# message
