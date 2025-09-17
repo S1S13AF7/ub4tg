@@ -1148,13 +1148,14 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
-		pattern=r'(👺|📛) (Чекай нових патогенів|Жди новых патогенов)!'))
+		@client.on(events.NewMessage(incoming=True,from_users=6333102398,pattern=
+		r'(👺|📛|⏱) (Чекай нових патогенів|Жди новых патогенов|Wait for new pathogens)!'))
 		async def need_p(event):
 			m = event.message
 			if m.sender_id == 6333102398:
 				if m.mentioned or m.chat_id == 6333102398:
 					global bf_mode,ostalos_pt
+					print(m.raw_text)
 					bf_mode = 'Slow'
 					ostalos_pt=0
 					optimize()
