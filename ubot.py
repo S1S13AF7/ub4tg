@@ -470,7 +470,6 @@ async def main():
 					if u==my_id:
 						global ostalos_pt
 						ostalos_pt=int(re.sub(r' ','',re.findall(r'(Осталось|Remaining): ([0-9\ ]+)',t)[0][1]))
-						print(ostalos_pt)
 					for v in r:
 						uid=int(v[0])
 						bio=str(v[1])
