@@ -402,7 +402,7 @@ async def main():
 							if u1id > 0 and u2id > 0:
 								if u1id==my_id:
 									global ostalos_pt,my_days
-									ostalos_pt=int(re.sub(r' ','',re.findall(r' Осталось: ([0-9\ ]+) шт.',t)[0]))
+									ostalos_pt=int(re.sub(r' ','',re.findall(r'(Осталось|Remaining): ([0-9\ ]+)',t)[0][1]))
 									my_days=int(days)	# свій летал. для списків (там не пише на скільки д.)
 								
 								if p:
@@ -469,7 +469,7 @@ async def main():
 					r=re.findall(r'<code>([0-9]+)</code> \| \+([0-9,k]+) оп.',h) # list of infect
 					if u==my_id:
 						global ostalos_pt
-						ostalos_pt=int(re.sub(r' ','',re.findall(r'(Осталось|Remaining): ([0-9\ ]+)',t)[0][1]))
+						ostalos_pt=int(re.sub(r' ','',re.findall(r'Осталось: ([0-9\ ]+) шт.',t)[0]))	# Осталось:
 					for v in r:
 						uid=int(v[0])
 						bio=str(v[1])
