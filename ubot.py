@@ -23,7 +23,6 @@ sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 noeb_file = "noeb.json"		# кого ненада заражать айдішки
-chts_file = "chts.json"		# чати де працюватимуть "чіти"
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -50,7 +49,6 @@ if is_termux:
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
 		noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
-		chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -299,6 +297,15 @@ async def main():
 		if mine:
 			try:
 				await client.send_message(6333102398,'Майн')
+			except Exception as wtf:
+				print(wtf)	#	print
+		elif get_config_key("farm"):
+			if ch_id < 0:
+				kuda = ch_id # слать в чат
+			else:
+				kuda = 5443619563 # якщо чат не задано
+			try:
+				await client.send_message(kuda,'Ферма')
 			except Exception as wtf:
 				print(wtf)	#	print
 		
@@ -1209,12 +1216,8 @@ async def main():
 		@client.on(events.NewMessage(pattern=r'✅ (ВДАЛО|ЗАЧЁТ)'))
 		async def ферма(event):
 			m = event.message
-			print(m.raw_text)
-			if m.sender_id in irises:
-				if ch_id < 0 and get_config_key("farm"):
-					rs=random.uniform(3.53,5.11)	# random
-					await asyncio.sleep(rs)	# ждем rs секунд
-					await client.send_message(ch_id,'''.таймер 4 часа\n.ферма''')
+			t = m.raw_text
+			# тут потом
 		
 		####################################################################
 		
