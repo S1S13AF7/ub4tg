@@ -1217,7 +1217,26 @@ async def main():
 		async def ферма(event):
 			m = event.message
 			t = m.raw_text
-			# тут потом
+			u = 0 # OR id
+			if m.sender_id in irises:
+				if ch_id < 0:
+					kuda = ch_id
+				elif m.chat_id in irises:
+					kuda = m.chat_id
+			if m.entities:
+				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
+				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
+				if r:
+					u=int(r[0])
+			else:
+				h=t
+				#return
+			if u==my_id or m.chat_id in irises:
+				if get_config_key("farm"):
+					print(m.raw_text)
+					rs=random.uniform(14404,14441)	# random
+					await asyncio.sleep(rs)	# ждем rs секунд
+					await client.send_message(kuda,'Ферма')
 		
 		####################################################################
 		
