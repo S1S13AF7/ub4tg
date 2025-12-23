@@ -313,9 +313,9 @@ async def main():
 		
 		async def get_id(url):
 			user_id = 0
-			if "tg://openmessage?user_id=" in url:
-				user_id = int(re.findall(r'user_id=([0-9]+)',url)[0])
-				#print(user_id)# А тут розкоментувать якщо нада бачить
+			if "tg://openmessage?user_id=" in url or "tg://user?id=" in url:
+				user_id = int(re.findall(r'id=([0-9]+)',url)[0])
+				#print(user_id)# розкоментувать якщо нада бачить
 				return user_id
 			if "t.me/" in url:
 				if db_pymysql:
@@ -797,7 +797,7 @@ async def main():
 					save_config_key('ch_id',ch_id)
 				while bf_run:
 					#	✅ погнали?
-					count=int(c.execute(f"SELECT COUNT(*) FROM `avocado` WHERE expr_int<{when} OR bio_int==1").fetchone()[0]) # рахуємо разом з одиничками, а то пише, що нема 🤷
+					count=int(c.execute(f"SELECT COUNT(*) FROM `avocado` WHERE expr_int<{when} OR bio_int==1").fetchone()[0])
 					if count< len(noeb)+2: # так як, теоретично, там можуть всі вони + свій айді, тому жрать нема
 						await asyncio.sleep(random.uniform(0.567,2))	#	чуток ждем
 						bf_run = False
@@ -1251,13 +1251,18 @@ async def main():
 			elif get_config_key("farm"):
 				r= re.findall(
 				r'Наступний прибуток через ([0-9]) годин.* ([0-9]{1,2}) хв.*',t)
+				s= re.findall(r'Наступний прибуток через ([0-9]{1,2}) сек.*',t)
 				if r:
 					г=int(r[0][0])
 					х=int(r[0][1])
 					w=int(int(г * 3600)+int(х * 60)+random.uniform(16,69))
-					print(f'⏳ wait ~{w}')	# ждем w секунд
-					await asyncio.sleep(w)	# ждем w секунд
-					await client.send_message(ch_id,'Ферма')
+				elif s:
+					w=int(int(s[0])+1)
+				else:
+					return				
+				print(f'⏳ wait ~{w}')	# ждем w секунд
+				await asyncio.sleep(w)	# ждем w секунд
+				await client.send_message(ch_id,'Ферма')
 			else:
 				return
 		
