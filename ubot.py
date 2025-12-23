@@ -1252,7 +1252,7 @@ async def main():
 				г= re.findall(r'([0-9]) годин.*',t)
 				х= re.findall(r'([0-9]{1,2}) хв.*',t)
 				с= re.findall(r'([0-9]{1,2}) сек.*',t)
-				w= random.uniform(1,9)
+				w= int(random.uniform(1,9)) # int(rnd)
 				if г:
 					г =int(г[0][0])
 					w+=int(г *3600)
