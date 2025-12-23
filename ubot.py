@@ -1248,24 +1248,19 @@ async def main():
 			t = m.raw_text
 			if m.sender_id not in irises or m.chat_id != ch_id:
 				return
-			elif get_config_key("farm"):
-				r= re.findall(
-				r'Наступний прибуток через ([0-9]) годин.* ([0-9]{1,2}) хв.*',t)
-				h= re.findall(
-				r'Наступний прибуток через ([0-9]{1,2}) хв.* ([0-9]{1,2}) сек.*',t)
-				s= re.findall(r'Наступний прибуток через ([0-9]{1,2}) сек.*',t)
-				if r:
-					г=int(r[0][0])
-					х=int(r[0][1])
-					w=int(int(г * 3600)+int(х * 60)+random.uniform(16,69))
-				elif h:
-					х=int(h[0][0])
-					с=int(h[0][1])
-					w=int(int(х * 60)+int(с)+random.uniform(1,9))
-				elif s:
-					w=int(int(s[0])+1)
-				else:
-					return				
+			elif get_config_key("farm") and 'Наступний прибуток через' in t:
+				г= re.findall(r'([0-9]) годин.*',t)
+				х= re.findall(r'([0-9]{1,2}) хв.*',t)
+				с= re.findall(r'([0-9]{1,2}) сек.*',t)
+				w= random.uniform(1,9)
+				if г:
+					г =int(г[0][0])
+					w+=int(г *3600)
+				if х:
+					х = int(х[0])
+					w+=int(х *60)
+				if с:
+					w+=int(с[0])
 				print(f'⏳ wait {w}')	# ждем w секунд
 				await asyncio.sleep(w)	# ждем w секунд
 				await client.send_message(ch_id,'Ферма')
