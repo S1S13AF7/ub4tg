@@ -1259,8 +1259,8 @@ async def main():
 					х=int(r[0][1])
 					w=int(int(г * 3600)+int(х * 60)+random.uniform(16,69))
 				elif h:
-					х=int(r[0][0])
-					с=int(r[0][1])
+					х=int(h[0][0])
+					с=int(h[0][1])
 					w=int(int(х * 60)+int(с)+random.uniform(1,9))
 				elif s:
 					w=int(int(s[0])+1)
