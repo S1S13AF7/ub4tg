@@ -1249,11 +1249,6 @@ async def main():
 			if m.sender_id not in irises or m.chat_id != ch_id:
 				return
 			elif get_config_key("farm"):
-				if ch_id < 0:
-					kuda = ch_id
-				elif m.chat_id in irises:
-					kuda = m.chat_id
-				
 				r= re.findall(
 				r'Наступний прибуток через ([0-9]) годин.* ([0-9]{1,2}) хв.*',t)
 				if r:
@@ -1262,7 +1257,7 @@ async def main():
 					w=int(int(г * 3600)+int(х * 60)+random.uniform(16,69))
 					print(f'⏳ wait ~{w}')	# ждем w секунд
 					await asyncio.sleep(w)	# ждем w секунд
-					await client.send_message(kuda,'Ферма')
+					await client.send_message(ch_id,'Ферма')
 			else:
 				return
 		
