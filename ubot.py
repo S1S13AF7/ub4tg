@@ -1213,7 +1213,7 @@ async def main():
 		
 		####################################################################
 		
-		@client.on(events.NewMessage(pattern=r'✅ (ВДАЛО|ЗАЧЁТ)'))
+		@client.on(events.NewMessage(incoming=True,pattern=r'✅ (ВДАЛО|ЗАЧЁТ)'))
 		async def ферма(event):
 			m = event.message
 			t = m.raw_text
@@ -1223,6 +1223,8 @@ async def main():
 					kuda = ch_id
 				elif m.chat_id in irises:
 					kuda = m.chat_id
+			else:
+				return
 			if m.entities:
 				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
 				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
@@ -1239,6 +1241,33 @@ async def main():
 					await client.send_message(kuda,'Ферма')
 		
 		####################################################################
+		
+		@client.on(events.NewMessage(pattern=r'❌ НЕВДАЛО!'))
+		async def НЕВДАЛО(event):
+			m = event.message
+			t = m.raw_text
+			if m.sender_id not in irises or m.chat_id != ch_id:
+				return
+			elif get_config_key("farm"):
+				if ch_id < 0:
+					kuda = ch_id
+				elif m.chat_id in irises:
+					kuda = m.chat_id
+				
+				r= re.findall(
+				r'Наступний прибуток через ([0-9]) годин.* ([0-9]{1,2}) хв.*',t)
+				if r:
+					г=int(r[0][0])
+					х=int(r[0][1])
+					w=int(int(г * 3600)+int(х * 60)+random.uniform(16,69))
+					print(f'⏳ wait ~{w}')	# ждем w секунд
+					await asyncio.sleep(w)	# ждем w секунд
+					await client.send_message(kuda,'Ферма')
+			else:
+				return
+		
+		####################################################################
+
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'.reset$'))
 		async def cmd_reset(event):
