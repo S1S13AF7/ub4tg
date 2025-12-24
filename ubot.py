@@ -73,8 +73,7 @@ if not os.path.exists(CONFIG_PATH):
 	'farm': False,
 	'mine': False,
 	'a_h': a_h,
-	'ch_id': 0,
-	'co_id': 0
+	'ch_id': 0
 	}
 	# api_id & api_hash - обов'язкові параметри; 
 	# db_pymysql - чи юзать MySQL? (default: False); 
@@ -1237,14 +1236,6 @@ async def main():
 			if u==my_id or m.chat_id in irises:
 				if get_config_key("farm"):
 					print(m.raw_text)
-					co_id = get_config_key("co_id")	# бкоин
-					if int(co_id) < 0:	# куда бкоин 99
-						pong='Бкоин 99'	# к-сть бкоинів
-						rs=random.uniform(4.04,5.05)	# random
-						await asyncio.sleep(rs)	# ждем rs секунд
-						b=await client.send_message(co_id,pong)
-						await asyncio.sleep(random.uniform(1,3))
-						await client.delete_messages(co_id,b.id)
 					rs=random.uniform(14404,14441)	# random
 					await asyncio.sleep(rs)	# ждем rs секунд
 					f=await client.send_message(kuda,'Ферма')
@@ -1274,50 +1265,14 @@ async def main():
 					w+=int(с[0])
 				print(f'⏳ wait {w}')	# ждем w секунд
 				await asyncio.sleep(w)	# ждем w секунд
-				await client.send_message(ch_id,'Ферма')
+				f=await client.send_message(ch_id,'Ферма')
+				await asyncio.sleep(random.uniform(1,3))
+				await client.delete_messages(ch_id,f.id)
 			else:
 				return
 		
 		####################################################################
-		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'.coins$'))
-		async def sv_cheats(event):
-			c = event.chat_id
-			m = event.message
-			t = m.raw_text
-			pong = '??'
-			co_id=get_config_key("co_id")
-			if int(c) > 0:
-				pong='Алоу це не чат!' #wtf?!
-				await event.edit(pong) # ред.
-				print(pong)
-				return
-			if t=='+coins' or t=='-coins':
-				need_save=False
-				if '+' in t:
-					if c!=co_id:
-						co_id = int(c)
-						need_save=True
-					pong=f'✅ coins\n💬<code>{c}</code>'
-				if '-' in t:
-					if int(co_id) < 0:
-						co_id = int(0)
-						need_save=True
-					pong=f'❎ coins\n💬<code>{c}</code>'
-				if need_save:
-					save_config_key('co_id',co_id)
-			else:
-				if c==co_id:
-					pong=f'✅ coins\n💬<code>{co_id}</code>' # ok?!
-				else:
-					pong=f'❎ coins' # –
-			try:
-				await event.edit(pong) # ред.
-				print(pong)
-			except Exception as wtf:
-				print(wtf)	#	print
-		
-		####################################################################
+
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'.reset$'))
 		async def cmd_reset(event):
