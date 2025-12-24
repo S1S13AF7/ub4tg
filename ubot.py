@@ -1242,10 +1242,14 @@ async def main():
 						pong='Бкоин 99'	# к-сть бкоинів
 						rs=random.uniform(4.04,5.05)	# random
 						await asyncio.sleep(rs)	# ждем rs секунд
-						await client.send_message(co_id,pong)
+						b=await client.send_message(co_id,pong)
+						await asyncio.sleep(random.uniform(1,3))
+						await client.delete_messages(co_id,b.id)
 					rs=random.uniform(14404,14441)	# random
 					await asyncio.sleep(rs)	# ждем rs секунд
-					await client.send_message(kuda,'Ферма')
+					f=await client.send_message(kuda,'Ферма')
+					await asyncio.sleep(random.uniform(1,3))
+					await client.delete_messages(kuda,f.id)
 		
 		####################################################################
 		
