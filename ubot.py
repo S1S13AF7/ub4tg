@@ -305,7 +305,9 @@ async def main():
 			else:
 				kuda = 5443619563 # якщо чат не задано
 			try:
-				await client.send_message(kuda,'Ферма')
+				f=await client.send_message(kuda,'Ферма')
+				await asyncio.sleep(random.uniform(1,3))
+				await client.delete_messages(kuda,f.id)
 			except Exception as wtf:
 				print(wtf)	#	print
 		
@@ -1263,6 +1265,11 @@ async def main():
 					w+=int(х *60)
 				if с:
 					w+=int(с[0])
+				try:
+					await asyncio.sleep(random.uniform(1,3))
+					await client.delete_messages(ch_id,m.id)
+				except:
+					pass
 				print(f'⏳ wait {w}')	# ждем w секунд
 				await asyncio.sleep(w)	# ждем w секунд
 				f=await client.send_message(ch_id,'Ферма')
