@@ -295,12 +295,6 @@ async def main():
 			def optimize():
 				c.execute('PRAGMA optimize'); conn.commit()
 				c.execute('VACUUM'); conn.commit()
-
-		if mine:
-			try:
-				await client.send_message(6333102398,'Майн')
-			except Exception as wtf:
-				print(wtf)	#	print
 		
 		####################################################################
 		
@@ -440,7 +434,7 @@ async def main():
 						r= re.findall(r'<a href="tg://openmessage\?user_id=([0-9]+)">.*</a>.+<a href="tg://openmessage\?user_id=([0-9]+)">',h)
 						p= re.findall(r'«(.+)»',t)	#	патогеном
 						if r:
-							print(h)
+							#print(h)
 							exp_int=1
 							experience=1
 							u1id =int(r[0][0])
@@ -1267,6 +1261,29 @@ async def main():
 				rs=random.uniform(7201,7222)	# random
 				await asyncio.sleep(rs)	# ждем rs секунд
 				await client.send_message(kuda,'Майн')
+		
+		####################################################################
+		
+		async def mine_TRY():
+			w = 3601 # 1
+			if ch_id < 0:
+				kuda = ch_id # слать в чат
+			else:
+				kuda = 6333102398 # боту
+				#return
+			
+			while(get_config_key("mine")):
+				f = await message_q(
+					text='Майн',
+					user_id=kuda,
+					mark_read=True,
+					delete=True)
+				if f.text:
+					print(f.raw_text)
+				await asyncio.sleep(w)
+		
+		if mine:
+			await mine_TRY()
 		
 		####################################################################
 		
