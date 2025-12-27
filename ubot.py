@@ -355,6 +355,16 @@ async def main():
 		
 		####################################################################
 		
+		async def message_d(chat:int=0,text:str=None):
+			b = False
+			if chat and text:
+				b=await client.send_message(chat,text)
+				await asyncio.sleep(random.uniform(2.002,3))
+				await client.delete_messages(b.chat_id,b.id)
+			return b
+		
+		####################################################################
+		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,pattern=
 		r'.*(йобнув|подверг(ла)?|infected|сикди|атаковал|выебал|инфицировал|напугала|насрал|нокаутировал|обмануло|оглушил|поставила|рассмешил|угостила).*'))
 		async def infect(event):
@@ -1199,22 +1209,6 @@ async def main():
 		
 		####################################################################
 		
-		async def mine_TRY():
-			if ch_id < 0:
-				kuda = ch_id # слать в чат
-			else:
-				kuda = 6333102398 # боту
-				#return
-			w = random.uniform(666,7222)
-			while(get_config_key("mine")):
-				ь=await client.send_message(kuda,'Майн')
-				await asyncio.sleep(w)
-		
-		if mine:
-			await mine_TRY()
-		
-		####################################################################
-		
 		@client.on(events.NewMessage(incoming=True,pattern=r'✅ (ВДАЛО|ЗАЧЁТ)'))
 		async def ферма_ВДАЛО(event):
 			m = event.message
@@ -1236,76 +1230,15 @@ async def main():
 			else:
 				h=t
 				#return
-			if u==my_id or m.chat_id in irises:
-				if get_config_key("farm"):
-					global f_time
-					f_time = int(datetime.timestamp(f.date))
+			if u==my_id:
 				print(m.raw_text)
-				#
-		
-		async def ферма():
-			global f_time
-			if ch_id < 0:
-				kuda = ch_id # слать в чат
-			else:
-				#kuda = 5443619563	# if!ch_id
-				return
-			while(get_config_key("farm")):
-				u = int(0) # OR id
-				d = int(time.time())
-				s = int(f_time+14401)
-				if s > d:
-					w = int(s-d)
-				else:
-					w = int(1)
-				if w > 1:
-					print(f'⏳ wait {w}')	# ждем w с.
+				f_time = int(datetime.timestamp(m.date))
+				w=random.uniform(14401,14441)	# random
+				print(f'⏳ wait {w}')	# ждем w секунд
 				await asyncio.sleep(w)	# ждем w секунд
-				f = await message_q(
-					text='Ферма',
-					user_id=kuda,
-					mark_read=True,
-					delete=True)
-				if f.text:
-					u = 0 # OR id
-					t = f.raw_text
-					if f.entities:
-						h= utils.sanitize_parse_mode('html').unparse(t,f.entities)
-						r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
-						if r:
-							u=int(r[0])
-					if u==my_id:
-						#print(f.raw_text)
-						await ферма_ВДАЛО(event=f)
-						f_time = int(datetime.timestamp(f.date))
-						w=random.uniform(14404,14441)	# random
-					d = int(datetime.timestamp(f.date))	# дата
-					if 'Наступний прибуток через' in t:
-						г= re.findall(r'([0-9]) годин.*',t)
-						х= re.findall(r'([0-9]{1,2}) хв.*',t)
-						с= re.findall(r'([0-9]{1,2}) сек.*',t)
-						w= int(random.uniform(1,9)) # int(rnd)
-						if г:
-							г =int(г[0][0])
-							w+=int(г *3600)
-						if х:
-							х = int(х[0])
-							w+=int(х *60)
-						if с:
-							w+=int(с[0])
-						try:
-							await asyncio.sleep(random.uniform(1,3))
-							await client.delete_messages(kuda,f.id)						
-						except:
-							pass
-				if f_time:
-					if int(d+w) < int(f_time+14404):
-						w = int(int(f_time+14404)-d)
-				print(f'⏳ wait {w}')	# ждем w сек
-				await asyncio.sleep(w)	# ждем w сек
-		
-		if get_config_key("farm"):
-			await ферма()
+				ф=await client.send_message(kuda,'Ферма')
+				await asyncio.sleep(random.uniform(2.002,3))
+				await client.delete_messages(ф.chat_id,ф.id)
 		
 		####################################################################
 		
@@ -1361,6 +1294,13 @@ async def main():
 			m = await event.reply('pong!')
 			await asyncio.sleep(5)
 			await client.delete_messages(event.chat_id, [event.id, m.id])
+		
+		####################################################################
+		
+		if mine:
+			await message_d(ch_id,'Майн')
+		if get_config_key("farm"):
+			await message_d(ch_id,'Ферма')
 		
 		####################################################################
 		
