@@ -374,7 +374,8 @@ async def main():
 				user_id=kuda,
 				mark_read=True,
 				delete=True)
-			d = int(datetime.timestamp(f.date))
+			if f.date:
+				d = int(datetime.timestamp(f.date))
 			if f.text:
 				t = f.raw_text
 				s = f.sender_id
@@ -1284,7 +1285,8 @@ async def main():
 				print(m.raw_text)
 				f_time = int(datetime.timestamp(m.date))
 				f_next = int(f_time+14401)	# коли далі
-				f=await ферма(14401)	#	ждем + шлем
+				if get_config_key("farm"):	# якщо увімкнено
+					f=await ферма(14401)	# ждем + шлем
 		
 		####################################################################
 		
