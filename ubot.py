@@ -356,6 +356,29 @@ async def main():
 		
 		####################################################################
 		
+		async def майн(w:int=0):
+			d = int(time.time())
+			if int(ch_id) < 0:
+				kuda = int(ch_id)
+			else:
+				kuda = 6333102398
+			w+= random.uniform(0,1)
+			if int(w)>1:
+				w=int(w)
+				#print(f'⏳ wait {w}')
+			await asyncio.sleep(w)
+			
+			try:
+				m = await client.send_message(kuda,'Майн')
+				await asyncio.sleep(random.uniform(2,5))
+				await client.delete_messages(kuda,m.id)
+			except Exception as wtf:
+				print(wtf)	#	print
+			
+			return 
+		
+		####################################################################
+		
 		async def ферма(w:int=0):
 			d = int(time.time())
 			kuda = int(ch_id)
@@ -405,13 +428,14 @@ async def main():
 							w+=int(с[0])
 						f_next=int(d+w)
 						w=int(f_next-d)
-						print(f"⏳ wait {w}")	# ждать w секунд
+						#
 						try:
-							await asyncio.sleep(random.uniform(1,3))
+							await asyncio.sleep(random.uniform(3,7))
 							await client.delete_messages(kuda,f.id)						
 						except:
-							pass
-						
+							pass			
+			if get_config_key("mine"):	# якщо увімкнено
+				м = await майн(int(random.uniform(3,7)))
 			return f
 		
 		####################################################################
@@ -1237,8 +1261,7 @@ async def main():
 					else:
 						kuda = 6333102398 # if!ch_id
 					m = (int(r[0]) +1)*60	# +1 м
-					await asyncio.sleep(m)	# ждем
-					await client.send_message(kuda,'Майн')
+					m = await майн(m)	# ждем
 		
 		####################################################################
 		
@@ -1254,9 +1277,9 @@ async def main():
 				else:
 					kuda = 6333102398 # якщо чат не задано
 				print(m.text) # показать в консолі текст
-				rs=random.uniform(7201,7222)	# random
-				await asyncio.sleep(rs)	# ждем rs секунд
-				await client.send_message(kuda,'Майн')
+				#rs=random.uniform(7201,7222)	# random
+				#await client.send_message(kuda,'Майн')
+				m = await майн(7201)	# ждем + шлем
 		
 		####################################################################
 		
@@ -1287,6 +1310,36 @@ async def main():
 				f_next = int(f_time+14401)	# коли далі
 				if get_config_key("farm"):	# якщо увімкнено
 					f=await ферма(14401)	# ждем + шлем
+		
+		####################################################################
+		
+		@client.on(events.NewMessage(pattern=r'❌ НЕВДАЛО!'))
+		async def ферма_НЕВДАЛО(event):
+			m = event.message
+			t = m.raw_text
+			if m.sender_id not in irises or m.chat_id != ch_id:
+				return
+			elif get_config_key("farm") and 'Наступний прибуток через' in t:
+				г= re.findall(r'([0-9]) годин.*',t)
+				х= re.findall(r'([0-9]{1,2}) хв.*',t)
+				с= re.findall(r'([0-9]{1,2}) сек.*',t)
+				w= int(random.uniform(1,9)) # int(rnd)
+				if г:
+					г =int(г[0][0])
+					w+=int(г *3600)
+				if х:
+					х = int(х[0])
+					w+=int(х *60)
+				if с:
+					w+=int(с[0])
+				try:
+					await asyncio.sleep(random.uniform(3,7))
+					await client.delete_messages(ch_id,m.id)
+				except:
+					pass
+				f=await ферма(w)
+			#else:
+			return
 		
 		####################################################################
 		
@@ -1345,6 +1398,8 @@ async def main():
 		
 		####################################################################
 		
+		if mine:
+			await майн()
 		if get_config_key("farm") and ch_id<0:
 			await ферма()
 		
