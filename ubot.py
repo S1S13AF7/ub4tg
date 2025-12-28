@@ -114,6 +114,7 @@ rs_max=3600	# інтервал. буде мінятись.
 my_days=10	# свій летал. виставиться коли бот "побачить".
 
 f_time = 0	# остання успішна ферма була коли? 
+f_next = 0	# остання успішна ферма +кд +хз
 
 irises = [707693258,5137994780,5226378684,5434504334,5443619563]
 
@@ -355,13 +356,62 @@ async def main():
 		
 		####################################################################
 		
-		async def message_d(chat:int=0,text:str=None):
-			b = False
-			if chat and text:
-				b=await client.send_message(chat,text)
-				await asyncio.sleep(random.uniform(2.002,3))
-				await client.delete_messages(b.chat_id,b.id)
-			return b
+		async def ферма(w:int=0):
+			d = int(time.time())
+			kuda = int(ch_id)
+			if kuda==0:
+				return
+			global f_time,f_next
+			if d < f_next:
+				w= f_next - d
+			w+= random.uniform(0,1)
+			if int(w)>1:
+				w=int(w)
+				print(f'⏳ wait {w}')
+			await asyncio.sleep(w)
+			f = await message_q(
+				text='Ферма',
+				user_id=kuda,
+				mark_read=True,
+				delete=True)
+			d = int(datetime.timestamp(f.date))
+			if f.text:
+				t = f.raw_text
+				s = f.sender_id
+				if s in irises:
+					if '✅' in t:
+						u = int(0)
+						if f.entities:
+							h= utils.sanitize_parse_mode('html').unparse(t,f.entities)
+							r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
+							if r:
+								u=int(r[0])
+								if u==my_id:
+									f_time = int(datetime.timestamp(f.date))
+									f_next = int(f_time+14401)	# коли далі
+					if 'Наступний прибуток через' in t:
+						г= re.findall(r'([0-9]) годин.*',t)
+						х= re.findall(r'([0-9]{1,2}) хв.*',t)
+						с= re.findall(r'([0-9]{1,2}) сек.*',t)
+						w= int(random.uniform(1,9)) # int(rnd)
+						if г:
+							г =int(г[0][0])
+							w+=int(г *3600)
+						if х:
+							х = int(х[0])
+							w+=int(х *60)
+						if с:
+							w+=int(с[0])
+						f_next=int(d+w)
+						w=int(f_next-d)
+						print(f"⏳ wait {w}")	# ждать w секунд
+						try:
+							await asyncio.sleep(random.uniform(1,3))
+							await client.delete_messages(kuda,f.id)						
+						except:
+							pass
+						
+			return f
 		
 		####################################################################
 		
@@ -1214,7 +1264,7 @@ async def main():
 			m = event.message
 			t = m.raw_text
 			u = 0 # OR id
-			global f_time
+			global f_time,f_next
 			if m.sender_id in irises:
 				if ch_id < 0:
 					kuda = ch_id
@@ -1233,12 +1283,8 @@ async def main():
 			if u==my_id:
 				print(m.raw_text)
 				f_time = int(datetime.timestamp(m.date))
-				w=random.uniform(14401,14441)	# random
-				print(f'⏳ wait {w}')	# ждем w секунд
-				await asyncio.sleep(w)	# ждем w секунд
-				ф=await client.send_message(kuda,'Ферма')
-				await asyncio.sleep(random.uniform(2.002,3))
-				await client.delete_messages(ф.chat_id,ф.id)
+				f_next = int(f_time+14401)	# коли далі
+				f=await ферма(14401)	#	ждем + шлем
 		
 		####################################################################
 		
@@ -1297,10 +1343,8 @@ async def main():
 		
 		####################################################################
 		
-		if mine:
-			await message_d(ch_id,'Майн')
-		if get_config_key("farm"):
-			await message_d(ch_id,'Ферма')
+		if get_config_key("farm") and ch_id<0:
+			await ферма()
 		
 		####################################################################
 		
