@@ -47,7 +47,7 @@ if is_termux:
 		print('✅ дозвіл на запис')
 		default_directory = '/sdcard/ub4tg'
 		os.system(f'mkdir -p {default_directory}')
-		#CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
+		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
 		#noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
@@ -75,8 +75,7 @@ if not os.path.exists(CONFIG_PATH):
 	}
 	# api_id & api_hash - обов'язкові параметри; 
 	# db_pymysql - чи юзать MySQL? (default: False); 
-	# a_404_p - автоматично сожрать пацієнта якщо не знайдено; 
-	# ch_id - ід чата де відбувається магія. виставиться само якщо був 0; 
+	# ch_id - ід чата де відбувається магія. виставить в конфіґу; 
 	# wakelock - чи юзать wakelock (у мене від нього нема толку); 
 	with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
 		json.dump(new_config, configfile,ensure_ascii=False, indent='	')
@@ -204,7 +203,7 @@ async def main():
 			);''');
 			con.commit()
 			try:
-				d.execute("SELECT reg_int FROM `tg_bot_users` WHERE user_id = %d" % int(my_id)); 
+				d.execute("SELECT f_time FROM `tg_bot_users` WHERE user_id = %d" % int(my_id)); 
 				u = d.fetchone();
 				if u is None:
 					print('не знайшли юзера у базі localhost')
