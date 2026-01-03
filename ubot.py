@@ -71,7 +71,8 @@ if not os.path.exists(CONFIG_PATH):
 	'wakelock': False,
 	'farm': False,
 	'mine': False,
-	'ch_id': 0
+	'ch_id': 0,
+	'co_id': 0
 	}
 	# api_id & api_hash - обов'язкові параметри; 
 	# db_pymysql - чи юзать MySQL? (default: False); 
@@ -101,14 +102,14 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 		save_config_key('ch_id',ch_id)
 		#print('неправильний id чата')
 	
-############################################################################
+################################################################################
 
 f_time = 0	# остання успішна ферма була коли? 
 f_next = 0	# остання успішна ферма +кд +хз
 
 irises = [707693258,5137994780,5226378684,5434504334,5443619563]
 
-############################################################################
+################################################################################
 
 def get_config_key(key: str) -> typing.Union[str, bool]:
 	"""
@@ -124,7 +125,7 @@ def get_config_key(key: str) -> typing.Union[str, bool]:
 	except FileNotFoundError:
 		return False
 
-############################################################################
+################################################################################
 
 def save_config_key(key: str, value: str) -> bool:
 	"""
@@ -152,7 +153,7 @@ def save_config_key(key: str, value: str) -> bool:
 	
 	return True
 
-############################################################################
+################################################################################
 
 async def main():
 	async with TelegramClient(sessdb,api_id,api_hash,timeout=300) as client:
@@ -333,6 +334,14 @@ async def main():
 								if u==my_id:
 									f_time = int(datetime.timestamp(f.date))
 									f_next = int(f_time+14401)	# коли далі
+									co_id = get_config_key("co_id") # куда?
+									if int(co_id) < 0:	# куда бкоин 99
+										pong='Бкоин 99'	# к-сть бкоинів
+										rs=random.uniform(4.04,5.05)	# random
+										await asyncio.sleep(rs)	# ждем rs секунд
+										b=await client.send_message(co_id,pong)
+										await asyncio.sleep(random.uniform(1,3))
+										await client.delete_messages(co_id,b.id)
 									if db_pymysql:
 										try:
 											d.execute("INSERT INTO `tg_bot_users` (`user_id`, `reg_int`, `f_name`, `f_time`) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE f_time=VALUES(f_time);",(int(my_id),int(f_time),str(me.first_name),int(f_time))); con.commit()
@@ -427,6 +436,45 @@ async def main():
 				f=await ферма(w)
 			#else:
 			return
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'.coins$'))
+		async def sv_cheats(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			pong = '??'
+			co_id=get_config_key("co_id")
+			if int(c) > 0:
+				pong='Алоу це не чат!' #wtf?!
+				await event.edit(pong) # ред.
+				print(pong)
+				return
+			if t=='+coins' or t=='-coins':
+				need_save=False
+				if '+' in t:
+					if c!=co_id:
+						co_id = int(c)
+						need_save=True
+					pong=f'✅ coins\n💬<code>{c}</code>'
+				if '-' in t:
+					if int(co_id) < 0:
+						co_id = int(0)
+						need_save=True
+					pong=f'❎ coins\n💬<code>{c}</code>'
+				if need_save:
+					save_config_key('co_id',co_id)
+			else:
+				if c==co_id:
+					pong=f'✅ coins\n💬<code>{co_id}</code>' # ok?!
+				else:
+					pong=f'❎ coins' # –
+			try:
+				await event.edit(pong) # ред.
+				print(pong)
+			except Exception as wtf:
+				print(wtf)	#	print
 		
 		########################################################################
 		
