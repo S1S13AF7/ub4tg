@@ -22,7 +22,6 @@ if os.name == 'nt':
 sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
-#noeb_file = "noeb.json"		# кого ненада заражать айдішки
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -48,7 +47,6 @@ if is_termux:
 		default_directory = '/sdcard/ub4tg'
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
-		#noeb_file = f'{default_directory}/{noeb_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -60,9 +58,6 @@ if not os.path.exists(CONFIG_PATH):
 	api_id = int(input('enter api_id from https://my.telegram.org/ :'))
 	api_hash = input('enter api_hash from https://my.telegram.org/ :')
 	
-	#a_h = input('enable automatic use medkit? [y/n]: ').lower() in treat_as_true
-	#a_404_p = input('enable automatic bioeb if victim not found or expired? It will be trigger on "Жертва не найдена" [y/n]: ').lower() in treat_as_true
-	
 	new_config = {
 	'api_id': api_id,
 	'api_hash': api_hash,
@@ -70,9 +65,7 @@ if not os.path.exists(CONFIG_PATH):
 	'db_sqlite3': False,
 	'wakelock': False,
 	'farm': False,
-	'mine': False,
-	'ch_id': 0,
-	'co_id': 0
+	'ch_id': 0
 	}
 	# api_id & api_hash - обов'язкові параметри; 
 	# db_pymysql - чи юзать MySQL? (default: False); 
@@ -92,15 +85,13 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	db_pymysql = bool(config['db_pymysql'] or False)
 	db_sqlite3 = bool(config['db_sqlite3'] or False)
 	
-	#a_404_p = bool(config['a_404_p'] or False)
 	ch_id = int(config['ch_id'] or 0)  # id чата
 	farm= bool(config['farm'] or False)# вмикать фарм?
-	mine= bool(config['mine'] or False)# вмикать майн?
 	
 	if ch_id > 0:
 		ch_id=0
 		save_config_key('ch_id',ch_id)
-		#print('неправильний id чата')
+		print('неправильний id чата')
 	
 ################################################################################
 
@@ -204,6 +195,15 @@ async def main():
 			);''');
 			con.commit()
 			try:
+				d.execute('''INSERT INTO `tg_bot_users` 
+				(`user_id`, `reg_int`, `f_name`) 
+				VALUES (%s,%s,%s) 
+				ON DUPLICATE KEY UPDATE 
+				f_name=VALUES(f_name);''',
+				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
+			except Exception as Err:
+				print(f'E:{Err}')
+			try:
 				d.execute("SELECT f_time FROM `tg_bot_users` WHERE user_id = %d" % int(my_id)); 
 				u = d.fetchone();
 				if u is None:
@@ -277,37 +277,14 @@ async def main():
 		
 		########################################################################
 		
-		async def майн(w:int=0):
-			d = int(time.time())
-			if int(ch_id) < 0:
-				kuda = int(ch_id)
-			else:
-				kuda = 6333102398
-			w+= random.uniform(0,1)
-			if int(w)>1:
-				w=int(w)
-				#print(f'⏳ wait {w}')
-			await asyncio.sleep(w)
-			
-			try:
-				m = await client.send_message(kuda,'Майн')
-				await asyncio.sleep(random.uniform(2,5))
-				await client.delete_messages(kuda,m.id)
-			except Exception as wtf:
-				print(wtf)	#	print
-			
-			return 
-		
-		########################################################################
-		
 		async def ферма(w:int=0):
-			d = int(time.time())
+			д = int(time.time())
 			kuda = int(ch_id)
 			if kuda==0:
 				return
 			global f_time,f_next
-			if d < f_next:
-				w= f_next - d
+			if д < f_next:
+				w= f_next - д
 			w+= random.uniform(0,1)
 			if int(w)>1:
 				w=int(w)
@@ -319,7 +296,7 @@ async def main():
 				mark_read=True,
 				delete=True)
 			if f.date:
-				d = int(datetime.timestamp(f.date))
+				д = max(int(datetime.timestamp(f.date)),int(time.time()))
 			if f.text:
 				t = f.raw_text
 				s = f.sender_id
@@ -331,22 +308,12 @@ async def main():
 							r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
 							if r:
 								u=int(r[0])
+								if db_pymysql:
+									q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u};"
+									con.query(q)
 								if u==my_id:
-									f_time = int(datetime.timestamp(f.date))
+									f_time = int(д) # int(час)	# дата
 									f_next = int(f_time+14401)	# коли далі
-									co_id = get_config_key("co_id") # куда?
-									if int(co_id) < 0:	# куда бкоин 99
-										pong='Бкоин 99'	# к-сть бкоинів
-										rs=random.uniform(4.04,5.05)	# random
-										await asyncio.sleep(rs)	# ждем rs секунд
-										b=await client.send_message(co_id,pong)
-										await asyncio.sleep(random.uniform(1,3))
-										await client.delete_messages(co_id,b.id)
-									if db_pymysql:
-										try:
-											d.execute("INSERT INTO `tg_bot_users` (`user_id`, `reg_int`, `f_name`, `f_time`) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE f_time=VALUES(f_time);",(int(my_id),int(f_time),str(me.first_name),int(f_time))); con.commit()
-										except:
-											pass
 					if 'Наступний прибуток через' in t:
 						г= re.findall(r'([0-9]) годин.*',t)
 						х= re.findall(r'([0-9]{1,2}) хв.*',t)
@@ -360,16 +327,13 @@ async def main():
 							w+=int(х *60)
 						if с:
 							w+=int(с[0])
-						f_next=int(d+w)
-						w=int(f_next-d)
+						f_next=int(max(max(int(time.time()),datetime.timestamp(f.date)))+w,f_next)
 						#
 						try:
 							await asyncio.sleep(random.uniform(3,7))
 							await client.delete_messages(kuda,f.id)						
 						except:
 							pass			
-			if get_config_key("mine"):	# якщо увімкнено
-				м = await майн(int(random.uniform(3,7)))
 			return f
 		
 		########################################################################
@@ -379,6 +343,7 @@ async def main():
 			m = event.message
 			t = m.raw_text
 			u = 0 # OR id
+			д = int(time.time())
 			global f_time,f_next
 			if m.sender_id in irises:
 				if ch_id < 0:
@@ -387,6 +352,8 @@ async def main():
 					kuda = m.chat_id
 			else:
 				return
+			if m.date:
+				д = max(int(datetime.timestamp(m.date)),int(time.time()))
 			if m.entities:
 				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
 				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
@@ -395,17 +362,14 @@ async def main():
 			else:
 				h=t
 				#return
-			if u==my_id:
+			if db_pymysql and u>0:
+				q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u};"
+				con.query(q)
+			if u==my_id and get_config_key("farm"):	
 				print(m.raw_text)
-				f_time = int(datetime.timestamp(m.date))
+				f_time = int(д) # int(час)	# дата
 				f_next = int(f_time+14401)	# коли далі
-				if get_config_key("farm"):	# якщо увімкнено
-					if db_pymysql:
-						try:
-							d.execute("INSERT INTO `tg_bot_users` (`user_id`, `reg_int`, `f_name`, `f_time`) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE f_time=VALUES(f_time);",(int(my_id),int(f_time),str(me.first_name),int(f_time))); con.commit()
-						except:
-							pass
-					f=await ферма(14401)	# ждем + шлем
+				f=await ферма(14401)	# ждем + шлем
 		
 		########################################################################
 		
@@ -436,45 +400,6 @@ async def main():
 				f=await ферма(w)
 			#else:
 			return
-		
-		########################################################################
-		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'.coins$'))
-		async def sv_cheats(event):
-			c = event.chat_id
-			m = event.message
-			t = m.raw_text
-			pong = '??'
-			co_id=get_config_key("co_id")
-			if int(c) > 0:
-				pong='Алоу це не чат!' #wtf?!
-				await event.edit(pong) # ред.
-				print(pong)
-				return
-			if t=='+coins' or t=='-coins':
-				need_save=False
-				if '+' in t:
-					if c!=co_id:
-						co_id = int(c)
-						need_save=True
-					pong=f'✅ coins\n💬<code>{c}</code>'
-				if '-' in t:
-					if int(co_id) < 0:
-						co_id = int(0)
-						need_save=True
-					pong=f'❎ coins\n💬<code>{c}</code>'
-				if need_save:
-					save_config_key('co_id',co_id)
-			else:
-				if c==co_id:
-					pong=f'✅ coins\n💬<code>{co_id}</code>' # ok?!
-				else:
-					pong=f'❎ coins' # –
-			try:
-				await event.edit(pong) # ред.
-				print(pong)
-			except Exception as wtf:
-				print(wtf)	#	print
 		
 		########################################################################
 		
