@@ -301,7 +301,7 @@ async def main():
 				t = f.raw_text
 				s = f.sender_id
 				if s in irises:
-					if '✅' in t:
+					if '✅' in t or '🔑' in t:
 						u = int(0)
 						if f.entities:
 							h= utils.sanitize_parse_mode('html').unparse(t,f.entities)
