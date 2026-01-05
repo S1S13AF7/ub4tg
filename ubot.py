@@ -27,8 +27,6 @@ is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX
 
 termux_api = False # там нижче буде перевизначено якщо is_termux == True
 
-treat_as_true = ('true','1','t','y','yes','yeah','yup')# все інше False
-
 if is_termux:
 	import sys
 	# майже все що для термукса я вкрав з форка бота.
@@ -310,7 +308,10 @@ async def main():
 								u=int(r[0])
 								if db_pymysql:
 									q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u};"
-									con.query(q)
+									try:
+										con.query(q)
+									except:
+											pass
 								if u==my_id:
 									f_time = int(д) # int(час)	# дата
 									f_next = int(f_time+14401)	# коли далі
@@ -363,8 +364,11 @@ async def main():
 				h=t
 				#return
 			if db_pymysql and u>0:
-				q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u};"
-				con.query(q)
+				q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u} AND `f_time`<{д};"
+				try:
+					con.query(q)
+				except:
+					pass
 			if u==my_id and get_config_key("farm"):	
 				print(m.raw_text)
 				f_time = int(д) # int(час)	# дата
