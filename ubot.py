@@ -200,17 +200,6 @@ async def main():
 				f_name=VALUES(f_name);''',
 				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
 			except Exception as Err:
-				print(f'E:{Err}')
-			try:
-				d.execute("SELECT f_time FROM `tg_bot_users` WHERE user_id = %d" % int(my_id)); 
-				u = d.fetchone();
-				if u is None:
-					print('не знайшли юзера у базі localhost')
-				else:
-					global f_time,f_next
-					f_time = int(u ["f_time"])
-					f_next = int(f_time+14401)
-			except:
 				pass
 		
 		#if db_sqlite3:
@@ -276,13 +265,9 @@ async def main():
 		########################################################################
 		
 		async def ферма(w:int=0):
-			д = int(time.time())
 			kuda = int(ch_id)
 			if kuda==0:
 				return
-			global f_time,f_next
-			if д < f_next:
-				w= f_next - д
 			w+= random.uniform(0,1)
 			if int(w)>1:
 				w=int(w)
@@ -293,53 +278,12 @@ async def main():
 				user_id=kuda,
 				mark_read=True,
 				delete=True)
-			if f.date:
-				д = max(int(datetime.timestamp(f.date)),int(time.time()))
-			if f.text:
-				t = f.raw_text
-				s = f.sender_id
-				if s in irises:
-					if '✅' in t or '🔑' in t:
-						u = int(0)
-						if f.entities:
-							h= utils.sanitize_parse_mode('html').unparse(t,f.entities)
-							r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
-							if r:
-								u=int(r[0])
-								if db_pymysql:
-									q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u};"
-									try:
-										con.query(q)
-									except:
-											pass
-								if u==my_id:
-									f_time = int(д) # int(час)	# дата
-									f_next = int(f_time+14401)	# коли далі
-					if 'Наступний прибуток через' in t:
-						г= re.findall(r'([0-9]) годин.*',t)
-						х= re.findall(r'([0-9]{1,2}) хв.*',t)
-						с= re.findall(r'([0-9]{1,2}) сек.*',t)
-						w= int(random.uniform(1,9)) # int(rnd)
-						if г:
-							г =int(г[0][0])
-							w+=int(г *3600)
-						if х:
-							х = int(х[0])
-							w+=int(х *60)
-						if с:
-							w+=int(с[0])
-						f_next=int(max(max(int(time.time()),datetime.timestamp(f.date)))+w,f_next)
-						#
-						try:
-							await asyncio.sleep(random.uniform(3,7))
-							await client.delete_messages(kuda,f.id)						
-						except:
-							pass			
 			return f
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True,pattern=r'✅ (ВДАЛО|ЗАЧЁТ)'))
+		@client.on(events.NewMessage(incoming=True,
+		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ!!!'))
 		async def ферма_ВДАЛО(event):
 			m = event.message
 			t = m.raw_text
