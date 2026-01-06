@@ -93,9 +93,6 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 ################################################################################
 
-f_time = 0	# остання успішна ферма була коли? 
-f_next = 0	# остання успішна ферма +кд +хз
-
 irises = [707693258,5137994780,5226378684,5434504334,5443619563]
 
 ################################################################################
@@ -180,7 +177,6 @@ async def main():
 			`user_id` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
 			`reg_int` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			`f_name` text CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
-			`f_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			PRIMARY KEY (`user_id`)
 			);''');
 			con.commit()
@@ -278,6 +274,37 @@ async def main():
 				user_id=kuda,
 				mark_read=True,
 				delete=True)
+			if f.text:
+				t = f.raw_text
+				s = f.sender_id
+				if s in irises:
+					if 'Наступний прибуток через' in t:
+						г= re.findall(r'([0-9]) годин.*',t)
+						х= re.findall(r'([0-9]{1,2}) хв.*',t)
+						с= re.findall(r'([0-9]{1,2}) сек.*',t)
+						w= int(random.uniform(1,9)) # int(rnd)
+						if г:
+							г =int(г[0][0])
+							w+=int(г *3600)
+						if х:
+							х = int(х[0])
+							w+=int(х *60)
+						if с:
+							w+=int(с[0])
+						#
+						try:
+							await asyncio.sleep(random.uniform(2,4))
+							await client.delete_messages(kuda,f.id)					
+						except:
+							pass
+						w=int(w)
+						print(f'⏳ wait {w}')
+						await asyncio.sleep(w)
+						f = await message_q(
+						text='Ферма',
+						user_id=kuda,
+						mark_read=True,
+						delete=True)
 			return f
 		
 		########################################################################
@@ -289,7 +316,6 @@ async def main():
 			t = m.raw_text
 			u = 0 # OR id
 			д = int(time.time())
-			global f_time,f_next
 			if m.sender_id in irises:
 				if ch_id < 0:
 					kuda = ch_id
@@ -307,47 +333,9 @@ async def main():
 			else:
 				h=t
 				#return
-			if db_pymysql and u>0:
-				q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u} AND `f_time`<{д};"
-				try:
-					con.query(q)
-				except:
-					pass
-			if u==my_id and get_config_key("farm"):	
+			if u==my_id and get_config_key("farm"):
 				print(m.raw_text)
-				f_time = int(д) # int(час)	# дата
-				f_next = int(f_time+14401)	# коли далі
 				f=await ферма(14401)	# ждем + шлем
-		
-		########################################################################
-		
-		@client.on(events.NewMessage(pattern=r'❌ НЕВДАЛО!'))
-		async def ферма_НЕВДАЛО(event):
-			m = event.message
-			t = m.raw_text
-			if m.sender_id not in irises or m.chat_id != ch_id:
-				return
-			elif get_config_key("farm") and 'Наступний прибуток через' in t:
-				г= re.findall(r'([0-9]) годин.*',t)
-				х= re.findall(r'([0-9]{1,2}) хв.*',t)
-				с= re.findall(r'([0-9]{1,2}) сек.*',t)
-				w= int(random.uniform(1,9)) # int(rnd)
-				if г:
-					г =int(г[0][0])
-					w+=int(г *3600)
-				if х:
-					х = int(х[0])
-					w+=int(х *60)
-				if с:
-					w+=int(с[0])
-				try:
-					await asyncio.sleep(random.uniform(3,7))
-					await client.delete_messages(ch_id,m.id)
-				except:
-					pass
-				f=await ферма(w)
-			#else:
-			return
 		
 		########################################################################
 		
