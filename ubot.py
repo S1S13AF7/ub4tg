@@ -199,7 +199,7 @@ async def main():
 				ON DUPLICATE KEY UPDATE 
 				f_name=VALUES(f_name);''',
 				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
-			except Exception as Err:
+			except:
 				pass
 		
 		#if db_sqlite3:
@@ -283,7 +283,7 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,
-		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ!!!'))
+		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ)'))
 		async def ферма_ВДАЛО(event):
 			m = event.message
 			t = m.raw_text
