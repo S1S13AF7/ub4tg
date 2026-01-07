@@ -207,7 +207,7 @@ async def main():
 								u=int(r[0])
 								if u==my_id:
 									w=14401
-									print(m.raw_text)
+									print(t)
 					if 'Наступний прибуток через' in t:
 						г= re.findall(r'([0-9]) годин.*',t)
 						х= re.findall(r'([0-9]{1,2}) хв.*',t)
