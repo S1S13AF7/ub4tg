@@ -190,13 +190,13 @@ async def main():
 				#F_RUN = True #	✅ погнали?
 				w = random.uniform(1,14401)
 				f = await message_q(
-				text='Ферма',
-				user_id=kuda,
-				mark_read=True,
-				delete=True)
-			if f.text:
-				t = f.raw_text
+					text='Ферма',
+					user_id=kuda,
+					mark_read=True,
+					delete=True)
 				s = f.sender_id
+				if f.text:
+					t = f.raw_text
 				if s in irises:
 					if '✅' in t or '🔑' in t:
 						u = int(0)
@@ -207,6 +207,7 @@ async def main():
 								u=int(r[0])
 								if u==my_id:
 									w=14401
+									print(m.raw_text)
 					if 'Наступний прибуток через' in t:
 						г= re.findall(r'([0-9]) годин.*',t)
 						х= re.findall(r'([0-9]{1,2}) хв.*',t)
