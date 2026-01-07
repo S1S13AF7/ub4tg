@@ -160,84 +160,6 @@ async def main():
 				print('Prevent killing termux by android, getting wakelock...')
 				os.system('termux-wake-lock')
 				print('This can cause battery drain!')
-
-		if db_pymysql:
-			
-			import pymysql
-			import pymysql.cursors
-			
-			con = pymysql.connect(host='localhost',
-			user='root',
-			password='V3rY$tR0NgPaS$Sw0Rd',
-			db='db',
-			charset='utf8mb4',
-			cursorclass=pymysql.cursors.DictCursor)
-			d = con.cursor()
-			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bot_users` (
-			`user_id` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
-			`reg_int` int(11) UNSIGNED NOT NULL DEFAULT '0',
-			`f_name` text CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
-			PRIMARY KEY (`user_id`)
-			);''');
-			con.commit()
-			d.execute('''CREATE TABLE IF NOT EXISTS `tg_users_url` (
-			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`u_link` varchar(64) NOT NULL DEFAULT '',
-			`f_name` text NOT NULL,
-			PRIMARY KEY (`user_id`)
-			);''');
-			con.commit()
-			try:
-				d.execute('''INSERT INTO `tg_bot_users` 
-				(`user_id`, `reg_int`, `f_name`) 
-				VALUES (%s,%s,%s) 
-				ON DUPLICATE KEY UPDATE 
-				f_name=VALUES(f_name);''',
-				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
-			except:
-				pass
-		
-		#if db_sqlite3:
-			####################################################################
-		
-		########################################################################
-		
-		async def get_id(url):
-			user_id = 0
-			if "tg://openmessage?user_id=" in url or "tg://user?id=" in url:
-				user_id = int(re.findall(r'id=([0-9]+)',url)[0])
-				#print(user_id)# розкоментувать якщо нада бачить
-				return user_id
-			if "t.me/" in url:
-				if db_pymysql:
-					try:
-						d.execute("SELECT * FROM `tg_users_url` WHERE `u_link` = '%s' ORDER BY `when_int` DESC" % str(url)); 
-						user = d.fetchone();
-						if user is None:
-							pass
-						else:
-							user_id = int(user['user_id'])
-							print(f'{url} in db: @{user_id}')
-					except:
-							pass
-				if user_id==0:
-					#return user_id # fucking limit # розкоментуйте щоб не резолв.
-					try:
-						user_entity = await client.get_entity(url)
-						if user_entity.id:
-							user_id = int(user_entity.id)
-							user_fn = user_entity.first_name or ''
-							print(f'✅ ok: {url} @{user_id}')
-							if db_pymysql:
-								try:
-									d.execute("INSERT INTO `tg_users_url` (`when_int`,`user_id`,`u_link`,`f_name`) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE user_id = VALUES (user_id),u_link = VALUES (u_link),f_name = VALUES (f_name),when_int = VALUES (when_int);", (int(time.time()),int(user_id),str(url),str(user_fn))); con.commit()
-								except Exception as Err:
-									print(f'E:{Err}')
-					except Exception as Err:
-						print(f'E:{Err}')
-						#pass
-			return user_id
 		
 		########################################################################
 		
@@ -260,16 +182,14 @@ async def main():
 		
 		########################################################################
 		
-		async def ферма(w:int=0):
+		async def ферма():
 			kuda = int(ch_id)
 			if kuda==0:
 				return
-			w+= random.uniform(0,1)
-			if int(w)>1:
-				w=int(w)
-				print(f'⏳ wait {w}')
-			await asyncio.sleep(w)
-			f = await message_q(
+			while (get_config_key("farm")):
+				#F_RUN = True #	✅ погнали?
+				w = random.uniform(1,14401)
+				f = await message_q(
 				text='Ферма',
 				user_id=kuda,
 				mark_read=True,
@@ -278,6 +198,15 @@ async def main():
 				t = f.raw_text
 				s = f.sender_id
 				if s in irises:
+					if '✅' in t or '🔑' in t:
+						u = int(0)
+						if f.entities:
+							h= utils.sanitize_parse_mode('html').unparse(t,f.entities)
+							r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
+							if r:
+								u=int(r[0])
+								if u==my_id:
+									w=14401
 					if 'Наступний прибуток через' in t:
 						г= re.findall(r'([0-9]) годин.*',t)
 						х= re.findall(r'([0-9]{1,2}) хв.*',t)
@@ -297,45 +226,10 @@ async def main():
 							await client.delete_messages(kuda,f.id)					
 						except:
 							pass
+					if int(w)>0:
 						w=int(w)
-						print(f'⏳ wait {w}')
-						await asyncio.sleep(w)
-						f = await message_q(
-						text='Ферма',
-						user_id=kuda,
-						mark_read=True,
-						delete=True)
-			return f
-		
-		########################################################################
-		
-		@client.on(events.NewMessage(incoming=True,
-		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ)'))
-		async def ферма_ВДАЛО(event):
-			m = event.message
-			t = m.raw_text
-			u = 0 # OR id
-			д = int(time.time())
-			if m.sender_id in irises:
-				if ch_id < 0:
-					kuda = ch_id
-				elif m.chat_id in irises:
-					kuda = m.chat_id
-			else:
-				return
-			if m.date:
-				д = max(int(datetime.timestamp(m.date)),int(time.time()))
-			if m.entities:
-				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
-				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
-				if r:
-					u=int(r[0])
-			else:
-				h=t
-				#return
-			if u==my_id and get_config_key("farm"):
-				print(m.raw_text)
-				f=await ферма(14401)	# ждем + шлем
+				print(f'⏳ wait {w}')
+				await asyncio.sleep(w)
 		
 		########################################################################
 		
