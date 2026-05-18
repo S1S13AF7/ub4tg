@@ -237,8 +237,8 @@ async def main():
 		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
 		async def cmd_ping(event):
 			# Say "pong!" whenever you send "!ping", then delete both messages
-			m = await event.reply('pong!')
-			await asyncio.sleep(5)
+			m = await event.reply('𝐏𝐎𝐍𝐆!')
+			await asyncio.sleep(random.uniform(4,6))
 			await client.delete_messages(event.chat_id, [event.id, m.id])
 		
 		########################################################################
