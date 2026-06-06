@@ -330,10 +330,24 @@ async def main():
 			if need_save:
 				with open(dovs_file, "w", encoding="utf-8") as write_file:
 					json.dump(dovs,write_file,ensure_ascii=False,indent='	')
-			
 		
 		########################################################################
-				
+		
+		@client.on(events.NewMessage(incoming=True, 
+		pattern='.(ping|пинг|пінг|пінґ|зштп|gsyu)'))
+		# вхідне повіомлення з перевіркою пінґа
+		async def cmd_ping_in(event):
+			c = event.chat_id
+			m = event.message
+			s = m.sender_id
+			pong='✅ 𝐏𝐎𝐍𝐆!'
+			if c==ch_id or c in chts:
+				m = await event.reply(pong)
+				await asyncio.sleep(random.uniform(4,6))
+				await client.delete_messages(event.chat_id, m.id)
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
 		async def cmd_ping(event):
 			# Say "pong!" whenever you send "!ping", then delete both messages
@@ -342,6 +356,11 @@ async def main():
 			await client.delete_messages(event.chat_id, [event.id, m.id])
 		
 		########################################################################
+		
+		if ch_id<0 and ch_id not in chts:
+			chts.append(ch_id)
+			with open(chts_file, "w", encoding="utf-8") as write_file:
+				json.dump(chts,write_file,ensure_ascii=False,indent='	')
 		
 		if get_config_key("farm") and ch_id<0:
 			await ферма()
