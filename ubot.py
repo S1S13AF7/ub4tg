@@ -159,7 +159,7 @@ dovs=[]
 try:
 	dovs_file = "dovs.json"		# дови:
 	with open(dovs_file, "r") as read_file:
-		chts = json.load(read_file)
+		dovs = json.load(read_file)
 except:
 	with open(dovs_file, "w", encoding="utf-8") as write_file:
 		json.dump(dovs, write_file,ensure_ascii=False, indent='	')
@@ -311,6 +311,7 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
+			u = 0 #user id
 			global dovs
 			pong = '??'
 			# мене вже давно просили зробити "дови" ("ДОВірені юзерИ"), 
@@ -368,11 +369,12 @@ async def main():
 			m = event.message
 			s = m.sender_id
 			pong='✅ 𝐏𝐎𝐍𝐆!'
-			if c==ch_id or c in chts:
-				print(pong)# показать в cmd
-				m = await event.reply(pong)
-				await asyncio.sleep(random.uniform(4,6))
-				await client.delete_messages(event.chat_id, m.id)
+			if c in chts:# де включено
+				print(pong) # показать
+				if c==ch_id or s in dovs:
+					m = await event.reply(pong)
+					await asyncio.sleep(random.uniform(4,6))
+					await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
 		
