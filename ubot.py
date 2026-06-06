@@ -23,6 +23,7 @@ sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 chts_file = "chts.json"		# чати де працюватимуть "чіти"
+dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -47,6 +48,7 @@ if is_termux:
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
 		chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
+		dovs_file = f'{default_directory}/{dovs_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -153,6 +155,15 @@ except:
 	with open(chts_file, "w", encoding="utf-8") as write_file:
 		json.dump(chts, write_file,ensure_ascii=False, indent='	')
 ################################################################################
+dovs=[]
+try:
+	dovs_file = "dovs.json"		# дови:
+	with open(dovs_file, "r") as read_file:
+		chts = json.load(read_file)
+except:
+	with open(dovs_file, "w", encoding="utf-8") as write_file:
+		json.dump(dovs, write_file,ensure_ascii=False, indent='	')
+################################################################################
 
 async def main():
 	async with TelegramClient(sessdb,api_id,api_hash,timeout=300) as client:
@@ -234,7 +245,6 @@ async def main():
 							w+=int(х *60)
 						if с:
 							w+=int(с[0])
-						#
 						try:
 							await asyncio.sleep(random.uniform(2,4))
 							await client.delete_messages(kuda,f.id)					
@@ -296,6 +306,34 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'.дов(и|ы)?'))
+		async def dovs(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			global dovs
+			pong = '??'
+			# мене вже давно просили зробити "дови" ("ДОВірені юзерИ"), 
+			# Але, чесно кажучи, мені було тупо "впадлу"
+			# і от, через ~2 роки, думаю, може пора? :D
+			try:
+				with open(dovs_file, "r") as read_file:
+					dovs = json.load(read_file)
+					need_save=False
+			except Exception as Err:
+				print(Err)
+			if my_id not in dovs:
+				dovs.append(my_id)
+				need_save=True
+			if t=='+дов' or t=='-дов':
+				pass # тут потом
+			if need_save:
+				with open(dovs_file, "w", encoding="utf-8") as write_file:
+					json.dump(dovs,write_file,ensure_ascii=False,indent='	')
+			
+		
+		########################################################################
+				
 		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
 		async def cmd_ping(event):
 			# Say "pong!" whenever you send "!ping", then delete both messages
