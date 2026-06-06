@@ -325,8 +325,35 @@ async def main():
 			if my_id not in dovs:
 				dovs.append(my_id)
 				need_save=True
-			if t=='+дов' or t=='-дов':
-				pass # тут потом
+			if '+дов' in t or '-дов' in t:
+				pong=False
+				plus=False
+				minus=False
+				if '+' in t:
+					plus=True
+				if '-' in t:
+					minus=True
+				if '@' in t: # працює з @ якщо далі йде айді юзера
+					u = int(re.findall(r'([0-9]+)',t)[0]) or False
+				if "tg://openmessage?user_id=" in t or "tg://user?id=" in t:
+					u = int(re.findall(r'id=([0-9]+)',t)[0])
+				if u:# якщо отримали айді юзера
+					if u not in dovs and plus:
+						dovs.append(u)
+						need_save=True
+					if u in dovs and minus:
+						dovs.remove(u)
+						need_save=True
+					if plus:
+						pong=f'✅ +дов @{u}' # ok?!
+					if minus:
+						pong=f'❎ -дов @{u}' # ok?!
+				if pong:
+					try:
+						await event.edit(pong)
+						print(pong)	#	print
+					except Exception as wtf:
+						print(wtf)	#	print
 			if need_save:
 				with open(dovs_file, "w", encoding="utf-8") as write_file:
 					json.dump(dovs,write_file,ensure_ascii=False,indent='	')
@@ -342,6 +369,7 @@ async def main():
 			s = m.sender_id
 			pong='✅ 𝐏𝐎𝐍𝐆!'
 			if c==ch_id or c in chts:
+				print(pong)# показать в cmd
 				m = await event.reply(pong)
 				await asyncio.sleep(random.uniform(4,6))
 				await client.delete_messages(event.chat_id, m.id)
