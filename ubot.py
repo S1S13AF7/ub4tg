@@ -187,6 +187,13 @@ async def main():
 		
 		########################################################################
 		
+		async def id_dov(u:int):
+			if u==0 or u==my_id or u in dovs:
+				return u
+			return False
+		
+		########################################################################
+		
 		async def message_q( # спизжено
 				text: str,
 				user_id: int,
@@ -369,11 +376,18 @@ async def main():
 			m = event.message
 			s = m.sender_id
 			pong='✅ 𝐏𝐎𝐍𝐆!'
-			if c in chts:# де включено
-				print(pong) # показать
-				m = await event.reply(pong)
-				await asyncio.sleep(random.uniform(4,6))
-				await client.delete_messages(event.chat_id, m.id)
+			needsend=False
+			if c in chts:
+				if c==ch_id:
+					needsend=True
+				elif await id_dov(s):
+					needsend=True
+				else:
+					needsend=False
+			if needsend:
+					m = await event.reply(pong)
+					await asyncio.sleep(random.uniform(4,6))
+					await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
 		
