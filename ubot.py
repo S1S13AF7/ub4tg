@@ -22,6 +22,7 @@ if os.name == 'nt':
 sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
+chts_file = "chts.json"		# чати де працюватимуть "чіти"
 
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -45,6 +46,7 @@ if is_termux:
 		default_directory = '/sdcard/ub4tg'
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
+		chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -140,6 +142,17 @@ def save_config_key(key: str, value: str) -> bool:
 	return True
 
 ################################################################################
+chts=[]
+if ch_id < 0:
+	chts.append(ch_id)
+try:
+	chts_file = "chts.json"		# чати:
+	with open(chts_file, "r") as read_file:
+		chts = json.load(read_file)
+except:
+	with open(chts_file, "w", encoding="utf-8") as write_file:
+		json.dump(chts, write_file,ensure_ascii=False, indent='	')
+################################################################################
 
 async def main():
 	async with TelegramClient(sessdb,api_id,api_hash,timeout=300) as client:
@@ -231,6 +244,55 @@ async def main():
 						w=int(w)
 				print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
+		async def sv_cheats(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			global chts
+			pong = '??'
+			try:
+				with open(chts_file, "r") as read_file:
+					chts = json.load(read_file)
+					need_save=False
+			except Exception as Err:
+				print(Err)
+			if int(c) > 0:
+				pong='Алоу це не чат!' #wtf?!
+				await event.edit(pong) # ред.
+				print(pong)
+				return
+			if ch_id < 0:
+				if ch_id not in chts:
+					chts.append(ch_id)
+					need_save=True
+			if t=='+chts' or t=='-chts':
+				if '+' in t:
+					if c not in chts:
+						chts.append(c)
+						need_save=True
+					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>'
+				if '-' in t:
+					if c in chts:
+						chts.remove(c)
+						need_save=True
+					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>'
+				if need_save:
+					with open(chts_file, "w", encoding="utf-8") as write_file:
+						json.dump(chts,write_file,ensure_ascii=False,indent='	')
+			else:
+				if c in chts:
+					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>' # ok?!
+				if c not in chts:
+					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>' # off!
+			try:
+				await event.edit(pong) # ред.
+				print(pong)
+			except Exception as wtf:
+				print(wtf)	#	print
 		
 		########################################################################
 		
