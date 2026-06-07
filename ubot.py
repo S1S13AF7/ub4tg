@@ -376,7 +376,7 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(pattern='\.send ')) #.send текст
+		@client.on(events.NewMessage(pattern='\.send '))
 		async def cmd_send_in(event):
 			c = event.chat_id
 			m = event.message
