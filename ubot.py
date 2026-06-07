@@ -188,7 +188,16 @@ async def main():
 		########################################################################
 		
 		async def id_dov(u:int):
-			if u==0 or u==my_id or u in dovs:
+			if u==0 or u==my_id:
+				return u
+			try:
+				dovs_file = "dovs.json"		# дови:
+				with open(dovs_file, "r") as read_file:
+					dovs = json.load(read_file)
+			except Exception as wtf:
+				print(wtf)	# print
+			if u in dovs:
+				print (u)
 				return u
 			return False
 		
