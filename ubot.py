@@ -374,13 +374,12 @@ async def main():
 		async def cmd_ping_in(event):
 			c = event.chat_id
 			m = event.message
-			s = m.sender_id
 			pong='✅ 𝐏𝐎𝐍𝐆!'
 			needsend=False
 			if c in chts:
 				if c==ch_id:
 					needsend=True
-				elif await id_dov(s):
+				elif int(await id_dov(m.sender_id))>0:
 					needsend=True
 				else:
 					needsend=False
