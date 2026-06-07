@@ -392,8 +392,8 @@ async def main():
 					r_min = 2
 					r_max = 4
 				else:
-					r_min = 1000
-					r_max = 3666
+					r_min = 111111
+					r_max = 666666
 				w = random.uniform(r_min,r_max)
 				print(f'✅ {щ}') # показать {щ}
 				if щ==0:
