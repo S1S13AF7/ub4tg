@@ -388,9 +388,9 @@ async def main():
 				т = str(re.sub(r"\.send ",'',т)) # cut
 			if c in chts and д and т:
 				print(f'🆔 {u}: {t}')
-				await asyncio.sleep(random.uniform(2,4))
+				await asyncio.sleep(random.uniform(2,5))
 				my_sended_message = await event.reply(т)
-				await asyncio.sleep(random.uniform(2,4))
+				await asyncio.sleep(random.uniform(5,7))
 				fordel = my_sended_message.id
 				if u==my_id:
 					fordel=[event.id, my_sended_message.id]
