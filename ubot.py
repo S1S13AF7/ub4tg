@@ -374,7 +374,7 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern='\.check$'))
+		@client.on(events.NewMessage(outgoing=True, pattern=r'\.check$'))
 		async def cmd_check(event):
 			c = event.chat_id
 			m = event.message
