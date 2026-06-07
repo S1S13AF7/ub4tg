@@ -197,7 +197,6 @@ async def main():
 			except Exception as wtf:
 				print(wtf)	# print
 			if u in dovs:
-				print (u)
 				return u
 			return False
 		
