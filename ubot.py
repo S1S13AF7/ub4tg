@@ -376,25 +376,48 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(pattern='\.send ')) #.send текст
+		async def cmd_send_in(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			u = int(m.sender_id)
+			д = await id_dov(u)
+			т = str(re.findall(r"\.send .*",t)[0]) or False
+			if т:
+				т = str(re.sub(r"\.send ",'',т)) # cut
+			if c in chts and д and т:
+				print(f'🆔 {u}: {t}')
+				await asyncio.sleep(random.uniform(2,4))
+				my_sended_message = await event.reply(т)
+				await asyncio.sleep(random.uniform(2,4))
+				fordel = my_sended_message.id
+				if u==my_id:
+					fordel=[event.id, my_sended_message.id]
+				await client.delete_messages(event.chat_id,fordel)
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(incoming=True, 
 		pattern='.(ping|пинг|пінг|пінґ|зштп|gsyu)'))
 		# вхідне повіомлення з перевіркою пінґа
 		async def cmd_ping_in(event):
 			c = event.chat_id
 			m = event.message
+			s = m.sender_id
 			pong='✅ 𝐏𝐎𝐍𝐆!'
 			needsend=False
 			if c in chts:
 				if c==ch_id:
 					needsend=True
-				elif int(await id_dov(m.sender_id))>0:
+				elif await id_dov(s):
 					needsend=True
 				else:
 					needsend=False
 			if needsend:
-					m = await event.reply(pong)
-					await asyncio.sleep(random.uniform(4,6))
-					await client.delete_messages(event.chat_id, m.id)
+				m = await event.reply(pong)
+				await asyncio.sleep(random.uniform(4,6))
+				await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
 		
