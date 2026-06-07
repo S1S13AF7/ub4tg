@@ -190,6 +190,7 @@ async def main():
 		async def id_dov(u:int):
 			if u==0 or u==my_id:
 				return u
+			global dovs
 			try:
 				dovs_file = "dovs.json"		# дови:
 				with open(dovs_file, "r") as read_file:
@@ -321,17 +322,14 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'.дов(и|ы)?'))
+		@client.on(events.NewMessage(outgoing=True, pattern=r'.дов'))
 		async def dovs(event):
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
 			u = 0 #user id
 			global dovs
-			pong = '??'
-			# мене вже давно просили зробити "дови" ("ДОВірені юзерИ"), 
-			# Але, чесно кажучи, мені було тупо "впадлу"
-			# і от, через ~2 роки, думаю, може пора? :D
+			
 			try:
 				with open(dovs_file, "r") as read_file:
 					dovs = json.load(read_file)
@@ -376,6 +374,41 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(outgoing=True, pattern='\.check$'))
+		async def cmd_check(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			# іноді бот "помирає",  я хз чому, але коли працювали заражалки, 
+			# то наче не так часто помирав (або вже погано пригадую)
+			# думаю справа в тому, що довго "нема активності" і всьо
+			# крч службова команда .check має періодично надсилати
+			# ну і, теоретично, тоді може не дохнутиме? 
+			# Або хоч узнаєм коли ще працювало
+			щ = 0
+			у = 0
+			while (True):
+				if щ == 0:
+					r_min = 2
+					r_max = 4
+				else:
+					r_min = 1000
+					r_max = 3666
+				w = random.uniform(r_min,r_max)
+				print(f'✅ {щ}') # показать {щ}
+				if щ==0:
+					await event.edit(f'✅ {t}')
+				else:
+					if у:
+						await asyncio.sleep(random.uniform(2,4))
+						await client.delete_messages(c,у) # prew
+						await asyncio.sleep(random.uniform(2,4))
+					m = await event.reply(f'✅ {щ}') # 1...хз
+					у = m.id
+				щ+=1
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(pattern=r'\.send '))
 		async def cmd_send_in(event):
 			c = event.chat_id
@@ -386,21 +419,22 @@ async def main():
 			т = str(re.findall(r"\.send .*",t)[0]) or False
 			if т:
 				т = str(re.sub(r"\.send ",'',т)) # cut
+			if "ping" in t:
+				т = '' # ''
+				return # ібо нєхуй
 			if c in chts and д and т:
 				print(f'🆔 {u}: {t}')
-				await asyncio.sleep(random.uniform(2,5))
-				my_sended_message = await event.reply(т)
+				await asyncio.sleep(random.uniform(2,4))
+				m = await client.send_message(c,т)#send.
 				await asyncio.sleep(random.uniform(5,7))
-				fordel = my_sended_message.id
+				fordel = m.id
 				if u==my_id:
-					fordel=[event.id, my_sended_message.id]
+					fordel=[event.id, m.id]
 				await client.delete_messages(event.chat_id,fordel)
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True, 
-		pattern='.(ping|пинг|пінг|пінґ|зштп|gsyu)'))
-		# вхідне повіомлення з перевіркою пінґа
+		@client.on(events.NewMessage(incoming=True, pattern='.ping'))
 		async def cmd_ping_in(event):
 			c = event.chat_id
 			m = event.message
@@ -415,15 +449,16 @@ async def main():
 				else:
 					needsend=False
 			if needsend:
+				# Say "𝐏𝐎𝐍𝐆!",del. message
 				m = await event.reply(pong)
-				await asyncio.sleep(random.uniform(4,6))
+				await asyncio.sleep(random.uniform(2,4))
 				await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
 		async def cmd_ping(event):
-			# Say "pong!" whenever you send "!ping", then delete both messages
+			# Say "𝐏𝐎𝐍𝐆!",delete messages.
 			m = await event.reply('𝐏𝐎𝐍𝐆!')
 			await asyncio.sleep(random.uniform(4,6))
 			await client.delete_messages(event.chat_id, [event.id, m.id])
