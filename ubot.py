@@ -388,21 +388,18 @@ async def main():
 			щ = 0
 			у = 0
 			while (True):
-				if щ == 0:
-					r_min = 2
-					r_max = 4
-				else:
-					r_min = 111111
-					r_max = 666666
+				r_min = 1000
+				r_max = 3666
 				w = random.uniform(r_min,r_max)
 				print(f'✅ {щ}') # показать {щ}
 				if щ==0:
 					await event.edit(f'✅ {t}')
 				else:
 					if у:
-						await asyncio.sleep(random.uniform(2,4))
+						print (f'⏳ wait {w}') # показать
+						await asyncio.sleep(w) # ждем (w)
 						await client.delete_messages(c,у) # prew
-						await asyncio.sleep(random.uniform(2,4))
+						await asyncio.sleep(random.uniform(2,9))
 					m = await event.reply(f'✅ {щ}') # 1...хз
 					у = m.id
 				щ+=1
