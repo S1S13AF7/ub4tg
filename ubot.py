@@ -185,6 +185,85 @@ async def main():
 				os.system('termux-wake-lock')
 				print('This can cause battery drain!')
 		
+		if db_pymysql:
+			
+			import pymysql
+			import pymysql.cursors
+			
+			con = pymysql.connect(host='localhost',
+			user='root',
+			password='V3rY$tR0NgPaS$Sw0Rd',
+			db='db',
+			charset='utf8mb4',
+			cursorclass=pymysql.cursors.DictCursor)
+			d = con.cursor()
+			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bot_users` (
+			`user_id` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
+			`reg_int` int(11) UNSIGNED NOT NULL DEFAULT '0',
+			`f_name` text CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
+			`f_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
+			PRIMARY KEY (`user_id`)
+			);''');
+			con.commit()
+			d.execute('''CREATE TABLE IF NOT EXISTS `tg_users_url` (
+			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
+			`u_link` varchar(64) NOT NULL DEFAULT '',
+			`f_name` text NOT NULL,
+			PRIMARY KEY (`user_id`)
+			);''');
+			con.commit()
+			try:
+				d.execute('''INSERT INTO `tg_bot_users` 
+				(`user_id`, `reg_int`, `f_name`) 
+				VALUES (%s,%s,%s) 
+				ON DUPLICATE KEY UPDATE 
+				f_name=VALUES(f_name);''',
+				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
+			except:
+				pass
+		
+		#if db_sqlite3:
+			####################################################################
+		
+		########################################################################
+		
+		async def get_id(url):
+			user_id = 0
+			if "tg://openmessage?user_id=" in url or "tg://user?id=" in url:
+				user_id = int(re.findall(r'id=([0-9]+)',url)[0])
+				#print(user_id)# розкоментувать якщо нада бачить
+				return user_id
+			if "t.me/" in url:
+				if db_pymysql:
+					try:
+						d.execute("SELECT * FROM `tg_users_url` WHERE `u_link` = '%s' ORDER BY `when_int` DESC" % str(url)); 
+						user = d.fetchone();
+						if user is None:
+							pass
+						else:
+							user_id = int(user['user_id'])
+							print(f'{url} in db: @{user_id}')
+					except:
+							pass
+				if user_id==0:
+					#return user_id # fucking limit # розкоментуйте щоб не резолв.
+					try:
+						user_entity = await client.get_entity(url)
+						if user_entity.id:
+							user_id = int(user_entity.id)
+							user_fn = user_entity.first_name or ''
+							print(f'✅ ok: {url} @{user_id}')
+							if db_pymysql:
+								try:
+									d.execute("INSERT INTO `tg_users_url` (`when_int`,`user_id`,`u_link`,`f_name`) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE user_id = VALUES (user_id),u_link = VALUES (u_link),f_name = VALUES (f_name),when_int = VALUES (when_int);", (int(time.time()),int(user_id),str(url),str(user_fn))); con.commit()
+								except Exception as Err:
+									print(f'E:{Err}')
+					except Exception as Err:
+						print(f'E:{Err}')
+						#pass
+			return user_id
+		
 		########################################################################
 		
 		async def id_dov(u:int):
@@ -222,7 +301,8 @@ async def main():
 		
 		########################################################################
 		
-		async def ферма():
+		async def ферма(w:int=0):
+			д=int(time.time())
 			kuda = int(ch_id)
 			if kuda==0:
 				return
@@ -248,6 +328,14 @@ async def main():
 								if u==my_id:
 									w=14401
 									print(t)
+								if db_pymysql:
+									q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u};"
+									try:
+										await asyncio.sleep(random.uniform(0,1))
+										con.query(q)
+									except Exception as Err:
+										#print(f'E:{Err} #337')
+										pass
 					if 'Наступний прибуток через' in t:
 						г= re.findall(r'([0-9]) годин.*',t)
 						х= re.findall(r'([0-9]{1,2}) хв.*',t)
@@ -270,6 +358,40 @@ async def main():
 						w=int(w)
 				print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True,
+		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ)'))
+		async def ферма_ВДАЛО(event):
+			m = event.message
+			t = m.raw_text
+			u = 0 # OR id
+			д = int(time.time())
+			if m.sender_id in irises:
+				if ch_id < 0:
+					kuda = ch_id
+				elif m.chat_id in irises:
+					kuda = m.chat_id
+			else:
+				return
+			if m.date:
+				д = max(int(datetime.timestamp(m.date)),int(time.time()))
+			if m.entities:
+				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
+				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
+				if r:
+					u=int(r[0])
+			else:
+				h=t
+				#return
+			if db_pymysql and u>0:
+				q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u} AND `f_time`<{д};"
+				try:
+					await asyncio.sleep(random.uniform(0,1))
+					con.query(q)
+				except:
+					pass
 		
 		########################################################################
 		
@@ -382,13 +504,13 @@ async def main():
 			# іноді бот "помирає",  я хз чому, але коли працювали заражалки, 
 			# то наче не так часто помирав (або вже погано пригадую)
 			# думаю справа в тому, що довго "нема активності" і всьо
-			# крч службова команда .check має періодично надсилати
-			# ну і, теоретично, тоді може не дохнутиме? 
-			# Або хоч узнаєм коли ще працювало
+			# службова команда .check працювала вродь нормально, 
+			# Але пока вона працювала не працювала "ферма", 
+			# Хоча може і не тому, хз. Крч пока не юзайте.
 			щ = 0
 			у = 0
 			while (True):
-				r_min = 1000
+				r_min = 3000
 				r_max = 3666
 				w = random.uniform(r_min,r_max)
 				print(f'✅ {щ}') # показать {щ}
@@ -406,7 +528,7 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(pattern=r'\.send '))
+		@client.on(events.NewMessage(pattern=r'\.send'))
 		async def cmd_send_in(event):
 			c = event.chat_id
 			m = event.message
@@ -414,10 +536,12 @@ async def main():
 			u = int(m.sender_id)
 			д = await id_dov(u)
 			т = str(re.findall(r"\.send .*",t)[0]) or False
+			if t=='.send' or t=='.send ':
+				т = 'А текст?' # .send т
 			if т:
-				т = str(re.sub(r"\.send ",'',т)) # cut
+				т = str(re.sub(r"\.send ",'',т))
 			if "ping" in t:
-				т = '' # ''
+				#т = '𝐏𝐎𝐍𝐆' # 𝐏𝐎𝐍𝐆
 				return # ібо нєхуй
 			if c in chts and д and т:
 				print(f'🆔 {u}: {t}')
@@ -428,6 +552,37 @@ async def main():
 				if u==my_id:
 					fordel=[event.id, m.id]
 				await client.delete_messages(event.chat_id,fordel)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, 
+		pattern=r'.(h(e)?lp|х(е)?лп(а)?)$'))
+		async def cmd_help(event):
+			help_message = f'''
+			<blockquote>📃 код і є документація 😈</blockquote>
+			
+			<code>.ping</code> – "pong!", del.
+			<code>+chts</code> – ✅ sv_cheats 1	*
+			<code>-chts</code> – ❎ sv_cheats 0	*
+			<code>+дов @ід</code> – ✅ +дов @ід	**
+			<code>-дов @ід</code> – ❎ -дов @ід	**
+			<code>.send </code> – пише текст***
+			<code>.help</code> – <u>you are here</u>
+			
+			*	впливає на <code>.ping</code> і <code>.send</code>
+			**	+/-дов через @(ід_кого)
+			***	якщо є дов і вкл. <code>+chts</code>
+			
+			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
+			href="https://github.com/S1S13AF7/ub4tg">code</a>;
+			
+			💬 <u>@misc_games</u>
+			'''
+			try:
+				await asyncio.sleep(random.uniform(0.3,1))
+				await event.edit(help_message) # ред.
+			except:
+				pass
 		
 		########################################################################
 		
@@ -448,13 +603,14 @@ async def main():
 			if needsend:
 				# Say "𝐏𝐎𝐍𝐆!",del. message
 				m = await event.reply(pong)
-				await asyncio.sleep(random.uniform(2,4))
+				await asyncio.sleep(random.uniform(2,6))
 				await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
 		async def cmd_ping(event):
+			print ('✅ 𝐏𝐎𝐍𝐆!')
 			# Say "𝐏𝐎𝐍𝐆!",delete messages.
 			m = await event.reply('𝐏𝐎𝐍𝐆!')
 			await asyncio.sleep(random.uniform(4,6))
