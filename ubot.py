@@ -383,27 +383,6 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True,
-		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ)'))
-		async def ферма_ВДАЛО(event):
-			m = event.message
-			t = m.raw_text
-			u = 0 # OR id
-			д = int(time.time())
-			if m.sender_id not in irises:
-				return
-			if m.date:
-				д = max(int(datetime.timestamp(m.date)),int(time.time()))
-			if m.entities:
-				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
-				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
-				if r:
-					u=int(r[0])
-					if db_pymysql and u==my_id:
-						s_f_t(u,д,403)
-		
-		########################################################################
-		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
 		async def sv_cheats(event):
 			c = event.chat_id
@@ -502,38 +481,6 @@ async def main():
 			if need_save:
 				with open(dovs_file, "w", encoding="utf-8") as write_file:
 					json.dump(dovs,write_file,ensure_ascii=False,indent='	')
-		
-		########################################################################
-		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'\.check$'))
-		async def cmd_check(event):
-			c = event.chat_id
-			m = event.message
-			t = m.raw_text
-			# іноді бот "помирає",  я хз чому, але коли працювали заражалки, 
-			# то наче не так часто помирав (або вже погано пригадую)
-			# думаю справа в тому, що довго "нема активності" і всьо
-			# службова команда .check працювала вродь нормально, 
-			# Але пока вона працювала не працювала "ферма", 
-			# Хоча може і не тому, хз. Крч пока не юзайте.
-			щ = 0
-			у = 0
-			while (True):
-				r_min = 3333
-				r_max = 3666
-				w = random.uniform(r_min,r_max)
-				print(f'✅ {щ}') # показать {щ}
-				if щ==0:
-					await event.edit(f'✅ {t}')
-				else:
-					print (f'⏳ wait {w}') # показать
-					await asyncio.sleep(w) # ждем (w)
-					if у:
-						await client.delete_messages(c,у) # prew
-						await asyncio.sleep(random.uniform(2,9))
-					m = await event.reply(f'✅ {щ}') # 1...хз
-					у = m.id
-				щ+=1
 		
 		########################################################################
 		
