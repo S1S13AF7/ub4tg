@@ -282,6 +282,34 @@ async def main():
 		
 		########################################################################
 		
+		async def s_f_t(u:int,d:int,s:int):
+			дата=int(time.time())
+			if u==0:
+				return
+			if d==0:
+				d=дата
+			if db_pymysql:
+				await asyncio.sleep(random.uniform(1,3))
+				try:
+					d.execute(f"SELECT * FROM `tg_bot_users` WHERE user_id={u}"); 
+					user = d.fetchone();
+					if user is None:
+						return
+				except Exception as Err:
+					print(f'E:{Err} #29x,{s}')
+					return
+				q=f"UPDATE `tg_bot_users` SET `f_time`={d} WHERE `user_id`={u};"
+				try:
+					await asyncio.sleep(random.uniform(1,3))
+					con.query(q)
+				except Exception as Err:
+					print(f'E:{Err} #30x,{s}')
+				
+			
+			return
+		
+		########################################################################
+		
 		async def message_q( # спизжено
 				text: str,
 				user_id: int,
@@ -328,14 +356,8 @@ async def main():
 								if u==my_id:
 									w=14401
 									print(t)
-								if db_pymysql:
-									q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u};"
-									try:
-										await asyncio.sleep(random.uniform(0,1))
-										con.query(q)
-									except Exception as Err:
-										#print(f'E:{Err} #337')
-										pass
+									if db_pymysql:
+										s_f_t(u,д,360)
 					if 'Наступний прибуток через' in t:
 						г= re.findall(r'([0-9]) годин.*',t)
 						х= re.findall(r'([0-9]{1,2}) хв.*',t)
@@ -368,12 +390,7 @@ async def main():
 			t = m.raw_text
 			u = 0 # OR id
 			д = int(time.time())
-			if m.sender_id in irises:
-				if ch_id < 0:
-					kuda = ch_id
-				elif m.chat_id in irises:
-					kuda = m.chat_id
-			else:
+			if m.sender_id not in irises:
 				return
 			if m.date:
 				д = max(int(datetime.timestamp(m.date)),int(time.time()))
@@ -382,16 +399,8 @@ async def main():
 				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
 				if r:
 					u=int(r[0])
-			else:
-				h=t
-				#return
-			if db_pymysql and u>0:
-				q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u} AND `f_time`<{д};"
-				try:
-					await asyncio.sleep(random.uniform(0,1))
-					con.query(q)
-				except:
-					pass
+					if db_pymysql and u==my_id:
+						s_f_t(u,д,403)
 		
 		########################################################################
 		
@@ -510,16 +519,16 @@ async def main():
 			щ = 0
 			у = 0
 			while (True):
-				r_min = 3000
+				r_min = 3333
 				r_max = 3666
 				w = random.uniform(r_min,r_max)
 				print(f'✅ {щ}') # показать {щ}
 				if щ==0:
 					await event.edit(f'✅ {t}')
 				else:
+					print (f'⏳ wait {w}') # показать
+					await asyncio.sleep(w) # ждем (w)
 					if у:
-						print (f'⏳ wait {w}') # показать
-						await asyncio.sleep(w) # ждем (w)
 						await client.delete_messages(c,у) # prew
 						await asyncio.sleep(random.uniform(2,9))
 					m = await event.reply(f'✅ {щ}') # 1...хз
@@ -547,7 +556,7 @@ async def main():
 				print(f'🆔 {u}: {t}')
 				await asyncio.sleep(random.uniform(2,4))
 				m = await client.send_message(c,т)#send.
-				await asyncio.sleep(random.uniform(5,7))
+				await asyncio.sleep(random.uniform(5,8))
 				fordel = m.id
 				if u==my_id:
 					fordel=[event.id, m.id]
@@ -603,7 +612,7 @@ async def main():
 			if needsend:
 				# Say "𝐏𝐎𝐍𝐆!",del. message
 				m = await event.reply(pong)
-				await asyncio.sleep(random.uniform(2,6))
+				await asyncio.sleep(random.uniform(2,8))
 				await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
@@ -613,15 +622,10 @@ async def main():
 			print ('✅ 𝐏𝐎𝐍𝐆!')
 			# Say "𝐏𝐎𝐍𝐆!",delete messages.
 			m = await event.reply('𝐏𝐎𝐍𝐆!')
-			await asyncio.sleep(random.uniform(4,6))
+			await asyncio.sleep(random.uniform(4,8))
 			await client.delete_messages(event.chat_id, [event.id, m.id])
 		
 		########################################################################
-		
-		if ch_id<0 and ch_id not in chts:
-			chts.append(ch_id)
-			with open(chts_file, "w", encoding="utf-8") as write_file:
-				json.dump(chts,write_file,ensure_ascii=False,indent='	')
 		
 		if get_config_key("farm") and ch_id<0:
 			await ферма()
