@@ -97,6 +97,8 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 ################################################################################
 
+f_time = 0	# остання успішна ферма була коли?
+
 irises = [707693258,5137994780,5226378684,5434504334,5443619563]
 
 ################################################################################
@@ -222,6 +224,15 @@ async def main():
 				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
 			except:
 				pass
+			try:
+				d.execute("SELECT f_time FROM `tg_bot_users` WHERE user_id = %d" % int(my_id)); 
+				u = d.fetchone();
+				if u is None:
+					print('не знайшли юзера у базі localhost')
+				else:
+					f_time = int(u ["f_time"])
+			except:
+				pass
 		
 		#if db_sqlite3:
 			####################################################################
@@ -282,28 +293,17 @@ async def main():
 		
 		########################################################################
 		
-		async def s_f_t(u:int,d:int,s:int):
-			дата=int(time.time())
-			if u==0:
+		async def sft(u:int,д:int):
+			if u==0 or д==0:
 				return
-			if d==0:
-				d=дата
 			if db_pymysql:
-				await asyncio.sleep(random.uniform(1,3))
-				try:
-					d.execute(f"SELECT * FROM `tg_bot_users` WHERE user_id={u}"); 
-					user = d.fetchone();
-					if user is None:
-						return
-				except Exception as Err:
-					print(f'E:{Err} #29x,{s}')
-					return
 				q=f"UPDATE `tg_bot_users` SET `f_time`={d} WHERE `user_id`={u};"
+				await asyncio.sleep(random.uniform(0,1))
 				try:
-					await asyncio.sleep(random.uniform(1,3))
 					con.query(q)
+					con.commit
 				except Exception as Err:
-					print(f'E:{Err} #30x,{s}')
+					print(f'E:{Err} #30x')
 				
 			
 			return
@@ -329,20 +329,28 @@ async def main():
 		
 		########################################################################
 		
-		async def ферма(w:int=0):
-			д=int(time.time())
+		async def ферма():
 			kuda = int(ch_id)
 			if kuda==0:
 				return
 			while (get_config_key("farm")):
 				#F_RUN = True #	✅ погнали?
 				w = random.uniform(1,14401)
+				д = int(time.time())
+				global f_time
+				if f_time>0:
+					if (д-f_time)<14401:
+						w=(f_time+14401)-д
+						print(f'⏳ wait {w}')
+						await asyncio.sleep(w)
 				f = await message_q(
 					text='Ферма',
 					user_id=kuda,
 					mark_read=True,
 					delete=True)
 				s = f.sender_id
+				if f.date:
+					д = int(datetime.timestamp(f.date))
 				if f.text:
 					t = f.raw_text
 				if s in irises:
@@ -356,8 +364,9 @@ async def main():
 								if u==my_id:
 									w=14401
 									print(t)
+									f_time=int(д)
 									if db_pymysql:
-										s_f_t(u,д,360)
+										await sft(u,д)
 					if 'Наступний прибуток через' in t:
 						г= re.findall(r'([0-9]) годин.*',t)
 						х= re.findall(r'([0-9]{1,2}) хв.*',t)
@@ -380,6 +389,31 @@ async def main():
 						w=int(w)
 				print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True,
+		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ)'))
+		async def ферма_ВДАЛО(event):
+			m = event.message
+			t = m.raw_text
+			u = 0 # OR id
+			д = int(time.time())
+			if m.sender_id not in irises:
+				return
+			if m.date:
+				д = int(datetime.timestamp(m.date))
+			if m.entities:
+				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
+				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
+				if r:
+					u=int(r[0])
+					q=f"UPDATE `tg_bot_users` SET f_time={д} WHERE user_id={u};"
+					if u==my_id:
+						global f_time
+						f_time=int(д)
+					if db_pymysql and u==my_id:
+						await sft(u,д)
 		
 		########################################################################
 		
