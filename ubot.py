@@ -97,8 +97,6 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 ################################################################################
 
-f_time = 0	# остання успішна ферма була коли?
-
 irises = [707693258,5137994780,5226378684,5434504334,5443619563]
 
 ################################################################################
@@ -224,15 +222,6 @@ async def main():
 				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
 			except:
 				pass
-			try:
-				d.execute("SELECT f_time FROM `tg_bot_users` WHERE user_id = %d" % int(my_id)); 
-				u = d.fetchone();
-				if u is None:
-					print('не знайшли юзера у базі localhost')
-				else:
-					f_time = int(u ["f_time"])
-			except:
-				pass
 		
 		#if db_sqlite3:
 			####################################################################
@@ -299,9 +288,10 @@ async def main():
 			if db_pymysql:
 				try:
 					q="UPDATE tg_bot_users SET f_time = %s WHERE user_id = %s"
+					await asyncio.sleep(random.uniform(1,2))
 					d.execute(q,(f'{д}',u));con.commit()
 				except Exception as Err:
-					print(f'E:{Err} #30x')
+					print(f'E:{Err} #sft')
 				
 			return
 		
@@ -334,12 +324,6 @@ async def main():
 				#F_RUN = True #	✅ погнали?
 				w = random.uniform(1,14401)
 				д = int(time.time())
-				global f_time
-				if f_time>0:
-					if (д-f_time)<14401:
-						w=(f_time+14401)-д
-						print(f'⏳ wait {w}')
-						await asyncio.sleep(w)
 				f = await message_q(
 					text='Ферма',
 					user_id=kuda,
@@ -361,7 +345,6 @@ async def main():
 								if u==my_id:
 									w=14401
 									print(t)
-									f_time=int(д)
 									if db_pymysql:
 										await sft(u,д)
 					if 'Наступний прибуток через' in t:
@@ -405,9 +388,6 @@ async def main():
 				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
 				if r:
 					u=int(r[0])
-					if u==my_id:
-						global f_time
-						f_time=int(д)
 					if db_pymysql and u==my_id:
 						await sft(u,д)
 		
