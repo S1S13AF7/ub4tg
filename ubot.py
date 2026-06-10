@@ -405,7 +405,6 @@ async def main():
 				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
 				if r:
 					u=int(r[0])
-					q=f"UPDATE `tg_bot_users` SET f_time={д} WHERE user_id={u};"
 					if u==my_id:
 						global f_time
 						f_time=int(д)
@@ -458,8 +457,8 @@ async def main():
 			try:
 				await event.edit(pong) # ред.
 				print(pong)
-			except Exception as wtf:
-				print(wtf)	#	print
+			except:
+				pass
 		
 		########################################################################
 		
@@ -507,8 +506,8 @@ async def main():
 					try:
 						await event.edit(pong)
 						print(pong)	#	print
-					except Exception as wtf:
-						print(wtf)	#	print
+					except:
+						pass
 			if need_save:
 				with open(dovs_file, "w", encoding="utf-8") as write_file:
 					json.dump(dovs,write_file,ensure_ascii=False,indent='	')
