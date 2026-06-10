@@ -297,15 +297,12 @@ async def main():
 			if u==0 or д==0:
 				return
 			if db_pymysql:
-				q=f"UPDATE `tg_bot_users` SET `f_time`={д} WHERE `user_id`={u};"
-				await asyncio.sleep(random.uniform(0,1))
 				try:
-					con.query(q)
-					con.commit
+					q="UPDATE tg_bot_users SET f_time = %s WHERE user_id = %s"
+					d.execute(q,(f'{д}',u));con.commit()
 				except Exception as Err:
 					print(f'E:{Err} #30x')
 				
-			
 			return
 		
 		########################################################################
