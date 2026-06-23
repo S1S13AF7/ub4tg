@@ -402,9 +402,12 @@ async def main():
 			if c not in chts:
 				return
 			if m.mentioned and 'Нашелся вражеский клан:' in t:
-				await asyncio.sleep(random.uniform(3,4444))
+				print(t) # показать в консолі повідомлення
+				w = random.uniform(3,4444) # скільки ждем?
+				print(f'⏳ wait {w}')
+				await asyncio.sleep(w)
 				m = await event.reply('@toadbot Напасть на клан')
-				await asyncio.sleep(random.uniform(2,8))
+				await asyncio.sleep(random.uniform(3,7))
 				await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
