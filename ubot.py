@@ -393,17 +393,64 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True, pattern='Жабы стартанули!'))
+		@client.on(events.NewMessage(incoming=True, pattern='⚡️ Алло, подъем,',
+		from_users=1124824021))
+		async def подъем(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			if c not in chts:
+				return
+			if m.mentioned and 'Нашелся вражеский клан:' in t:
+				await asyncio.sleep(random.uniform(3,4444))
+				m = await event.reply('@toadbot Напасть на клан')
+				await asyncio.sleep(random.uniform(2,8))
+				await client.delete_messages(event.chat_id, m.id)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True, pattern='Боевая готовность',
+		from_users=1124824021))
+		async def готовность(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			if c not in chts:
+				return
+			if m.mentioned and 'Не забудь совершить атаку на арене!' in t:
+				await asyncio.sleep(random.uniform(3,1111))
+				m = await event.reply('@toadbot На арену')
+				await asyncio.sleep(random.uniform(2,8))
+				await client.delete_messages(event.chat_id, m.id)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True, pattern='Жабы стартанули!',
+		from_users=1124824021))
 		async def Жабы_стартанули(event):
 			c = event.chat_id
 			m = event.message
-			s = int(m.sender_id)
-			if s!= 1124824021 or c not in chts:
-				return # якщо не включені chts.
+			if c not in chts:
+				return
 			message = '@toadbot Гонка 50'
 			m = await event.reply(message)
 			await asyncio.sleep(random.uniform(2,8))
 			await client.delete_messages(event.chat_id, m.id)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True, from_users=1124824021,
+		pattern=r'(Эх, почти|Не повезло),'))
+		async def Не_повезло(event):
+			c = event.chat_id
+			m = event.message
+			if c not in chts:
+				return
+			if m.mentioned:
+				message = '@toadbot Реанимировать жабу'
+				m = await event.reply(message)
+				await asyncio.sleep(random.uniform(2,8))
+				await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
 		
