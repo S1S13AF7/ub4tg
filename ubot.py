@@ -393,6 +393,20 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(incoming=True, pattern='Жабы стартанули!'))
+		async def Жабы_стартанули(event):
+			c = event.chat_id
+			m = event.message
+			s = int(m.sender_id)
+			if s!= 1124824021 or c not in chts:
+				return # якщо не включені chts.
+			message = '@toadbot Гонка 50'
+			m = await event.reply(message)
+			await asyncio.sleep(random.uniform(2,8))
+			await client.delete_messages(event.chat_id, m.id)
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
 		async def sv_cheats(event):
 			c = event.chat_id
