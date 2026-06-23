@@ -393,6 +393,22 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(incoming=True, pattern='⚡️ Алло, подъем,',
+		from_users=1124824021))
+		async def подъем(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			if c not in chts:
+				return
+			if m.mentioned and 'Нашелся вражеский клан:' in t:
+				await asyncio.sleep(random.uniform(3,4444))
+				m = await event.reply('@toadbot Напасть на клан')
+				await asyncio.sleep(random.uniform(2,8))
+				await client.delete_messages(event.chat_id, m.id)
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(incoming=True, pattern='Боевая готовность',
 		from_users=1124824021))
 		async def готовность(event):
