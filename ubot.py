@@ -473,7 +473,7 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
-		pattern=r'.*(Ваш|Ваша|Вы|Твой|Твоя|Ты).*уже'))
+		pattern=r'.*уже.*'))
 		async def уже(event):
 			c = event.chat_id
 			m = event.message
