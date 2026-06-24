@@ -488,7 +488,7 @@ async def main():
 					print(f'⏳ wait {w}')
 					await asyncio.sleep(w)
 					m = await client.send_message(c,т)
-					await asyncio.sleep(random.uniform(1,7))
+			await asyncio.sleep(random.uniform(1,7))
 			try:
 				await client.delete_messages(event.chat_id, m.id) # try delete
 			except:
