@@ -473,15 +473,22 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
-		pattern=
-		r'.+(не на работе|уже (использовал|совершила|мудохался|участник))'))
+		pattern=r'.+?(Ваш|Ваша|Вы|Твой|Твоя|Ты).*уже.*'))
 		async def уже(event):
 			c = event.chat_id
 			m = event.message
 			if c not in chts:
 				return
 			if m.mentioned:
-				# якщо сповіщення (собі) про те, що вже не треба нічого робити:
+				if '⏳ Ты уже зарегистрирован как участник арены!' in t:
+					м= re.findall(r'([0-9]{1,2}) мин.*',t)
+					if м:
+						print(t) # показать в консолі повідомлення
+						w=int(м[0])+random.uniform(1,2) # скільки?
+						print(f'⏳ wait {w}')
+						await asyncio.sleep(w)
+						m = await event.reply('На арену')
+						await asyncio.sleep(random.uniform(3,7))
 				try:
 					await client.delete_messages(event.chat_id, m.id) # видаляєм
 				except:
