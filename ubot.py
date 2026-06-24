@@ -473,17 +473,17 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
-		pattern=r'.+?(Ваш|Ваша|Вы|Твой|Твоя|Ты).*уже.*'))
+		pattern=r'.*уже.*'))
 		async def уже(event):
 			c = event.chat_id
 			m = event.message
 			if c not in chts:
 				return
 			if m.mentioned:
+				print(t) # показать в консолі повідомлення
 				if '⏳ Ты уже зарегистрирован как участник арены!' in t:
 					м= re.findall(r'([0-9]{1,2}) мин.*',t)
 					if м:
-						print(t) # показать в консолі повідомлення
 						w=int(м[0])+random.uniform(1,2) # скільки?
 						print(f'⏳ wait {w}')
 						await asyncio.sleep(w)
