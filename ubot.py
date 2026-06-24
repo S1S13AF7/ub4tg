@@ -477,6 +477,7 @@ async def main():
 		async def уже(event):
 			c = event.chat_id
 			m = event.message
+			t = m.raw_text
 			if c not in chts:
 				return
 			if m.mentioned:
