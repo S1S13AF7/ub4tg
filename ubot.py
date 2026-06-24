@@ -453,15 +453,12 @@ async def main():
 			if m.mentioned:
 				m = await event.reply(message)
 				await asyncio.sleep(random.uniform(2,8))
-				try:
-					await client.delete_messages(event.chat_id, [event.id,m.id])
-				except:
-					await client.delete_messages(event.chat_id, m.id)
+				await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True, from_users=1124824021,
-		pattern=r'(Эх, почти|Не повезло),'))
+		pattern=r'(Ваша жабка нуждается в реанимации|Эх, почти|Не повезло)'))
 		async def Не_повезло(event):
 			c = event.chat_id
 			m = event.message
@@ -472,6 +469,23 @@ async def main():
 				m = await event.reply(message)
 				await asyncio.sleep(random.uniform(2,8))
 				await client.delete_messages(event.chat_id, m.id)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
+		pattern=
+		r'.+(не на работе|уже (использовал|совершила|мудохался|участник))'))
+		async def уже(event):
+			c = event.chat_id
+			m = event.message
+			if c not in chts:
+				return
+			if m.mentioned:
+				# якщо сповіщення (собі) про те, що вже не треба нічого робити:
+				try:
+					await client.delete_messages(event.chat_id, m.id) # видаляєм
+				except:
+					pass
 		
 		########################################################################
 		
