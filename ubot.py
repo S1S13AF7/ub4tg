@@ -472,6 +472,30 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
+		pattern=r'.*(Ваш|Ваша|Вы|Твой|Твоя|Ты).*уже'))
+		async def уже(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			if c not in chts:
+				return
+			if '⏳ Ты уже зарегистрирован как участник арены!' in t:
+				м= re.findall(r'([0-9]{1,2}) мин.*',t)
+				if м:
+					т='@toadbot На арену'
+					w=int(м[0])+random.uniform(1,1111)
+					print(f'⏳ wait {w}')
+					await asyncio.sleep(w)
+					m = await client.send_message(c,т)
+					await asyncio.sleep(random.uniform(1,7))
+			try:
+				await client.delete_messages(event.chat_id, m.id) # try delete
+			except:
+				pass
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
 		async def sv_cheats(event):
 			c = event.chat_id
