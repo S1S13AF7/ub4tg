@@ -481,13 +481,7 @@ async def main():
 			if c not in chts:
 				return
 			if '⏳ Ты уже зарегистрирован как участник арены!' in t:
-				м= re.findall(r'([0-9]{1,2}) мин.*',t)
-				if м:
-					т='@toadbot На арену'
-					w=int(м[0])+random.uniform(1,1111)
-					print(f'⏳ wait {w}')
-					await asyncio.sleep(w)
-					m = await client.send_message(c,т)
+				return
 			await asyncio.sleep(random.uniform(1,7))
 			try:
 				await client.delete_messages(event.chat_id, m.id) # try delete
