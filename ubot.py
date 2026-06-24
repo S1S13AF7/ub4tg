@@ -443,6 +443,24 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True, from_users=1124824021,
+		pattern='Можно завершить работу'))
+		async def завершить_работу(event):
+			c = event.chat_id
+			m = event.message
+			if c not in chts:
+				return
+			message = '@toadbot Завершить работу'
+			if m.mentioned:
+				m = await event.reply(message)
+				await asyncio.sleep(random.uniform(2,8))
+				try:
+					await client.delete_messages(event.chat_id, [event.id,m.id])
+				except:
+					await client.delete_messages(event.chat_id, m.id)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True, from_users=1124824021,
 		pattern=r'(Эх, почти|Не повезло),'))
 		async def Не_повезло(event):
 			c = event.chat_id
