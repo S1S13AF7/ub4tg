@@ -610,7 +610,7 @@ async def main():
 				return # ібо нєхуй
 			if c in chts and д and т:
 				print(f'🆔 {u}: {t}')
-				await asyncio.sleep(random.uniform(2,4))
+				await asyncio.sleep(random.uniform(2,8))
 				m = await client.send_message(c,т)#send.
 				await asyncio.sleep(random.uniform(5,8))
 				fordel = m.id
