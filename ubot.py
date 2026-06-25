@@ -480,6 +480,8 @@ async def main():
 			t = m.raw_text
 			if c not in chts:
 				return
+			if 'Карта' in t:
+				return
 			if '⏳ Ты уже зарегистрирован как участник арены!' in t:
 				return
 			await asyncio.sleep(random.uniform(1,7))
