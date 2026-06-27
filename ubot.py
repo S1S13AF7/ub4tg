@@ -480,9 +480,9 @@ async def main():
 			t = m.raw_text
 			if c not in chts:
 				return
-			if 'Карта' in t:
-				return
-			if '⏳ Ты уже зарегистрирован как участник арены!' in t:
+			if 'Давай начнем работу' in t:
+				m = await event.reply('Начать работу')
+			if 'Карта' in t or 'Ты уже зарегистрирован как участник арены' in t:
 				return
 			await asyncio.sleep(random.uniform(1,7))
 			try:
@@ -610,9 +610,9 @@ async def main():
 				return # ібо нєхуй
 			if c in chts and д and т:
 				print(f'🆔 {u}: {t}')
-				await asyncio.sleep(random.uniform(2,8))
+				await asyncio.sleep(random.uniform(2,6))
 				m = await client.send_message(c,т)#send.
-				await asyncio.sleep(random.uniform(5,8))
+				await asyncio.sleep(random.uniform(4,6))
 				fordel = m.id
 				if u==my_id:
 					fordel=[event.id, m.id]
