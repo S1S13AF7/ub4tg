@@ -481,7 +481,10 @@ async def main():
 			if c not in chts:
 				return
 			if 'Давай начнем работу' in t:
-				m = await event.reply('Начать работу')
+				if m.mentioned:
+					m = await event.reply('Начать работу')
+				else:
+					return
 			if 'Карта' in t or 'Ты уже зарегистрирован как участник арены' in t:
 				return
 			await asyncio.sleep(random.uniform(1,7))
