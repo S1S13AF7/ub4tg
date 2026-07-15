@@ -485,7 +485,7 @@ async def main():
 					m = await event.reply('Начать работу')
 				else:
 					return
-			if 'Карта' in t or 'Ты уже зарегистрирован как участник арены' in t:
+			if 'Карта' in t or 'уже зарегистрирован' in t or 'Поход' in t:
 				return
 			await asyncio.sleep(random.uniform(1,7))
 			try:
