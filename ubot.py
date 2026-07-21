@@ -495,6 +495,22 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(incoming=True,from_users=1968071106))
+		# той бот пише рекламу. тому "слухаємо" все (без патерна)
+		async def уже(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			needdel=False
+			if c not in chts:
+				return
+			# А що саме будемо видаляти перерахую нижче. пока "подарок":
+			if 'Получен Подарок' in t:
+				needdel=True # якщо параметрів буде більше це нам знадобиться.
+				await client.delete_messages(event.chat_id, m.id) # try delete
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
 		async def sv_cheats(event):
 			c = event.chat_id
