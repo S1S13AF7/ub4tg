@@ -660,7 +660,6 @@ async def main():
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
 			href="https://github.com/S1S13AF7/ub4tg">code</a>;
 			
-			💬 <u>@misc_games</u>
 			'''
 			try:
 				await asyncio.sleep(random.uniform(0.3,1))
