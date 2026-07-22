@@ -487,7 +487,7 @@ async def main():
 					return
 			if 'Карта' in t or 'Поход' in t or 'У ВАС НЕТ ПРАВА НА ОШИБКУ' in t:
 				return
-			await asyncio.sleep(random.uniform(0.123,4.321))
+			await asyncio.sleep(random.uniform(1.234,4.321))
 			try:
 				await client.delete_messages(event.chat_id, m.id) # try delete
 			except:
