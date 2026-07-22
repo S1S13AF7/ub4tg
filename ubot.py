@@ -485,9 +485,10 @@ async def main():
 					m = await event.reply('Начать работу')
 				else:
 					return
-			if 'Карта' in t or 'уже зарегистрирован' in t or 'Поход' in t:
+			if 'Карта' in t or 'зарегистрирован' in t or 'Поход' in t 
+			or 'У ВАС НЕТ ПРАВА НА ОШИБКУ' in t:
 				return
-			await asyncio.sleep(random.uniform(1,7))
+			await asyncio.sleep(random.uniform(0.12345,5.4321))
 			try:
 				await client.delete_messages(event.chat_id, m.id) # try delete
 			except:
