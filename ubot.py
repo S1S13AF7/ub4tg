@@ -433,7 +433,7 @@ async def main():
 		async def Жабы_стартанули(event):
 			c = event.chat_id
 			m = event.message
-			if c not in chts:
+			if c not in chts or c!=-1002149106230:
 				return
 			message = '@toadbot Гонка 50'
 			m = await event.reply(message)
@@ -487,7 +487,7 @@ async def main():
 					return
 			if 'Карта' in t or 'Поход' in t or 'У ВАС НЕТ ПРАВА НА ОШИБКУ' in t:
 				return
-			await asyncio.sleep(random.uniform(1.234,4.321))
+			await asyncio.sleep(random.uniform(2.56,5.12))
 			try:
 				await client.delete_messages(event.chat_id, m.id) # try delete
 			except:
