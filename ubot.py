@@ -459,8 +459,28 @@ async def main():
 		
 		########################################################################
 		
-		# я пока непоняв чому та фігня неробить. 
-			
+		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
+		pattern=r'.*путь.*'))
+		async def путь(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			if m.mentioned:
+				print(m.raw_text)
+				if 'реанимировать' in t:
+					await asyncio.sleep(random.uniform(1,2))
+					message = '@toadbot Реанимировать жабу'
+					m = await client.send_message(c,message)
+				await asyncio.sleep(random.uniform(1,2))
+				result = await client(functions.messages.GetBotCallbackAnswerRequest(  # src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
+				peer=m.peer_id,
+				msg_id=m.id,
+				game=False,  # idk why it works only when it false... 0_o
+				data=m.reply_markup.rows[0].buttons[1].data
+				))
+				print(result) # if have text ?
+				
+		
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
