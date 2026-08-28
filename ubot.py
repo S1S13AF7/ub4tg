@@ -399,16 +399,12 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
-			if c not in chts:
-				return
 			if m.mentioned and 'Нашелся вражеский клан:' in t:
 				print(t) # показать в консолі повідомлення
 				w = random.uniform(3,4444) # скільки ждем?
 				print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
-				m = await event.reply('@toadbot Напасть на клан')
-				await asyncio.sleep(random.uniform(3,7))
-				await client.delete_messages(event.chat_id, m.id)
+				m = await client.send_message(c,'Напасть на клан')
 		
 		########################################################################
 		
@@ -418,13 +414,9 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
-			if c not in chts:
-				return
 			if m.mentioned and 'Не забудь совершить атаку на арене!' in t:
 				await asyncio.sleep(random.uniform(3,1111))
-				m = await event.reply('@toadbot На арену')
-				await asyncio.sleep(random.uniform(2,8))
-				await client.delete_messages(event.chat_id, m.id)
+				m = await client.send_message(c,'На арену')
 		
 		########################################################################
 		
@@ -435,8 +427,8 @@ async def main():
 			m = event.message
 			if c not in chts or c!=-1002149106230:
 				return
-			message = '@toadbot Гонка 50'
-			m = await event.reply(message)
+			т = '@toadbot Гонка 50'
+			m = await client.send_message(c,т)#send.
 			await asyncio.sleep(random.uniform(2,8))
 			await client.delete_messages(event.chat_id, m.id)
 		
@@ -451,9 +443,7 @@ async def main():
 				return
 			message = '@toadbot Завершить работу'
 			if m.mentioned:
-				m = await event.reply(message)
-				await asyncio.sleep(random.uniform(2,8))
-				await client.delete_messages(event.chat_id, m.id)
+				m = await client.send_message(c,message)
 		
 		########################################################################
 		
@@ -462,14 +452,29 @@ async def main():
 		async def Не_повезло(event):
 			c = event.chat_id
 			m = event.message
-			if c not in chts:
-				return
 			if m.mentioned:
+				await asyncio.sleep(random.uniform(1,9))
 				message = '@toadbot Реанимировать жабу'
-				m = await event.reply(message)
-				await asyncio.sleep(random.uniform(2,8))
-				await client.delete_messages(event.chat_id, m.id)
+				m = await client.send_message(c,message)
 		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True, pattern=r'.*выбирает.*',
+		from_users=1124824021))
+		async def выб(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			if m.mentioned:
+				print(m.raw_text)
+				if 'реанимировать' in t:
+					await asyncio.sleep(random.uniform(1,2))
+					message = '@toadbot Реанимировать жабу'
+					m = await client.send_message(c,message)
+				await asyncio.sleep(random.uniform(1,2))
+				tryclick = await message.click(1)
+				print(tryclick) # if have text ?
+			
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
@@ -482,16 +487,9 @@ async def main():
 				return
 			if 'Давай начнем работу' in t:
 				if m.mentioned:
-					m = await event.reply('Начать работу')
-				else:
-					return
-			if 'Карта' in t or 'Поход' in t or 'У ВАС НЕТ ПРАВА НА ОШИБКУ' in t:
-				return
-			await asyncio.sleep(random.uniform(2.56,5.12))
-			try:
-				await client.delete_messages(event.chat_id, m.id) # try delete
-			except:
-				pass
+					m = await client.send_message(c,'Начать работу')
+			
+			return
 		
 		########################################################################
 		
