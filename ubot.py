@@ -459,21 +459,7 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True, pattern=r'.*выбирает.*',
-		from_users=1124824021))
-		async def выб(event):
-			c = event.chat_id
-			m = event.message
-			t = m.raw_text
-			if m.mentioned:
-				print(m.raw_text)
-				if 'реанимировать' in t:
-					await asyncio.sleep(random.uniform(1,2))
-					message = '@toadbot Реанимировать жабу'
-					m = await client.send_message(c,message)
-				await asyncio.sleep(random.uniform(1,2))
-				tryclick = await message.click(1)
-				print(tryclick) # if have text ?
+		# я пока непоняв чому та фігня неробить. 
 			
 		########################################################################
 		
