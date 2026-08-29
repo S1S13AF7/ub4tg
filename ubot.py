@@ -485,7 +485,7 @@ async def main():
 							mssg = result.message
 							print(mssg) # if have message
 							await asyncio.sleep(random.uniform(2.0002, 2.22394))
-							if 'живой' in mssg:
+							if 'живая' in mssg:
 								message = 'Реанимировать жабу'
 								m = await client.send_message(c,message)
 							if 'не твой' in mssg:
