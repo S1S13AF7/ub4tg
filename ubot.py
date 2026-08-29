@@ -471,15 +471,58 @@ async def main():
 					await asyncio.sleep(random.uniform(1,2))
 					message = '@toadbot Реанимировать жабу'
 					m = await client.send_message(c,message)
-				await asyncio.sleep(random.uniform(1,2))
-				result = await client(functions.messages.GetBotCallbackAnswerRequest(  # src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
-				peer=m.peer_id,
-				msg_id=m.id,
-				game=False,  # idk why it works only when it false... 0_o
-				data=m.reply_markup.rows[0].buttons[1].data
-				))
-				print(result) # if have text ?
-				
+				await asyncio.sleep(random.uniform(1.001,3))
+				try:
+					result = await client(functions.messages.GetBotCallbackAnswerRequest(
+					# src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
+					peer=m.peer_id,
+					msg_id=m.id,
+					game=False,  # idk why it works only when it false... 0_o
+					data=m.reply_markup.rows[0].buttons[1].data
+					))
+					if result:
+						if result.message:
+							mssg = result.message
+							print(mssg) # if have message
+							await asyncio.sleep(random.uniform(2.0002, 2.22394))
+							if 'живой' in mssg:
+								message = 'Реанимировать жабу'
+								m = await client.send_message(c,message)
+							if 'не твой' in mssg:
+								return
+							if '50' in mssg:
+								if c==-1002149106230:
+									message = 'Выйти из гонки'
+									m = await client.send_message(c,message)
+								if termux_api:
+									os.system(
+									f"termux-notification --title '{my_id}' --content '{mssg}'"
+									)
+								if c not in chts:
+									return
+							try:
+								await asyncio.sleep(random.uniform(1.0001,2.94))
+								result = await client(functions.messages.GetBotCallbackAnswerRequest(
+								peer=m.peer_id,msg_id=m.id,game=False,
+								data=m.reply_markup.rows[0].buttons[1].data
+								))
+								if result:
+									if result.message:
+										print(result.message)
+										msg = result.message
+										if termux_api:
+											os.system(
+											f"termux-notification --title '{my_id}' --content '{msg}'"
+											)
+								return
+									else:
+										print(result)
+							except Exception as wtf:
+								print(wtf)	# print
+					else:
+						print(result)
+				except Exception as wtf:
+					print(wtf)	# print
 		
 		########################################################################
 		
