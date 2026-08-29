@@ -514,7 +514,7 @@ async def main():
 											os.system(
 											f"termux-notification --title '{my_id}' --content '{msg}'"
 											)
-								return
+										return
 									else:
 										print(result)
 							except Exception as wtf:
