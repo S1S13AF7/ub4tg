@@ -476,15 +476,14 @@ async def main():
 					m = await client.send_message(c,message)
 				await asyncio.sleep(random.uniform(1.001,3))
 				if u!=my_id:
+					print(u)
 					return
 				try:
-					result = await client(functions.messages.GetBotCallbackAnswerRequest(
-					# src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
-					peer=m.peer_id,
-					msg_id=m.id,
-					game=False,  # idk why it works only when it false... 0_o
-					data=m.reply_markup.rows[0].buttons[1].data
-					))
+					for row in m.buttons:
+						for button in row:
+							if 'прямо' in button.text:
+								result=await button.click()
+								break
 					if result:
 						if result.message:
 							mssg = result.message
