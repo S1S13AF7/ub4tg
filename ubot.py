@@ -420,9 +420,10 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True, pattern='Жабы стартанули!',
+		@client.on(events.NewMessage(incoming=True, 
+		pattern='Первой к финишу пришла жабка',
 		from_users=1124824021))
-		async def Жабы_стартанули(event):
+		async def финиш(event):
 			c = event.chat_id
 			m = event.message
 			if c not in chts or c!=-1002149106230:
