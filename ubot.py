@@ -469,40 +469,33 @@ async def main():
 			h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
 			u = int(re.findall(r'путь: <a href="tg://user\?id=([0-9]+)">',h)[0])
 			if m.mentioned or u==my_id:
+				await asyncio.sleep(random.uniform(1,3))
+				message = '@toadbot Реанимировать жабу'
+				р = await client.send_message(c,message)
+				await asyncio.sleep(random.uniform(1,3))
 				print(m.raw_text)
-				if 'реанимировать' in t:
-					await asyncio.sleep(random.uniform(1,2))
-					message = '@toadbot Реанимировать жабу'
-					р = await client.send_message(c,message)
-				await asyncio.sleep(random.uniform(1.001,3))
 				if u!=my_id:
-					print(u)
 					return
 				for row in m.buttons:
 					for button in row:
-						print(button.text) # text
 						if 'прямо' in button.text:
 							result=await button.click()
-							print(result.message)
-							mssg = result.message
-							await asyncio.sleep(random.uniform(2.0002, 2.22394))
-							if 'живая' in mssg:
-								message = 'Реанимировать жабу'
-								await client.send_message(c,message)
-							if 'не твой' in mssg:
-								return
-							if '50' in mssg:
-								if c==-1002149106230:
-									message = 'Выйти из гонки'
-									await client.send_message(c,message)
+							if result.message:
+								pritn(result.message)
+								mssg = result.message
+								if 'не твой' in mssg:
+									return
+								if '50' in mssg:
+									if c==-1002149106230:
+										message = 'Выйти из гонки'
+										await client.send_message(c,message)
 								if termux_api:
 									os.system(
 									f"termux-notification --title '{my_id}' --content '{mssg}'"
 									)
-								if c not in chts:
-									return
+								
 							print(result)
-							
+							break
 		
 		########################################################################
 		
