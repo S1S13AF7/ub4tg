@@ -297,6 +297,18 @@ async def main():
 		
 		########################################################################
 		
+		async def try_click(m,text:str):
+			# клікнути на кнопку
+			for row in m.buttons:
+				for button in row:
+					if text in button.text:
+						result=await button.click()
+						return result
+			print('щось пішло нетак')
+			return
+		
+		########################################################################
+		
 		async def message_q( # спизжено
 				text: str,
 				user_id: int,
@@ -478,55 +490,40 @@ async def main():
 				if u!=my_id:
 					print(u)
 					return
-				try:
-					for row in m.buttons:
-						for button in row:
-							if 'прямо' in button.text:
-								result=await button.click()
-								break
-					if result:
-						if result.message:
-							mssg = result.message
-							print(mssg) # if have message
-							await asyncio.sleep(random.uniform(2.0002, 2.22394))
-							if 'живая' in mssg:
-								message = 'Реанимировать жабу'
-								m = await client.send_message(c,message)
-							if 'не твой' in mssg:
-								return
-							if '50' in mssg:
-								if c==-1002149106230:
-									message = 'Выйти из гонки'
-									m = await client.send_message(c,message)
-								if termux_api:
-									os.system(
-									f"termux-notification --title '{my_id}' --content '{mssg}'"
-									)
-								if c not in chts:
-									return
-							try:
-								await asyncio.sleep(random.uniform(1.0001,2.94))
-								result = await client(functions.messages.GetBotCallbackAnswerRequest(
-								peer=m.peer_id,msg_id=m.id,game=False,
-								data=m.reply_markup.rows[0].buttons[1].data
-								))
-								if result:
-									if result.message:
-										print(result.message)
-										msg = result.message
-										if termux_api:
-											os.system(
-											f"termux-notification --title '{my_id}' --content '{msg}'"
-											)
-										return
-									else:
-										print(result)
-							except Exception as wtf:
-								print(wtf)	# print
+				result=try_click(m=event.message,text='прямо')
+				if result.message:
+					mssg = result.message
+					print(mssg) # if have message
+					await asyncio.sleep(random.uniform(2.0002, 2.22394))
+					if 'живая' in mssg:
+						message = 'Реанимировать жабу'
+						m = await client.send_message(c,message)
+					if 'не твой' in mssg:
+						return
+					if '50' in mssg:
+						if c==-1002149106230:
+							message = 'Выйти из гонки'
+							m = await client.send_message(c,message)
+						if termux_api:
+							os.system(
+							f"termux-notification --title '{my_id}' --content '{mssg}'"
+							)
+						if c not in chts:
+							return
+					result=try_click(m=event.message,text='прямо')
+					if result.message:
+						print(result.message)
+						msg = result.message
+						if termux_api:
+							os.system(
+							f"termux-notification --title '{my_id}' --content '{msg}'"
+							)
 					else:
 						print(result)
-				except Exception as wtf:
-					print(wtf)	# print
+						return
+				else:
+					print(result)
+				
 		
 		########################################################################
 		
