@@ -466,13 +466,17 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
-			if m.mentioned:
+			h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
+			u = int(re.findall(r'путь: <a href="tg://user\?id=([0-9]+)">',h)[0])
+			if m.mentioned or u==my_id:
 				print(m.raw_text)
 				if 'реанимировать' in t:
 					await asyncio.sleep(random.uniform(1,2))
 					message = '@toadbot Реанимировать жабу'
 					m = await client.send_message(c,message)
 				await asyncio.sleep(random.uniform(1.001,3))
+				if u!=my_id:
+					return
 				try:
 					result = await client(functions.messages.GetBotCallbackAnswerRequest(
 					# src https://tl.telethon.dev/methods/messages/get_bot_callback_answer.html
