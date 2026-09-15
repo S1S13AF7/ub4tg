@@ -469,10 +469,9 @@ async def main():
 			h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
 			u = int(re.findall(r'путь: <a href="tg://user\?id=([0-9]+)">',h)[0])
 			if m.mentioned or u==my_id:
-				await asyncio.sleep(random.uniform(1,3))
-				message = '@toadbot Реанимировать жабу'
-				р = await client.send_message(c,message)
-				await asyncio.sleep(random.uniform(1,3))
+				await asyncio.sleep(random.uniform(1.0001, 2.56))
+				await client.send_message(c,'Реанимировать жабу')
+				await asyncio.sleep(random.uniform(1.0001, 2.56))
 				print(m.raw_text)
 				if u!=my_id:
 					return
