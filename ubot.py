@@ -449,14 +449,65 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True, from_users=1124824021,
-		pattern=r'(Ваша жабка нуждается в реанимации|Эх, почти|Не повезло)'))
+		pattern=r'(Ваша|Твоя) жабка нуждается в реанимации'))
+		async def нуждается_в_реанимации(event):
+			c = event.chat_id
+			m = event.message
+			if m.mentioned:
+				now = datetime.now()
+				hours = now.hour
+				minutes = now.minute
+				
+				await asyncio.sleep(random.uniform(1.234, 2.987))
+				await client.send_message(c,'Реанимировать жабу')
+				await asyncio.sleep(random.uniform(1.234, 2.987))
+				
+				if hours == 23 or hours == 0:
+					await client.send_message(c, 'Жабу на тусу')
+				elif 8 <= hours <= 22 and minutes < 49:
+					await client.send_message(c, 'На арену')
+				elif hours!=4 and hours!=8 and hours!=12 and hours!=20:
+					await client.send_message(c,'Напасть на клан')
+		
+		@client.on(events.NewMessage(incoming=True, 
+		from_users=1124824021,
+		pattern=r'Победитель.*'))
+		async def Победитель(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			if m.mentioned:
+				now = datetime.now()
+				hours=int(now.hour)
+				minutes = now.minute
+				if m.buttons:
+					for row in m.buttons:
+						for button in row:
+							if 'аптечку' in button.text:
+								await asyncio.sleep(random.uniform(1.234, 9.11))
+								await client.send_message(c,'Реанимировать жабу')
+							if 'топ' in button.text and hours>20 and minutes<50:
+								await asyncio.sleep(random.uniform(1,9.1))
+								await client.send_message(c,'Сезон арены')
+				if 'Банда получила критическое повреждение' in t:
+					h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
+					r = re.findall(r'жабы <a href="tg://user\?id=([0-9]+)">',h)
+					u = my_id
+					if r:
+						u = int(r[0])
+						if u!=my_id:
+							return
+					await asyncio.sleep(random.uniform(1.23,9.1))
+					await client.send_message(c,'Отдать леденец')
+		
+		@client.on(events.NewMessage(incoming=True, from_users=1124824021,
+		pattern=r'(Эх, почти|Не повезло)'))
 		async def Не_повезло(event):
 			c = event.chat_id
 			m = event.message
 			if m.mentioned:
-				await asyncio.sleep(random.uniform(1,9))
-				message = '@toadbot Реанимировать жабу'
-				m = await client.send_message(c,message)
+				await asyncio.sleep(random.uniform(1.12, 9.11))
+				await client.send_message(c,'Реанимировать жабу')
 		
 		########################################################################
 		
