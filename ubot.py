@@ -511,15 +511,6 @@ async def main():
 					await asyncio.sleep(random.uniform(1.23,3.5))
 					await client.send_message(c,'Отдать леденец')
 		
-		@client.on(events.NewMessage(incoming=True, from_users=1124824021,
-		pattern=r'(Эх, почти|Не повезло)'))
-		async def Не_повезло(event):
-			c = event.chat_id
-			m = event.message
-			if m.mentioned:
-				await asyncio.sleep(random.uniform(1.12, 9.11))
-				await client.send_message(c,'Реанимировать жабу')
-		
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
@@ -533,9 +524,15 @@ async def main():
 			await asyncio.sleep(random.uniform(1.0001, 2.56))
 			реанимировать='Реанимировать жабу'
 			if m.mentioned or u==my_id:
-				print(t) # m.raw_text
+				if 'реанимировать' in t:
+					await client.send_message(c,реанимировать)
+					await asyncio.sleep(random.uniform(1.1,2))
+					print(h) # html
+				else:
+					print(t) # text
 				for row in m.buttons:
 					for button in row:
+						print(button.text) # гляну
 						if 'прямо' in button.text:
 							result=await button.click()
 							if result.message:
