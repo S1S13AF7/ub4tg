@@ -530,13 +530,10 @@ async def main():
 			t = m.raw_text
 			h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
 			u = int(re.findall(r'путь: <a href="tg://user\?id=([0-9]+)">',h)[0])
+			await asyncio.sleep(random.uniform(1.0001, 2.56))
+			реанимировать='Реанимировать жабу'
 			if m.mentioned or u==my_id:
-				await asyncio.sleep(random.uniform(1.0001, 2.56))
-				await client.send_message(c,'Реанимировать жабу')
-				await asyncio.sleep(random.uniform(1.0001, 2.56))
-				print(m.raw_text)
-				if u!=my_id:
-					return
+				print(t) # m.raw_text
 				for row in m.buttons:
 					for button in row:
 						if 'прямо' in button.text:
@@ -545,12 +542,31 @@ async def main():
 								pritn(result.message)
 								mssg = result.message
 								if 'не твой' in mssg:
+									# якщо це не свій хід, але бот тегнув, то:
+									await asyncio.sleep(random.uniform(1.1,2))
+									await client.send_message(c,реанимировать)
+									print(mssg)
 									return
+								if 'живая' in mssg:
+									await asyncio.sleep(random.uniform(1.1,2))
+									await client.send_message(c,реанимировать)
+									await asyncio.sleep(random.uniform(1.1,2))
+									result=await button.click()
+									mssg = result.message
 								if '50' in mssg:
 									if c==-1002149106230:
+										await asyncio.sleep(1.11)
 										message = 'Выйти из гонки'
 										await client.send_message(c,message)
-								if termux_api:
+										await asyncio.sleep(random.uniform(1,2))
+										result=await button.click()
+										await asyncio.sleep(1.11)
+										mssg = result.message
+										if result.message:
+											print(mssg)
+											if '50' in mssg:
+												await client.send_message(c,mssg)
+								if termux_api and mssg:
 									os.system(
 									f"termux-notification --title '{my_id}' --content '{mssg}'"
 									)
