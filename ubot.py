@@ -475,10 +475,13 @@ async def main():
 				
 				if hours == 23 or hours == 0:
 					await client.send_message(c, 'Жабу на тусу')
-				elif 8 <= hours <= 22 and minutes < 49:
-					await client.send_message(c, 'На арену')
-				elif hours!=4 and hours!=8 and hours!=12 and hours!=20:
-					await client.send_message(c,'Напасть на клан')
+				else:
+					if 8 <= hours <= 22 and minutes < 49:
+						await client.send_message(c, 'На арену')
+						await asyncio.sleep(random.uniform(1.2, 2.9))
+						await client.send_message(c,'Реанимировать жабу')
+					if hours!=4 and hours!=8 and hours!=12 and hours!=20:
+						await client.send_message(c,'Напасть на клан')
 		
 		@client.on(events.NewMessage(incoming=True, 
 		from_users=1124824021,
@@ -497,21 +500,17 @@ async def main():
 							if 'аптечку' in button.text:
 								await asyncio.sleep(random.uniform(1.234, 2.56))
 								await client.send_message(c,'Реанимировать жабу')
-		
-		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
-		pattern=r'.*Банда получила критическое повреждение.*'))
-		async def путь(event):
-			c = event.chat_id
-			m = event.message
-			t = m.raw_text
-			h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
-			r = re.findall(r'жабы <a href="tg://user\?id=([0-9]+)">',h)
-			if m.mentioned:
-				u = int(r[0])
-				if u!=my_id:
-					return
-				await asyncio.sleep(random.uniform(1.23,3.5))
-				await client.send_message(c,'Отдать леденец')
+				# я думав винести ту хрінь окремо, але тоді не працювало. Вернув
+				if 'Банда получила критическое повреждение' in t:
+					h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
+					r = re.findall(r'жабы <a href="tg://user\?id=([0-9]+)">',h)
+					u = my_id
+					if r:
+						u = int(r[0])
+						if u!=my_id:
+							return
+					await asyncio.sleep(random.uniform(1.23,3.5))
+					await client.send_message(c,'Отдать леденец')
 		
 		########################################################################
 		
@@ -541,8 +540,9 @@ async def main():
 								mssg = result.message
 								if 'не твой' in mssg:
 									# якщо це не свій хід, але бот тегнув, то:
-									await asyncio.sleep(random.uniform(1.1,2))
-									await client.send_message(c,реанимировать)
+									#await asyncio.sleep(random.uniform(1.1,2))
+									#await client.send_message(c,реанимировать)
+									# мало б реанімувати ще на етапі "аптечку"?
 									print(mssg)
 									return
 								if 'живая' in mssg:
