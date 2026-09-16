@@ -497,19 +497,21 @@ async def main():
 							if 'аптечку' in button.text:
 								await asyncio.sleep(random.uniform(1.234, 2.56))
 								await client.send_message(c,'Реанимировать жабу')
-							if 'топ' in button.text and hours>20 and minutes<50:
-								await asyncio.sleep(random.uniform(1,3.5))
-								await client.send_message(c,'Сезон арены')
-				if 'Банда получила критическое повреждение' in t:
-					h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
-					r = re.findall(r'жабы <a href="tg://user\?id=([0-9]+)">',h)
-					u = my_id
-					if r:
-						u = int(r[0])
-						if u!=my_id:
-							return
-					await asyncio.sleep(random.uniform(1.23,3.5))
-					await client.send_message(c,'Отдать леденец')
+		
+		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
+		pattern=r'.*Банда получила критическое повреждение.*'))
+		async def путь(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
+			r = re.findall(r'жабы <a href="tg://user\?id=([0-9]+)">',h)
+			if m.mentioned:
+				u = int(r[0])
+				if u!=my_id:
+					return
+				await asyncio.sleep(random.uniform(1.23,3.5))
+				await client.send_message(c,'Отдать леденец')
 		
 		########################################################################
 		
@@ -532,7 +534,6 @@ async def main():
 					print(t) # text
 				for row in m.buttons:
 					for button in row:
-						print(button.text) # гляну
 						if 'прямо' in button.text:
 							result=await button.click()
 							if result.message:
