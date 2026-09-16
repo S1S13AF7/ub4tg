@@ -523,17 +523,23 @@ async def main():
 			t = m.raw_text
 			h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
 			u = int(re.findall(r'путь: <a href="tg://user\?id=([0-9]+)">',h)[0])
+			r = re.findall(r'Теперь <a href="tg://user\?id=([0-9]+)">',h)
 			await asyncio.sleep(random.uniform(1.0001, 2.56))
 			реанимировать='Реанимировать жабу'
 			if m.mentioned or u==my_id:
 				if 'реанимировать' in t:
-					await client.send_message(c,реанимировать)
-					await asyncio.sleep(random.uniform(1.1,2))
+					r = int(r[0])
+					if r==my_id:
+						await client.send_message(c,реанимировать)
+						await asyncio.sleep(random.uniform(1.1,2))
 					print(h) # html
 				else:
 					print(t) # text
 				for row in m.buttons:
 					for button in row:
+						if 'аптечку' in button.text:
+							await client.send_message(c,реанимировать)
+							await asyncio.sleep(random.uniform(1.1,2))
 						if 'прямо' in button.text:
 							result=await button.click()
 							if result.message:
