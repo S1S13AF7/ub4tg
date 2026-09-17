@@ -485,28 +485,27 @@ async def main():
 		
 		@client.on(events.NewMessage(incoming=True, 
 		from_users=1124824021,
-		pattern=r'Победитель.*'))
-		async def Победитель(event):
+		pattern=r'.*(П|п)обед.*'))
+		async def Побед(event):
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
 			if m.mentioned:
-				now = datetime.now()
-				hours=int(now.hour)
-				minutes = now.minute
 				if m.buttons:
 					for row in m.buttons:
 						for button in row:
 							if 'аптечку' in button.text:
 								await asyncio.sleep(random.uniform(1.234, 2.56))
 								await client.send_message(c,'Реанимировать жабу')
-				# я думав винести ту хрінь окремо, але тоді не працювало. Вернув
+				
 				if 'Банда получила критическое повреждение' in t:
 					h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
 					r = re.findall(r'жабы <a href="tg://user\?id=([0-9]+)">',h)
 					u = my_id
+					print(h)
 					if r:
 						u = int(r[0])
+						print(f'@{r}')
 						if u!=my_id:
 							return
 					await asyncio.sleep(random.uniform(1.23,3.5))
