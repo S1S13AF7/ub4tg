@@ -734,6 +734,50 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, 
+		pattern=r'.кв(а)?)$'))
+		async def cmd_к(event):
+			# хелпа по жабам
+			# для новачків
+			# і для лінивих
+			help_message = f'''
+			<blockquote>швидка хелпа жабам</blockquote>
+			
+			/battle_settings@toadbot став галки
+			/toad_notifications@toadbot +галки
+			
+			<code>Дейлики</code> (роби все)
+			<code>Где жаба</code> (на роботу)
+			<code>Гонка 50</code> (на гонку)
+			<code>Забег инфо</code>
+			<code>Рейд инфо</code>
+			<code>Туса инфо</code>
+			<code>Жаба инфо</code> або /toad_info
+			<code>Война инфо</code>
+			<code>Напасть на клан</code>
+			<code>Отправить карту</code>
+			<code>Отправиться за картой</code>
+			<code>Реанимировать жабу</code>
+			<code>Использовать леденец</code>
+			<code>Отдать леденец</code>
+			<code>Мое снаряжение</code>
+			<code>Мой инвентарь</code>
+			<code>Моя комната</code>
+			<code>Мой огород</code>
+			<code>Мой клан</code>
+			<code>На арену</code>
+			
+			ну для начала хватить.
+			
+			'''
+			try:
+				await asyncio.sleep(random.uniform(0.3,1))
+				await event.edit(help_message) # ред.
+			except:
+				pass
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, 
 		pattern=r'.(h(e)?lp|х(е)?лп(а)?)$'))
 		async def cmd_help(event):
 			help_message = f'''
