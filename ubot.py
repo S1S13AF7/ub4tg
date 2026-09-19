@@ -734,7 +734,7 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, 
-		pattern=r'.кв(а)?)$'))
+		pattern=r'.кв(а)?$'))
 		async def cmd_к(event):
 			# хелпа по жабам
 			# для новачків
