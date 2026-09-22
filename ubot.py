@@ -734,39 +734,32 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, 
-		pattern=r'.кв(а)?$'))
+		pattern=r'.ква$'))
 		async def cmd_к(event):
 			# хелпа по жабам
 			# для новачків
 			# і для лінивих
 			help_message = f'''
-			<blockquote>швидка хелпа жабам</blockquote>
-			
-			/battle_settings@toadbot став галки
-			/toad_notifications@toadbot +галки
-			
-			<code>Дейлики</code> (роби все)
-			<code>Где жаба</code> (на роботу)
-			<code>Гонка 50</code> (на гонку)
-			<code>Забег инфо</code>
-			<code>Рейд инфо</code>
-			<code>Туса инфо</code>
+			<blockquote>🐸 ВАША ЖАБА 🐸</blockquote>
+			<code>Взять жабу</code>
+			<code>Покормить жабу</code>
+			<code>Дейлики</code> (<code>Ежедневные задания</code>)
 			<code>Жаба инфо</code> або /toad_info
-			<code>Война инфо</code>
-			<code>Напасть на клан</code>
-			<code>Отправить карту</code>
-			<code>Отправиться за картой</code>
-			<code>Реанимировать жабу</code>
-			<code>Использовать леденец</code>
-			<code>Отдать леденец</code>
+			
+			<blockquote>🐸 Арена / снаряга 🐸</blockquote>
+			
+			<code>На арену</code>
 			<code>Мое снаряжение</code>
 			<code>Мой инвентарь</code>
-			<code>Моя комната</code>
-			<code>Мой огород</code>
-			<code>Мой клан</code>
-			<code>На арену</code>
+			<code>Сезон арены</code>
 			
-			ну для начала хватить.
+			<blockquote>🐸 Гонка / туса / рейд 🐸</blockquote>
+			
+			<code>Гонка 50</code>
+			<code>Рейд инфо</code>
+			<code>Забег инфо</code>
+			<code>Туса инфо</code>
+			<code>Жабу на тусу</code>
 			
 			'''
 			try:
