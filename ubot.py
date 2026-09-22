@@ -737,30 +737,24 @@ async def main():
 		pattern=r'.ква$'))
 		async def cmd_к(event):
 			# хелпа по жабам
-			# для новачків
-			# і для лінивих
 			help_message = f'''
 			<blockquote>🐸 ВАША ЖАБА 🐸</blockquote>
 			<code>Взять жабу</code>
 			<code>Покормить жабу</code>
 			<code>Дейлики</code> (<code>Ежедневные задания</code>)
 			<code>Жаба инфо</code> або /toad_info
-			
 			<blockquote>🐸 Арена / снаряга 🐸</blockquote>
-			
 			<code>На арену</code>
 			<code>Мое снаряжение</code>
-			<code>Мой инвентарь</code>
-			<code>Сезон арены</code>
-			
 			<blockquote>🐸 Гонка / туса / рейд 🐸</blockquote>
-			
 			<code>Гонка 50</code>
 			<code>Рейд инфо</code>
 			<code>Забег инфо</code>
 			<code>Туса инфо</code>
 			<code>Жабу на тусу</code>
-			
+			<blockquote>🐸 НАСТРОЙКИ 🐸</blockquote>
+			/battle_settings@toadbot
+			/toad_notifications@toadbot
 			'''
 			try:
 				await asyncio.sleep(random.uniform(0.3,1))
