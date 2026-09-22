@@ -747,9 +747,9 @@ async def main():
 			<code>Рейд инфо</code>
 			<code>Мое снаряжение</code>
 			<blockquote>🐞 Букашки:</blockquote>
-			<code>Покормить жабу</code>
 			<code>Где жаба</code>
 			<code>Моя команта</code>
+			<code>Покормить жабу</code>
 			<code>Начать ограбление с</code>
 			<blockquote>🐸 НАСТРОЙКИ:</blockquote>
 			/battle_settings@toadbot
