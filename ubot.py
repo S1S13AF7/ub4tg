@@ -741,8 +741,8 @@ async def main():
 			<blockquote>🐸 ВАША ЖАБА 🐸</blockquote>
 			<code>Взять жабу</code>
 			<code>Покормить жабу</code>
-			<code>Дейлики</code> (<code>Ежедневные задания</code>)
-			<code>Жаба инфо</code> або /toad_info
+			<code>Дейлики</code> /daily_quests
+			<code>Жаба инфо</code> /toad_info
 			<blockquote>🐸 Арена / снаряга 🐸</blockquote>
 			<code>На арену</code>
 			<code>Мое снаряжение</code>
