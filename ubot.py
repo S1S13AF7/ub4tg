@@ -748,9 +748,17 @@ async def main():
 			<code>Мое снаряжение</code>
 			<blockquote>🐞 Букашки:</blockquote>
 			<code>Где жаба</code>
-			<code>Моя команта</code>
+			<code>Моя комната</code>
 			<code>Покормить жабу</code>
 			<code>Начать ограбление с</code>
+			<blockquote>🐸 Клан / класс</blockquote>
+			<code>Война инфо</code>
+			<code>Выбрать класс</code>
+			<code>Сменить класс</code>
+			<code>Напасть на клан</code>
+			<code>Отправить карту</code>
+			<code>Отправиться за картой</code>
+			<code>Выбрать клановый усилитель</code>
 			<blockquote>🐸 НАСТРОЙКИ:</blockquote>
 			/battle_settings@toadbot
 			/toad_notifications@toadbot
