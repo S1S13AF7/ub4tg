@@ -738,21 +738,20 @@ async def main():
 		async def cmd_к(event):
 			# хелпа по жабам
 			help_message = f'''
-			<blockquote>🐸 ВАША ЖАБА 🐸</blockquote>
+			<blockquote>🐸 ЖАБА:</blockquote>
 			<code>Взять жабу</code>
-			<code>Покормить жабу</code>
 			<code>Дейлики</code> /daily_quests
 			<code>Жаба инфо</code> /toad_info
-			<blockquote>🐸 Арена / снаряга 🐸</blockquote>
+			<blockquote>🐸 Арена / снаряга</blockquote>
 			<code>На арену</code>
-			<code>Мое снаряжение</code>
-			<blockquote>🐸 Гонка / туса / рейд 🐸</blockquote>
-			<code>Гонка 50</code>
 			<code>Рейд инфо</code>
-			<code>Забег инфо</code>
-			<code>Туса инфо</code>
-			<code>Жабу на тусу</code>
-			<blockquote>🐸 НАСТРОЙКИ 🐸</blockquote>
+			<code>Мое снаряжение</code>
+			<blockquote>🐞 Букашки:</blockquote>
+			<code>Покормить жабу</code>
+			<code>Где жаба</code>
+			<code>Моя команта</code>
+			<code>Начать ограбление с</code>
+			<blockquote>🐸 НАСТРОЙКИ:</blockquote>
 			/battle_settings@toadbot
 			/toad_notifications@toadbot
 			'''
