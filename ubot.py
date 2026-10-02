@@ -401,10 +401,14 @@ async def main():
 			t = m.raw_text
 			if m.mentioned and 'Нашелся вражеский клан:' in t:
 				print(t) # показать в консолі повідомлення
-				w = random.uniform(3,4444) # скільки ждем?
+				w = random.uniform(3333,6666) # 55...111 m
 				print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
+				await client.send_message(c,'Реанимировать жабу')
+				await asyncio.sleep(random.uniform(61,69)) # 1+m
 				m = await client.send_message(c,'Напасть на клан')
+				await asyncio.sleep(random.uniform(61,69)) # 1+m
+				await client.send_message(c,'Реанимировать жабу')
 		
 		########################################################################
 		
@@ -475,13 +479,10 @@ async def main():
 				
 				if hours == 23 or hours == 0:
 					await client.send_message(c, 'Жабу на тусу')
-				else:
-					if 8 <= hours <= 22 and minutes < 49:
-						await client.send_message(c, 'На арену')
-						await asyncio.sleep(random.uniform(1.2, 2.9))
-						await client.send_message(c,'Реанимировать жабу')
-					if hours!=4 and hours!=8 and hours!=12 and hours!=20:
-						await client.send_message(c,'Напасть на клан')
+				elif 8 <= hours <= 22 and minutes < 49:
+					await client.send_message(c, 'На арену')
+					await asyncio.sleep(random.uniform(1.2, 2.9))
+					await client.send_message(c,'Реанимировать жабу')
 		
 		@client.on(events.NewMessage(incoming=True, 
 		from_users=1124824021,
@@ -502,10 +503,9 @@ async def main():
 					h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
 					r = re.findall(r'жабы <a href="tg://user\?id=([0-9]+)">',h)
 					u = my_id
-					print(h)
+					print(t)
 					if r:
 						u = int(r[0])
-						print(f'@{r}')
 						if u!=my_id:
 							return
 					await asyncio.sleep(random.uniform(1.23,3.5))
@@ -739,7 +739,7 @@ async def main():
 			# хелпа по жабам
 			help_message = f'''
 			<blockquote>🐸 ЖАБА:</blockquote>
-			<code>Взять жабу</code>
+			<code>Взять жабу</code> /take_toad
 			<code>Дейлики</code> /daily_quests
 			<code>Жаба инфо</code> /toad_info
 			<blockquote>🐸 Арена / снаряга</blockquote>
@@ -750,15 +750,14 @@ async def main():
 			<code>Где жаба</code>
 			<code>Моя комната</code>
 			<code>Покормить жабу</code>
-			<code>Начать ограбление с</code>
 			<blockquote>🐸 Клан / класс</blockquote>
+			<code>Мой клан</code>
 			<code>Война инфо</code>
 			<code>Выбрать класс</code>
 			<code>Сменить класс</code>
 			<code>Напасть на клан</code>
 			<code>Отправить карту</code>
 			<code>Отправиться за картой</code>
-			<code>Выбрать клановый усилитель</code>
 			<blockquote>🐸 НАСТРОЙКИ:</blockquote>
 			/battle_settings@toadbot
 			/toad_notifications@toadbot
