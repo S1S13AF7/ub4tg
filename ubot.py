@@ -419,8 +419,10 @@ async def main():
 			m = event.message
 			t = m.raw_text
 			if m.mentioned and 'Не забудь совершить атаку на арене!' in t:
-				await asyncio.sleep(random.uniform(3,1111))
-				m = await client.send_message(c,'На арену')
+				await asyncio.sleep(random.uniform(61,111)) # 1+m
+				await client.send_message(c,'Реанимировать жабу')
+				await asyncio.sleep(random.uniform(61,69)) # 1+m
+				await client.send_message(c,'На арену')
 		
 		########################################################################
 		
