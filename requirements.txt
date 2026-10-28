@@ -3,5 +3,5 @@
 Telethon
 asyncio
 pymysql
-#loguru
+qrcode
 emoji
