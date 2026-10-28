@@ -67,58 +67,57 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 	api_id = int(config['api_id'])
 	api_hash = config['api_hash']
-		
+	
 ################################################################################
 
 # Функція малювання QR-коду в консолі
 def display_qr(url):
-    qr = qrcode.QRCode()
-    qr.clear()
-    qr.add_data(url)
-    print("Налаштування -> Пристрої -> Підключити пристрій\n")
-    # tty=True змушує консоль використовувати інвертовані кольори для коректного зчитування
-    qr.print_ascii(tty=True) 
+	qr = qrcode.QRCode()
+	qr.clear()
+	qr.add_data(url)
+	print("Налаштування -> Пристрої -> Підключити пристрій\n")
+	# tty=True змушує консоль використовувати інвертовані кольори для коректного зчитування
+	qr.print_ascii(tty=True) 
 
 async def main():
-    # Називаємо сесію, наприклад 'my_telegram_account'
-    client = TelegramClient(sessdb, api_id, api_hash)
-    await client.connect()
-
-    if await client.is_user_authorized():
-        print("Ви вже успішно авторизовані!")
-        me = await client.get_me()
-        print(f"Увійшли як: {me.first_name} (@{me.id})")
-        await client.disconnect()
-        return
-
-    # Ініціалізуємо вхід через QR
-    qr_login = await client.qr_login()
-    
-    # Показуємо QR-код у терміналі
-    display_qr(qr_login.url)
-
-    # Очікуємо, поки користувач сканує код (таймаут 45 секунд)
-    try:
-        await qr_login.wait(timeout=45)
-        print("\n[+] Успішно авторизовано через QR-код!")
-        
-    except errors.SessionPasswordNeededError:
-        # Якщо у вас увімкнена двофакторна автентифікація (хмарний пароль)
-        print("\n[!] QR-код скановано, але потрібен пароль двоетапної перевірки (2FA).")
-        password = input("Введіть ваш хмарний пароль Telegram: ")
-        await client.sign_in(password=password)
-        print("[+] Успішно авторизовано з хмарним паролем!")
-        
-    except asyncio.TimeoutError:
-        print("\n[-] Час очікування QR-коду вичерпано. Спробуйте запустити скрипт знову.")
-        # Перестворюємо токен, якщо не встигли
-        await qr_login.recreate()
-        return
-
-    # Перевірка успішного входу
-    me = await client.get_me()
-    print(f"Вітаємо, {me.first_name}! Сесія успішно створена.")
-    await client.disconnect()
+	client = TelegramClient(sessdb, api_id, api_hash)
+	await client.connect()
+	
+	if await client.is_user_authorized():
+		print("Ви вже успішно авторизовані!")
+		me = await client.get_me()
+		print(f"Увійшли як: {me.first_name} (@{me.id})")
+		await client.disconnect()
+		return
+	
+	# Ініціалізуємо вхід через QR
+	qr_login = await client.qr_login()
+	
+	# Показуємо QR-код у терміналі
+	display_qr(qr_login.url)
+	
+	# Очікуємо, поки користувач сканує код (таймаут 45 секунд)
+	try:
+		await qr_login.wait(timeout=45)
+		print("\n[+] Успішно авторизовано через QR-код!")
+		
+	except errors.SessionPasswordNeededError:
+		# Якщо у вас увімкнена двофакторна автентифікація (хмарний пароль)
+		print("\n[!] QR-код скановано, але потрібен пароль двоетапної перевірки (2FA).")
+		password = input("Введіть ваш хмарний пароль Telegram: ")
+		await client.sign_in(password=password)
+		print("[+] Успішно авторизовано з хмарним паролем!")
+		
+	except asyncio.TimeoutError:
+		print("\n[-] Час очікування QR-коду вичерпано. Спробуйте запустити скрипт знову.")
+		# Перестворюємо токен, якщо не встигли
+		await qr_login.recreate()
+		return
+	
+	# Перевірка успішного входу
+	me = await client.get_me()
+	print(f"Вітаємо, {me.first_name}! Сесія успішно створена.")
+	await client.disconnect()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+	asyncio.run(main())
