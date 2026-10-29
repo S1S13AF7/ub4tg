@@ -414,7 +414,7 @@ async def main():
 			t = m.raw_text
 			if m.mentioned and 'Нашелся вражеский клан:' in t:
 				print(t) # показать в консолі повідомлення
-				w = random.uniform(3333,6666) # 55...111 m
+				w = random.uniform(3,6666) # скільки ждем?
 				print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
 				await client.send_message(c,'Реанимировать жабу')
