@@ -97,7 +97,7 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 ################################################################################
 
-irises = [707693258,5137994780,5226378684,5434504334,5443619563]
+irises = [707693258,5137994780,5226378684,5434504334,5443619563,8611067852]
 
 ################################################################################
 
@@ -372,15 +372,13 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True,
+		@client.on(events.NewMessage(incoming=True,from_users=irises,
 		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ)'))
 		async def ферма_ВДАЛО(event):
 			m = event.message
 			t = m.raw_text
 			u = 0 # OR id
 			д = int(time.time())
-			if m.sender_id not in irises:
-				return
 			if m.date:
 				д = int(datetime.timestamp(m.date))
 			if m.entities:
@@ -393,6 +391,21 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(incoming=True,from_users=irises,
+		pattern=r'🗓 Ачивки.*')) # Дивляться в жабах, але пише й Іріс
+		async def уже(event):
+			c = event.chat_id
+			m = event.message
+			t = m.raw_text
+			if 'Пока нет ни одной ачивки...' in t:
+				try:
+					await client.delete_messages(event.chat_id, m.id) # try del.
+				except:
+					pass
+					#Можливо просто нема адмінки і/або повідомлення вже видалено
+		
+		########################################################################
+				
 		@client.on(events.NewMessage(incoming=True, pattern='⚡️ Алло, подъем,',
 		from_users=1124824021))
 		async def подъем(event):
