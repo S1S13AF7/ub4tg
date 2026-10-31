@@ -316,6 +316,37 @@ async def main():
 		
 		########################################################################
 		
+		async def реанимировать_жабу(chat: int):
+			if chat>=0:
+				return
+			r=await message_q(
+					text='Реанимировать жабу',
+					user_id=chat,
+					mark_read=True,
+					delete=False)
+			if r.text:
+					t = r.raw_text
+					if 'У тебя нет аптечек для реанимации жабы!' in t:
+						if termux_api:
+							os.system(
+								f"termux-notification --title '{my_id}' --content '{t}'"
+								)
+						print(t)
+						return 0
+					Осталось= re.findall(r'Осталось аптечек: ([0-9]{1,})',t)
+					if Осталось:
+						print(t)
+						Осталось=int(Осталось[0][0])
+						print(f'💊 {Осталось}')
+						if Осталось==0:
+							return True # Принаймні реанімували хоча не осталось
+						return Осталось # int
+					if 'Твоя жаба жива' in t:
+						return True # ok?
+			return False
+		
+		########################################################################
+		
 		async def ферма():
 			kuda = int(ch_id)
 			if kuda==0:
@@ -405,7 +436,7 @@ async def main():
 					#Можливо просто нема адмінки і/або повідомлення вже видалено
 		
 		########################################################################
-				
+		
 		@client.on(events.NewMessage(incoming=True, pattern='⚡️ Алло, подъем,',
 		from_users=1124824021))
 		async def подъем(event):
@@ -417,11 +448,12 @@ async def main():
 				w = random.uniform(3,6666) # скільки ждем?
 				print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
-				await client.send_message(c,'Реанимировать жабу')
-				await asyncio.sleep(random.uniform(61,69)) # 1+m
-				m = await client.send_message(c,'Напасть на клан')
-				await asyncio.sleep(random.uniform(61,69)) # 1+m
-				await client.send_message(c,'Реанимировать жабу')
+				Осталось = int(await реанимировать_жабу(c))
+				if Осталось:
+					await asyncio.sleep(random.uniform(60,64)) # 1+m
+					m = await client.send_message(c,'Напасть на клан')
+					await asyncio.sleep(random.uniform(60,64)) # 1+m
+					await client.send_message(c,'Реанимировать жабу')
 		
 		########################################################################
 		
@@ -433,7 +465,9 @@ async def main():
 			t = m.raw_text
 			if m.mentioned and 'Не забудь совершить атаку на арене!' in t:
 				await asyncio.sleep(random.uniform(61,111)) # 1+m
-				await client.send_message(c,'Реанимировать жабу')
+				Осталось = int(await реанимировать_жабу(c))
+				if Осталось == 0:
+					return # :(
 				await asyncio.sleep(random.uniform(61,69)) # 1+m
 				await client.send_message(c,'На арену')
 		
@@ -476,28 +510,35 @@ async def main():
 				now = datetime.now()
 				hours = now.hour
 				minutes = now.minute
-				
+				Осталось= 0 # потом
+				Покормить = False
 				if m.buttons:
 					for row in m.buttons:
 						for button in row:
 							if 'аптечку' in button.text:
 								await asyncio.sleep(random.uniform(1.234, 2.56))
-								await client.send_message(c,'Реанимировать жабу')
+								Осталось = int(await реанимировать_жабу(c))
 							if 'Покормить' in button.text:
 								await asyncio.sleep(random.uniform(1.234, 2.56))
 								await client.send_message(c,'Покормить жабу')
+								Покормить = True # Вважаємо що покормили
 				else:
 					await asyncio.sleep(random.uniform(1.234, 2.987))
-					await client.send_message(c,'Реанимировать жабу')
+					Осталось = int(await реанимировать_жабу(c))
+				
+				if int(Осталось)<1 and Покормить == False:
+					return # думаю що пофіксив зациклювання
 				
 				await asyncio.sleep(random.uniform(1.234, 2.987))
 				
 				if hours == 23 or hours == 0:
-					await client.send_message(c, 'Жабу на тусу')
+					if c!=-1002671146796 or minutes < 11:
+						await client.send_message(c, 'Жабу на тусу')
 				elif 8 <= hours <= 22 and minutes < 49:
 					await client.send_message(c, 'На арену')
-					await asyncio.sleep(random.uniform(1.2, 2.9))
+					await asyncio.sleep(random.uniform(1,9))
 					await client.send_message(c,'Реанимировать жабу')
+				
 		
 		@client.on(events.NewMessage(incoming=True, 
 		from_users=1124824021,
@@ -538,51 +579,20 @@ async def main():
 			u = int(re.findall(r'путь: <a href="tg://user\?id=([0-9]+)">',h)[0])
 			r = re.findall(r'Теперь <a href="tg://user\?id=([0-9]+)">',h)
 			await asyncio.sleep(random.uniform(1.0001, 2.56))
-			реанимировать='Реанимировать жабу'
 			if r:
 				r = int(r[0])# хто має?
 			if m.mentioned or u==my_id:
 				for row in m.buttons:
 					for button in row:
 						if 'аптечку' in button.text and r==my_id:
-							await client.send_message(c,реанимировать)
+							Осталось =int(await реанимировать_жабу(c))
 							await asyncio.sleep(random.uniform(1.1,2))
 						if 'прямо' in button.text:
 							result=await button.click()
 							if result.message:
 								pritn(result.message)
-								mssg = result.message
-								if 'не твой' in mssg:
-									# якщо це не свій хід, але бот тегнув, то:
-									#await asyncio.sleep(random.uniform(1.1,2))
-									#await client.send_message(c,реанимировать)
-									# мало б реанімувати ще на етапі "аптечку"?
-									print(mssg)
-									return
-								if 'живая' in mssg:
-									await asyncio.sleep(random.uniform(1.1,2))
-									await client.send_message(c,реанимировать)
-									await asyncio.sleep(random.uniform(1.1,2))
-									result=await button.click()
-									mssg = result.message
-								if '50' in mssg:
-									if c==-1002149106230:
-										await asyncio.sleep(1.11)
-										message = 'Выйти из гонки'
-										await client.send_message(c,message)
-										await asyncio.sleep(random.uniform(1,2))
-										result=await button.click()
-										await asyncio.sleep(1.11)
-										mssg = result.message
-										if result.message:
-											print(mssg)
-											if '50' in mssg:
-												await client.send_message(c,mssg)
-								if termux_api and mssg:
-									os.system(
-									f"termux-notification --title '{my_id}' --content '{mssg}'"
-									)
-								
+								#те що було далі вобще чомусь не працювало
+								#я пока не поняв чому, тому покищо уберу.
 							print(result)
 							break
 		
