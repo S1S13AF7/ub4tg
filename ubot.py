@@ -480,7 +480,7 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			т = '@toadbot Гонка 50'
-			if c in chts or с==-1001186908367:
+			if c in chts or c==-1001186908367:
 				await client.send_message(c,т)
 		
 		########################################################################
