@@ -336,7 +336,7 @@ async def main():
 					Осталось= re.findall(r'Осталось аптечек: ([0-9]{1,})',t)
 					if Осталось:
 						print(t)
-						Осталось=int(Осталось[0][0])
+						Осталось=int(Осталось[0])
 						print(f'💊 {Осталось}')
 						if Осталось==0:
 							return True # Принаймні реанімували хоча не осталось
@@ -474,17 +474,14 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True, 
-		pattern='Первой к финишу пришла жабка',
+		pattern=r'(Нет ни одного участника забега|Первой к финишу пришла жабка)',
 		from_users=1124824021))
-		async def финиш(event):
+		async def Гонка(event):
 			c = event.chat_id
 			m = event.message
-			if c not in chts or c!=-1002149106230:
-				return
 			т = '@toadbot Гонка 50'
-			m = await client.send_message(c,т)#send.
-			await asyncio.sleep(random.uniform(2,8))
-			await client.delete_messages(event.chat_id, m.id)
+			if c in chts or с==-1001186908367:
+				await client.send_message(c,т)
 		
 		########################################################################
 		
