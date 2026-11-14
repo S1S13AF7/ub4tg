@@ -87,13 +87,14 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	db_pymysql = bool(config['db_pymysql'] or False)
 	db_sqlite3 = bool(config['db_sqlite3'] or False)
 	
-	ch_id = int(config['ch_id'] or 0)  # id чата
-	farm= bool(config['farm'] or False)# вмикать фарм?
-	
-	if ch_id > 0:
-		ch_id=0
+	ch_id= int(config['ch_id'] or -1002236064671) # чат
+	farm = bool(config['farm'] or False)# вмикать фарм?
+	mine = bool(config['mine'] or False)# вмикать майн?
+	m_run=False
+	if ch_id>=0:
+		ch_id=-1002236064671
 		save_config_key('ch_id',ch_id)
-		print('неправильний id чата')
+		print('неправильний id чата; пробуємо "стандартний" * якщо ти є там?')
 	
 ################################################################################
 
@@ -347,6 +348,44 @@ async def main():
 		
 		########################################################################
 		
+		async def Mining(w: float = 7200.0072):
+			global m_run
+			if m_run:
+				pass
+			else:
+				m_run = True
+				if int(w)>1:
+					print(f'⏳ wait {w}')
+				await asyncio.sleep(w)
+				while (True):
+					m = await message_q(
+					text='/Mine',
+					user_id=6333102398,
+					mark_read=True,
+					delete=False)
+					if m.text:
+						w = 0.01234567
+						t = m.raw_text
+						if 'Successful mining' in t or 'Удачная попытка' in t:
+							w = random.uniform(7200.0072,7227.7227)
+							print(t) # показать в консолі текст
+						elif '👎🏻💔 No luck!' in t:
+							х = re.findall(r'([0-9]{1,2}) min.*',t)
+							if х:
+								х = int(х[0])
+								w+=int(х *60)
+							if '1 h' in t:
+								w+=3600.0063
+						else:
+							print(t) # в консоль текст
+							w = random.uniform(64,999)
+					else:
+						w = random.uniform(3003,3993)
+					print(f'⏳ wait {w}')
+					await asyncio.sleep(w)
+		
+		########################################################################
+		
 		async def ферма():
 			kuda = int(ch_id)
 			if kuda==0:
@@ -400,6 +439,18 @@ async def main():
 						w=int(w)
 				print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
+		pattern=r'👍🏻❤️ (Successful mining attempt|Удачная попытка майнинга!) ⛏️')
+		async def Mine_ok(event):
+			global mine,m_run
+			if m_run:
+				pass
+			else:
+				mine = True # Force
+				Mining(random.uniform(7200.0072,7227.7227))
 		
 		########################################################################
 		
@@ -856,6 +907,9 @@ async def main():
 		
 		if get_config_key("farm") and ch_id<0:
 			await ферма()
+		
+		if get_config_key("mine"):
+			await Mining(1.11111)
 		
 		########################################################################
 		
