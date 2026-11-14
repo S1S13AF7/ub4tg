@@ -338,7 +338,6 @@ async def main():
 					if Осталось:
 						print(t)
 						Осталось=int(Осталось[0])
-						print(f'💊 {Осталось}')
 						if Осталось==0:
 							return True # Принаймні реанімували хоча не осталось
 						return Осталось # int
@@ -354,7 +353,7 @@ async def main():
 				pass
 			else:
 				m_run = True
-				if int(w)>1:
+				if int(w)>0:
 					print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
 				while (True):
@@ -443,7 +442,7 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
-		pattern=r'👍🏻❤️ (Successful mining attempt|Удачная попытка майнинга!) ⛏️')
+		pattern=r'👍🏻❤️ (Successful mining attempt|Удачная попытка майнинга)!'))
 		async def Mine_ok(event):
 			global mine,m_run
 			if m_run:
