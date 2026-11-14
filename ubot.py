@@ -449,7 +449,7 @@ async def main():
 				pass
 			else:
 				mine = True # Force
-				Mining(random.uniform(7200.0072,7227.7227))
+				await Mining(random.uniform(7200.0072,7227.7227))
 		
 		########################################################################
 		
