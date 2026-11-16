@@ -203,6 +203,7 @@ async def main():
 			`reg_int` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			`f_name` text CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
 			`f_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
+			`m_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			PRIMARY KEY (`user_id`)
 			);''');
 			con.commit()
@@ -214,6 +215,12 @@ async def main():
 			PRIMARY KEY (`user_id`)
 			);''');
 			con.commit()
+			try:
+				d.execute('''ALTER TABLE `tg_bot_users` 
+				ADD `m_time` INT(11) UNSIGNED NOT NULL DEFAULT '0' 
+				AFTER `f_time`;'''); con.commit()
+			except:
+				pass
 			try:
 				d.execute('''INSERT INTO `tg_bot_users` 
 				(`user_id`, `reg_int`, `f_name`) 
@@ -283,9 +290,9 @@ async def main():
 		
 		########################################################################
 		
-		async def sft(u:int,д:int):
-			if u==0 or д==0:
-				return
+		async def sft(u: int = my_id, д: int=0):
+			if д == 0:
+				д = int(time.time())
 			if db_pymysql:
 				try:
 					q="UPDATE tg_bot_users SET f_time = %s WHERE user_id = %s"
@@ -293,6 +300,19 @@ async def main():
 					d.execute(q,(f'{д}',u));con.commit()
 				except Exception as Err:
 					print(f'E:{Err} #sft')
+				
+			return
+		
+		async def smt(u: int = my_id, д: int=0):
+			if д == 0:
+				д = int(time.time())
+			if db_pymysql:
+				try:
+					q="UPDATE tg_bot_users SET m_time = %s WHERE user_id = %s"
+					await asyncio.sleep(random.uniform(1,2))
+					d.execute(q,(f'{д}',u));con.commit()
+				except Exception as Err:
+					print(f'E:{Err} #smt')
 				
 			return
 		
@@ -347,10 +367,10 @@ async def main():
 		
 		########################################################################
 		
-		async def Mining(w: float = 7200.0072):
+		async def Mining(w: float = 0.9973):
 			global m_run,mine
 			if m_run:
-				return	# якщо вже працює
+				return
 			m_run = True
 			try:
 				if int(w)>0:
@@ -358,6 +378,8 @@ async def main():
 				await asyncio.sleep(w)
 				while mine:
 					try:
+						д = int(time.time())
+						w = float(0.7777777)
 						m = await message_q(
 						text='/Mine',
 						user_id=6333102398,
@@ -365,13 +387,18 @@ async def main():
 						delete=False)
 						if m.text:
 							t = m.raw_text
-							w = random.uniform(1.111,3.333) # random wait
-							print(t) # показать в консолі текст відповіді
-							if 'not been created' in t or 'ещё не создана' in t:
+							if m.date:
+								д = int(datetime.timestamp(m.date))
+							if ('not been created' in t
+							or '🔒 Feature locked' in t
+							or 'ещё не создана' in t):
 								mine = False # force stop
 								break # припинити виконання
-							elif 'Successful mining' in t or 'Удачная попытка' in t:
+							print(t) # показать в консолі текст відповіді
+							if 'Successful mining' in t or 'Удачная попытка' in t:
 								w = random.uniform(7200.0072,7227.7227)
+								if db_pymysql:
+									smt(my_id, д)
 							elif '👎🏻💔 No luck!' in t:
 								M = re.findall(r'([0-9]{1,2}) min.*',t)
 								if M:
@@ -381,6 +408,7 @@ async def main():
 									w+=3600.0063
 							else:
 								# Якщо був якийсь інший??
+								print(f'відповідь "{t}" не розпізнана')
 								w = random.uniform(9,999)
 						else:
 							# Вобще нема ніякого текста
@@ -455,11 +483,16 @@ async def main():
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
 		pattern=r'👍🏻❤️ (Successful mining attempt|Удачная попытка майнинга)!'))
 		async def Mine_ok(event):
-			global mine,m_run
+			#global mine,m_run
+			д = int(time.time())
+			if m.date:
+				д = int(datetime.timestamp(m.date))
+			if db_pymysql:
+				smt(my_id, д)
 			if m_run:
-				pass
+				return
 			else:
-				mine = True # Force
+				#mine = True # Force
 				await Mining(random.uniform(7200.0072,7227.7227))
 		
 		########################################################################
