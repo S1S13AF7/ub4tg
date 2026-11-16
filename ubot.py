@@ -348,7 +348,7 @@ async def main():
 		########################################################################
 		
 		async def Mining(w: float = 7200.0072):
-			global m_run
+			global m_run,mine
 			if m_run:
 				pass
 			else:
@@ -356,7 +356,7 @@ async def main():
 				if int(w)>0:
 					print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
-				while (True):
+				while mine:
 					m = await message_q(
 					text='/Mine',
 					user_id=6333102398,
@@ -367,8 +367,8 @@ async def main():
 						t = m.raw_text
 						print(t) # показать в консолі текст відповіді
 						if 'has not been created' in t or 'ещё не создана' in t:
-							global mine	# for rewrite
 							mine = False # force stop
+							break # припинити виконання
 						elif 'Successful mining' in t or 'Удачная попытка' in t:
 							w = random.uniform(7200.0072,7227.7227)
 						elif '👎🏻💔 No luck!' in t:
