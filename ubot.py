@@ -350,9 +350,9 @@ async def main():
 		async def Mining(w: float = 7200.0072):
 			global m_run,mine
 			if m_run:
-				pass
-			else:
-				m_run = True
+				return	# якщо вже працює
+			m_run = True
+			try:
 				if int(w)>0:
 					print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
@@ -384,6 +384,8 @@ async def main():
 						w = random.uniform(3003,3993)
 					print(f'⏳ wait {w}')
 					await asyncio.sleep(w)
+			finally:
+				m_run = False  # навіть якщо станеться помилка чи break
 		
 		########################################################################
 		
