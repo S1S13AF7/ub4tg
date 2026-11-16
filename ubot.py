@@ -66,7 +66,8 @@ if not os.path.exists(CONFIG_PATH):
 	'db_pymysql': False,
 	'db_sqlite3': False,
 	'wakelock': False,
-	'farm': False,
+	'farm':  False,
+	'mine':  False,
 	'ch_id': 0
 	}
 	# api_id & api_hash - обов'язкові параметри; 
@@ -89,8 +90,10 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 	ch_id= int(config['ch_id'] or -1002236064671) # чат
 	farm = bool(config['farm'] or False)# вмикать фарм?
-	mine = bool(config['mine'] or False)# вмикать майн?
-	m_run=False
+	#mine = bool(config['mine'] or False)# вмикать майн?
+	mine = True # тупо врубаємо всім
+	f_run=False # зразу не запущено
+	m_run=False # зразу не запущено
 	if ch_id>=0:
 		ch_id=-1002236064671
 		save_config_key('ch_id',ch_id)
@@ -172,6 +175,7 @@ async def main():
 		print('User-Bot started')
 		me= await client.get_me()
 		my_id = int(me.id)
+		my_uz = me.username
 		print(f'🆔 {my_id}')
 		
 		if os.name == 'nt':
@@ -419,11 +423,14 @@ async def main():
 		########################################################################
 		
 		async def ферма():
-			kuda = int(ch_id)
-			if kuda==0:
+			global f_run
+			if ch_id==0:
+				return
+			kuda=ch_id
+			if f_run:
 				return
 			while (get_config_key("farm")):
-				#F_RUN = True #	✅ погнали?
+				f_run = True #	✅ погнали!
 				w = random.uniform(1,14401)
 				д = int(time.time())
 				f = await message_q(
@@ -486,15 +493,12 @@ async def main():
 		pattern=r'👍🏻❤️ (Successful mining attempt|Удачная попытка майнинга)!'))
 		async def Mine_ok(event):
 			m = event.message
-			д = int(time.time())
-			if m.date:
-				д = int(datetime.timestamp(m.date))
-			if db_pymysql:
-				smt(my_id, д)
+			print(m.raw_text)
+			if db_pymysql and m.date:
+				smt(my_id, datetime.timestamp(m.date))
 			if m_run:
 				return
 			else:
-				print(t) # показать в консолі текст
 				await Mining(random.uniform(7200.0072,7227.7227))
 		
 		########################################################################
@@ -513,8 +517,12 @@ async def main():
 				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
 				if r:
 					u=int(r[0])
-					if db_pymysql and u==my_id:
+					if db_pymysql and u>0:
 						await sft(u,д)
+			if m_run:
+				return
+			else:
+				await Mining(1) # Тупо врубаємо майн після успішної ферми
 		
 		########################################################################
 		
@@ -957,9 +965,6 @@ async def main():
 		
 		if get_config_key("farm") and ch_id<0:
 			await ферма()
-		
-		if get_config_key("mine"):
-			await Mining(0.49)
 		
 		########################################################################
 		
