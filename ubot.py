@@ -216,12 +216,6 @@ async def main():
 			);''');
 			con.commit()
 			try:
-				d.execute('''ALTER TABLE `tg_bot_users` 
-				ADD `m_time` INT(11) UNSIGNED NOT NULL DEFAULT '0' 
-				AFTER `f_time`;'''); con.commit()
-			except:
-				pass
-			try:
 				d.execute('''INSERT INTO `tg_bot_users` 
 				(`user_id`, `reg_int`, `f_name`) 
 				VALUES (%s,%s,%s) 
@@ -481,9 +475,16 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
+		pattern=r'🎉 New laboratory level'))
+		async def New_level(event):
+			t = event.message.raw_text
+			if '⛏️ Mining' in t:
+				await Mining(1)
+		
+		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
 		pattern=r'👍🏻❤️ (Successful mining attempt|Удачная попытка майнинга)!'))
 		async def Mine_ok(event):
-			#global mine,m_run
+			m = event.message
 			д = int(time.time())
 			if m.date:
 				д = int(datetime.timestamp(m.date))
@@ -492,7 +493,6 @@ async def main():
 			if m_run:
 				return
 			else:
-				#mine = True # Force
 				await Mining(random.uniform(7200.0072,7227.7227))
 		
 		########################################################################
@@ -511,7 +511,7 @@ async def main():
 				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
 				if r:
 					u=int(r[0])
-					if db_pymysql and u==my_id:
+					if db_pymysql and u>0:
 						await sft(u,д)
 		
 		########################################################################
@@ -522,12 +522,11 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
-			if 'Пока нет ни одной ачивки...' in t:
-				try:
-					await client.delete_messages(event.chat_id, m.id) # try del.
-				except:
-					pass
-					#Можливо просто нема адмінки і/або повідомлення вже видалено
+			try:
+				await client.delete_messages(event.chat_id, m.id) # try del.
+			except:
+				pass
+				#Можливо просто нема адмінки і/або повідомлення вже видалено
 		
 		########################################################################
 		
@@ -639,13 +638,18 @@ async def main():
 			m = event.message
 			t = m.raw_text
 			if m.mentioned:
+				now = datetime.now()
+				hours=int(now.hour)
+				minutes = now.minute
 				if m.buttons:
 					for row in m.buttons:
 						for button in row:
 							if 'аптечку' in button.text:
 								await asyncio.sleep(random.uniform(1.234, 2.56))
 								await client.send_message(c,'Реанимировать жабу')
-				
+							if 'топ' in button.text and hours>20:
+								await asyncio.sleep(random.uniform(1,3.5))
+								await client.send_message(c,'Сезон арены')
 				if 'Банда получила критическое повреждение' in t:
 					h = utils.sanitize_parse_mode('html').unparse(t,m.entities)
 					r = re.findall(r'жабы <a href="tg://user\?id=([0-9]+)">',h)
@@ -661,7 +665,7 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=1124824021,
-		pattern=r'.*путь.*'))
+		pattern=r'.*путь:.*'))
 		async def путь(event):
 			c = event.chat_id
 			m = event.message
@@ -952,7 +956,7 @@ async def main():
 			await ферма()
 		
 		if get_config_key("mine"):
-			await Mining(1.11111)
+			await Mining(0.49)
 		
 		########################################################################
 		
