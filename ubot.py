@@ -478,6 +478,7 @@ async def main():
 		pattern=r'🎉 New laboratory level'))
 		async def New_level(event):
 			t = event.message.raw_text
+			print(t) # показать в консолі
 			if '⛏️ Mining' in t:
 				await Mining(1)
 		
@@ -493,6 +494,7 @@ async def main():
 			if m_run:
 				return
 			else:
+				print(t) # показать в консолі текст
 				await Mining(random.uniform(7200.0072,7227.7227))
 		
 		########################################################################
@@ -511,7 +513,7 @@ async def main():
 				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
 				if r:
 					u=int(r[0])
-					if db_pymysql and u>0:
+					if db_pymysql and u==my_id:
 						await sft(u,д)
 		
 		########################################################################
@@ -522,11 +524,12 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
-			try:
-				await client.delete_messages(event.chat_id, m.id) # try del.
-			except:
-				pass
-				#Можливо просто нема адмінки і/або повідомлення вже видалено
+			if 'Пока нет ни одной ачивки...' in t:
+				try:
+					await client.delete_messages(event.chat_id, m.id) # try del.
+				except:
+					pass
+					#Можливо просто нема адмінки і/або повідомлення вже видалено
 		
 		########################################################################
 		
