@@ -357,33 +357,40 @@ async def main():
 					print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
 				while mine:
-					m = await message_q(
-					text='/Mine',
-					user_id=6333102398,
-					mark_read=True,
-					delete=False)
-					if m.text:
-						w = 0.01234567
-						t = m.raw_text
-						print(t) # показать в консолі текст відповіді
-						if 'has not been created' in t or 'ещё не создана' in t:
-							mine = False # force stop
-							break # припинити виконання
-						elif 'Successful mining' in t or 'Удачная попытка' in t:
-							w = random.uniform(7200.0072,7227.7227)
-						elif '👎🏻💔 No luck!' in t:
-							х = re.findall(r'([0-9]{1,2}) min.*',t)
-							if х:
-								х = int(х[0])
-								w+=int(х *60)
-							if '1 h' in t:
-								w+=3600.0063
+					try:
+						m = await message_q(
+						text='/Mine',
+						user_id=6333102398,
+						mark_read=True,
+						delete=False)
+						if m.text:
+							t = m.raw_text
+							w = random.uniform(1.111,3.333) # random wait
+							print(t) # показать в консолі текст відповіді
+							if 'not been created' in t or 'ещё не создана' in t:
+								mine = False # force stop
+								break # припинити виконання
+							elif 'Successful mining' in t or 'Удачная попытка' in t:
+								w = random.uniform(7200.0072,7227.7227)
+							elif '👎🏻💔 No luck!' in t:
+								M = re.findall(r'([0-9]{1,2}) min.*',t)
+								if M:
+									M = int(M[0])
+									w+= int(M*60)
+								if '1 h' in t:
+									w+=3600.0063
+							else:
+								# Якщо був якийсь інший??
+								w = random.uniform(9,999)
 						else:
-							w = random.uniform(64,999)
-					else:
-						w = random.uniform(3003,3993)
-					print(f'⏳ wait {w}')
-					await asyncio.sleep(w)
+							# Вобще нема ніякого текста
+							w = random.uniform(111,999)
+						print(f'⏳ wait {w}')
+						await asyncio.sleep(w)
+					except Exception as e:
+						w = random.uniform(66,99) # random wait
+						print(f"⚠️ Помилка під час майнінгу: {e}. Повтор через {w} сек...")
+						await asyncio.sleep(w)  # Пауза перед наступною спробою, щоб не спамити
 			finally:
 				m_run = False  # навіть якщо станеться помилка чи break
 		
