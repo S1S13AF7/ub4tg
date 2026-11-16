@@ -365,9 +365,12 @@ async def main():
 					if m.text:
 						w = 0.01234567
 						t = m.raw_text
-						if 'Successful mining' in t or 'Удачная попытка' in t:
+						print(t) # показать в консолі текст відповіді
+						if 'has not been created' in t or 'ещё не создана' in t:
+							global mine	# for rewrite
+							mine = False # force stop
+						elif 'Successful mining' in t or 'Удачная попытка' in t:
 							w = random.uniform(7200.0072,7227.7227)
-							print(t) # показать в консолі текст
 						elif '👎🏻💔 No luck!' in t:
 							х = re.findall(r'([0-9]{1,2}) min.*',t)
 							if х:
@@ -376,7 +379,6 @@ async def main():
 							if '1 h' in t:
 								w+=3600.0063
 						else:
-							print(t) # в консоль текст
 							w = random.uniform(64,999)
 					else:
 						w = random.uniform(3003,3993)
