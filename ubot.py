@@ -40,7 +40,7 @@ if is_termux:
 		print('You use not f-droid/github apk release, it may have problems...')
 		print('F-droid termux release here: https://f-droid.org/packages/com.termux/')
 		print('Github termux release here: https://github.com/termux/termux-app/releases')
-	if float(os.environ.get('TERMUX_VERSION')[:5]) < 0.118:
+	if float((os.environ.get('TERMUX_VERSION') or '0.119')[:5]) < 0.118:
 		print('You use old version of termux, highly recommended that you update to v0.119.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
 	if termux_api:
 		print('✅ termux API work')
@@ -49,8 +49,8 @@ if is_termux:
 		default_directory = '/sdcard/ub4tg'
 		os.system(f'mkdir -p {default_directory}')
 		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
-		chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
-		dovs_file = f'{default_directory}/{dovs_file}' # в доступну без рута
+		#chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
+		#dovs_file = f'{default_directory}/{dovs_file}' # в доступну без рута
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -1023,7 +1023,7 @@ async def main():
 						if 'прямо' in button.text:
 							result=await button.click()
 							if result.message:
-								pritn(result.message)
+								print(result.message)
 								#те що було далі вобще чомусь не працювало
 								#я пока не поняв чому, тому покищо уберу.
 							print(result)
