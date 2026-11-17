@@ -621,7 +621,6 @@ async def main():
 						until_ts=0# пишемо як не інфікованого
 						until_str="0"
 					
-					# 💾 ЗБЕРЕЖЕННЯ В SQLite (База на телефоні/локально)
 					if db_sqlite3:
 						if м:
 							try:
@@ -637,7 +636,7 @@ async def main():
 								OR (avocado.expr_int = 0 
 								AND excluded.when_int > avocado.when_int)""", 
 								(int(user_id), int(д), int(bio), int(until_ts), 
-								str(until_str))); conn.commit()
+								str(until_str))); #conn.commit()
 							except Exception as Err:
 								print(f'err: {Err} avocado')
 						elif user_id != my_id:
@@ -651,16 +650,20 @@ async def main():
 								bio_int = excluded.bio_int
 								WHERE avocado.expr_int = 0 
 								AND excluded.when_int > avocado.when_int""", 
-								(int(user_id), int(д), int(bio)));conn.commit()
+								(int(user_id), int(д), int(bio)));#conn.commit()
 							except Exception as Err:
 								print(f'err: {Err} avocado not my')
 					
 					if м:
 						print(f'@{user_id} +{bio} {until_ts} {until_str}')
 				
-				# ⚡ ОПТИМІЗАЦІЯ: викликаємо після того, як цикл повністю завершився
+				# ⚡ ЗБЕРІГАЄМО ВСЕ НА ДИСК ОДНИМ МАХОМ ТА ОПТИМІЗУЄМО
 				if db_sqlite3:
-					optimize()
+					try:
+						conn.commit()  # Один комміт на весь список користувачів!
+						optimize()     # Швидка оптимізація індексів
+					except Exception as e:
+						print(f"err final commit/optimize: {e}")
 		
 		########################################################################
 		
