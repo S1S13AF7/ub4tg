@@ -70,14 +70,27 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	
 ################################################################################
 
-# Функція малювання QR-коду в консолі
+# Функція малювання QR-коду в консолі та збереження картинки для одного екрана
 def display_qr(url):
-	qr = qrcode.QRCode()
+	qr = qrcode.QRCode(border=2)
 	qr.clear()
 	qr.add_data(url)
+	qr.make(fit=True)
+	
 	print("Налаштування -> Пристрої -> Підключити пристрій\n")
-	# tty=True змушує консоль використовувати інвертовані кольори для коректного зчитування
-	qr.print_ascii(tty=True) 
+	# 1. Класичний вивід у консоль (для другого пристрою)
+	qr.print_ascii(tty=True)
+	
+	# 2. Збереження картинки (для входу з одного телефона через Галерею)
+	qr_path = f"{default_directory}/qr.png" if default_directory else "qr.png"
+	try:
+		img = qr.make_image(fill_color="black", back_color="white")
+		img.save(qr_path)
+		print(f"\n🖼️ Якщо у вас один екран — QR-код збережено у файл: {qr_path}")
+		print("Відкрийте сканер у Telegram та натисніть іконку 'Галерея' в кутку екрана.")
+	except Exception as e:
+		# Якщо раптом у системі немає бібліотеки Pillow для PNG — просто ігноруємо, консоль все одно працює
+		print(f"\nℹ️ Не вдалося зберегти PNG ({e}), скануйте код із консолі вище.")
 
 async def main():
 	client = TelegramClient(sessdb, api_id, api_hash)
