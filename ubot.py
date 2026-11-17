@@ -19,6 +19,8 @@ import typing
 if os.name == 'nt':
 	import win32api
 
+import calendar
+
 sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
@@ -65,6 +67,12 @@ if not os.path.exists(CONFIG_PATH):
 	'api_hash': api_hash,
 	'db_pymysql': False,
 	'db_sqlite3': True,
+	'mysql': {
+			'host': 'localhost',
+			'user': 'root',
+			'password': 'V3rY$tR0NgPaS$Sw0Rd',
+			'db': 'db'
+		},
 	'wakelock': False,
 	'farm':  True,
 	'mine':  True,
@@ -86,8 +94,19 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	api_hash = config['api_hash']
 	
 	db_pymysql = bool(config['db_pymysql'] or False)
+	mysql_conf = config.get('mysql', {}) # якщо в старому конфігу немає блоку
+	# Якщо у старому конфігу немає блоку mysql — додаємо його і зберігаємо файл
+	if 'mysql' not in config or not isinstance(config['mysql'], dict):
+		config['mysql'] = {
+			'host': 'localhost',
+			'user': 'root',
+			'password': 'V3rY$tR0NgPaS$Sw0Rd',
+			'db': 'db'
+		}
+		with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
+			json.dump(config, configfile, ensure_ascii=False, indent='\t')
+		print('🔄 Дефолтний блок mysql додано до конфігу')
 	db_sqlite3 = bool(True) # Always true; або змініть.
-	
 	ch_id= int(config['ch_id'] or -1002236064671) # чат
 	farm = bool(config['farm'] or False)# вмикать фарм?
 	#mine = bool(config['mine'] or False)# вмикать майн?
@@ -171,6 +190,7 @@ except:
 ################################################################################
 
 async def main():
+	global db_pymysql
 	async with TelegramClient(sessdb,api_id,api_hash,timeout=300) as client:
 		client.parse_mode="HTML"
 		print('User-Bot started')
@@ -191,18 +211,72 @@ async def main():
 				os.system('termux-wake-lock')
 				print('This can cause battery drain!')
 		
+		bio_bot_username = '@bio_attacker_bot' # <--- правильний юзернейм
+		restart_timestamp = 1794601985 # 13.11.2026 20:33:05 UTC (перезапуск гри)
+
+		try:
+			bio_bot = await client.get_entity(bio_bot_username)
+			bio_attacker_bot_ID = int(bio_bot.id)
+			print(f'🤖 Знайдено бота {bio_bot_username}: {bio_attacker_bot_ID}')
+		except Exception as e:
+			print(f'❌ Не вдалося знайти {bio_bot_username}: {e}')
+			bio_attacker_bot_ID = 6333102398 # резервний ID, якщо виникла помилка
+		
 		if db_pymysql:
-			
-			import pymysql
-			import pymysql.cursors
-			
-			con = pymysql.connect(host='localhost',
-			user='root',
-			password='V3rY$tR0NgPaS$Sw0Rd',
-			db='db',
-			charset='utf8mb4',
-			cursorclass=pymysql.cursors.DictCursor)
-			d = con.cursor()
+			try:
+				import pymysql
+				import pymysql.cursors
+			except ImportError:
+				print('❌ Бібліотека pymysql не встановлена. Вимикаю MySQL...')
+				db_pymysql = False
+				save_config_key('db_pymysql', False)
+		
+		if db_pymysql:
+			while True:
+				try:
+					con = pymysql.connect(
+						host=str(mysql_conf.get('host', 'localhost')),
+						user=str(mysql_conf.get('user', 'root')),
+						password=str(mysql_conf.get('password', '')),
+						db=str(mysql_conf.get('db', 'db')),
+						charset='utf8mb4',
+						autocommit=False,
+						cursorclass=pymysql.cursors.DictCursor
+					)
+					d = con.cursor()
+					print('✅ Підключено до MySQL')
+					save_config_key('mysql', mysql_conf)
+					break
+				
+				except pymysql.err.OperationalError as e:
+					err_code = e.args[0] if e.args else 0
+					
+					if err_code == 1045:
+						print(f'⚠️ Невірний пароль для MySQL ({mysql_conf.get("user")}@{mysql_conf.get("host")}).')
+						new_pass = input('Введіть правильний пароль (або натисніть Enter, щоб вимкнути MySQL): ').strip()
+						if new_pass:
+							mysql_conf['password'] = new_pass
+							continue
+						else:
+							print('🚫 MySQL вимкнено для цієї та наступних сесій.')
+							db_pymysql = False
+							save_config_key('db_pymysql', False)
+							break
+					else:
+						print(f'❌ Не вдалося підключитися до MySQL (код {err_code}): {e}')
+						print('🚫 MySQL автоматично вимкнено в конфігу. Бот працюватиме на SQLite.')
+						db_pymysql = False
+						save_config_key('db_pymysql', False)
+						break
+				
+				except Exception as e:
+					print(f'❌ Невідома помилка MySQL: {e}')
+					db_pymysql = False
+					save_config_key('db_pymysql', False)
+					break
+		
+		# Окремий блок: виконується ТІЛЬКИ якщо підключення вище пройшло успішно
+		if db_pymysql:
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bot_users` (
 			`user_id` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
 			`reg_int` int(11) UNSIGNED NOT NULL DEFAULT '0',
@@ -210,6 +284,25 @@ async def main():
 			`f_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			`m_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			PRIMARY KEY (`user_id`)
+			);''');
+			con.commit()
+			# Таблиця атак (Тільки для СВОЇХ аків завдяки прапорцю `м`)
+			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_attack` (
+			`date` int(11) unsigned NOT NULL DEFAULT '0',
+			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+			`profit` int(11) unsigned NOT NULL DEFAULT '1',
+			`until_int` int(11) unsigned NOT NULL DEFAULT '0',
+			`until_str` varchar(11) NOT NULL DEFAULT '0',
+			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
+			);''');
+			con.commit()
+			# Оновлена таблиця користувачів БЕЗ virus,з полем коли (when_int)
+			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_users` (
+			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
+			`profit` int(11) unsigned NOT NULL DEFAULT '1',
+			UNIQUE KEY `user_id` (`user_id`)
 			);''');
 			con.commit()
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_users_url` (
@@ -227,19 +320,38 @@ async def main():
 				ON DUPLICATE KEY UPDATE 
 				f_name=VALUES(f_name);''',
 				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
-			except:
-				pass
+			except Exception as e:
+				print(f'⚠️ Помилка запису в tg_bot_users: {e}')
+			
+			#restart_timestamp = 1794601985 # 13.11.2026 (перезапуск)
+			
+			# Зачистка старих записів у MySQL (крім tg_bot_users)
+			d.execute('DELETE FROM `tg_bio_attack` WHERE `date` < %s', (restart_timestamp,))
+			del_attack = d.rowcount
+			
+			d.execute('DELETE FROM `tg_bio_users` WHERE `when_int` < %s', (restart_timestamp,))
+			del_users = d.rowcount
+			
+			d.execute('DELETE FROM `tg_users_url` WHERE `when_int` < %s', (restart_timestamp,))
+			del_urls = d.rowcount
+			
+			con.commit()
+			
+			if del_attack or del_users or del_urls:
+				print(f'🧹 MySQL очищено від старих записів (до {restart_timestamp}): атаки={del_attack}, юзери={del_users}, лінки={del_urls}')
 		
 		if db_sqlite3:
-			conn = sqlite3.connect(f"{my_id}.sqlite")#покласти базу рядом?
-			#conn = sqlite3.connect(f"D:\\Misc\\projects\\Python\\{my_id}.sqlite")# Або повністю
+			sqlite_path = f"{my_id}.sqlite" # покласти базу рядом (перевизначимо)?
 			
-			if is_termux:
-				conn = sqlite3.connect(f"{default_directory}/{my_id}.sqlite")
+			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
+				sqlite_path = rf"D:\Misc\projects\Python\{my_id}.sqlite"
+			elif is_termux:
+				sqlite_path = f"{default_directory}/{my_id}.sqlite"
 			
+			conn = sqlite3.connect(sqlite_path)
 			c = conn.cursor()
 			
-			c.execute('''CREATE TABLE IF NOT EXISTS avocado	(
+			c.execute('''CREATE TABLE IF NOT EXISTS avocado (
 			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
 			when_int	INTEGER NOT NULL DEFAULT 0,
 			bio_int	INTEGER NOT NULL DEFAULT 1,
@@ -248,12 +360,25 @@ async def main():
 			)''');
 			conn.commit()
 			
+			# Зачистка старих записів у SQLite
+			c.execute('DELETE FROM avocado WHERE when_int < ?', (restart_timestamp,))
+			del_sqlite = c.rowcount
+			conn.commit()
+			
+			if del_sqlite > 0:
+				print(f"""🧹 SQLite (avocado): видалено {del_sqlite} записів. 
+				Стискаю базу (VACUUM)...""")
+				c.execute('VACUUM')
+				conn.commit()
+			
 			# https://www.sqlite.org/pragma.html
-			c.execute('PRAGMA optimize=0x10002'); conn.commit()
+			c.execute('PRAGMA optimize=0x10002')
+			conn.commit()
 			
 			def optimize():
 				try:
-					c.execute('PRAGMA optimize'); conn.commit()
+					c.execute('PRAGMA optimize')
+					conn.commit()
 				except Exception as e:
 					print(f"err optimize: {e}")
 			
@@ -554,6 +679,7 @@ async def main():
 		########################################################################
 		
 		Active_victims = r'.*(Active\s+victims|Активные\s+жертвы)'
+		#import calendar # можна перенести на самий верх файлу до інших імпортів
 		@client.on(events.NewMessage(incoming=True, pattern=Active_victims))
 		@client.on(events.MessageEdited(incoming=True, pattern=Active_victims))
 		async def ActiveVictims(event):
@@ -576,20 +702,19 @@ async def main():
 			# 2. ФІЛЬТР ПО БОТУ
 			if s != 6333102398:
 				return
-			# 3. ФІЛЬТР ВІД МИНУЛОРІЧНОЇ / СТАРОЇ ФІГНІ (Фіксована дата перезапуску)
-			# найпростіший і 100% робочий спосіб порівняння через UNIX-timestamp:
-			restart_timestamp = 1793491200  # Це точний UNIX-time для 01.11.2026
-			# Я потом заміню на реальну дату коли її вілкопаю
+				
+			# 3. ФІЛЬТР ВІД СТАРОЇ ФІГНІ (використовується глобальний restart_timestamp)
 			if int(msg_date.timestamp()) < restart_timestamp:
 				return  # Повідомлення згенероване ДО перезапуску гри — ігноруєм
 			д = int(msg_date.timestamp()) # Дата самого повідомлення від бота
 			м = event.is_private and s == 6333102398 and not m.fwd_from # МОЄ
+			
 			if m.entities:
 				h = utils.sanitize_parse_mode('html').unparse(t, m.entities)
 				pattern = re.compile(
 				r"""
 				href="
-				(?:tg://openmessage\?user_id=|https?://t\.me/)  # 1. Посиланя
+				(?:tg://openmessage\?user_id=|https?://t\.me/)  # 1. Посилання
 				(\d+)                                           # ID користувача (Група 1)
 				"[^>]*>                                         # Закриття тегу <a>
 				[^<]+                                           # Ім'я користувача
@@ -606,20 +731,21 @@ async def main():
 				""",
 				re.IGNORECASE | re.VERBOSE
 				)
+				
 				for r in pattern.finditer(h):
 					user_id = int(r.group(1))
 					bio = int(r.group(2))
 					date_str = r.group(3)
 					until_str = date_str.split(" ")[0] # Отримуємо "27.11.2026"
-					# 1. Конвертуємо в datetime об'єкт (поки без часового поясу)
+					
+					# Конвертуємо в чистий UTC UNIX timestamp
 					dt = datetime.strptime(date_str, "%d.%m.%Y %H:%M")
-					# 2. Перетворюємо в UNIX timestamp за допомогою модуля time
-					until_ts = int(time.mktime(dt.timetuple()) - time.timezone)
+					until_ts = int(calendar.timegm(dt.timetuple()))
+					
 					# 🛡️ ПЕРЕВІРКА АНТІЛУ: якщо час дії жертви ВЖЕ МИНУВ
 					if until_ts < int(time.time()):
-						#continue # жертва застаріла,
-						until_ts=0# пишемо як не інфікованого
-						until_str="0"
+						until_ts = 0 # пишемо як не інфікованого
+						until_str = "0"
 					
 					if db_sqlite3:
 						if м:
@@ -654,16 +780,63 @@ async def main():
 							except Exception as Err:
 								print(f'err: {Err} avocado not my')
 					
+					# 💾 ЗБЕРЕЖЕННЯ В MySQL (База на ноутбуці / Мультиакаунт)
+					if db_pymysql:
+						if м:
+							try:
+								d.execute("""INSERT INTO `tg_bio_attack` 
+								(`date`, `who_id`, `user_id`, `profit`, 
+								`until_int`, `until_str`) 
+								VALUES (%s, %s, %s, %s, %s, %s)
+								ON DUPLICATE KEY UPDATE 
+								date = IF(VALUES(until_int) > until_int 
+								OR (until_int = 0 AND VALUES(date) > date),
+								VALUES(date), date),
+								profit = IF(VALUES(until_int) > until_int 
+								OR (until_int = 0 AND VALUES(date) > date), 
+								VALUES(profit), profit),
+								until_str = IF(VALUES(until_int) > until_int 
+								OR (until_int = 0 AND VALUES(date) > date), 
+								VALUES(until_str), until_str),
+								until_int = IF(VALUES(until_int) > until_int 
+								OR (until_int = 0 AND VALUES(date) > date), 
+								VALUES(until_int), until_int)""",
+								(int(д), int(my_id), int(user_id), int(bio), 
+								int(until_ts), str(until_str)))
+							except Exception as Err:
+								print(f'err: {Err} (tg_bio_attack my)')
+						
+						# 🔵 ЗАГАЛЬНА ТАБЛИЦЯ КОРИСТУВАЧІВ (Усі пацієнти: і свої, і чужі)
+						# Оновлюємо profit та when_int ТІЛЬКИ якщо дата (д) більша наявної
+						try:
+							d.execute("""INSERT INTO `tg_bio_users` 
+							(`user_id`, `when_int`, `profit`) 
+							VALUES (%s, %s, %s) 
+							ON DUPLICATE KEY UPDATE 
+							profit = IF(VALUES(when_int) > when_int, 
+							VALUES(profit), profit),
+							when_int = IF(VALUES(when_int) > when_int, 
+							VALUES(when_int), when_int)""",
+							(int(user_id), int(д), int(bio)))
+						except Exception as Err:
+							print(f'err: {Err} (tg_bio_users)')
+					
 					if м:
 						print(f'@{user_id} +{bio} {until_ts} {until_str}')
 				
-				# ⚡ ЗБЕРІГАЄМО ВСЕ НА ДИСК ОДНИМ МАХОМ ТА ОПТИМІЗУЄМО
+				# ⚡ ЗБЕРІГАЄМО ВСЕ НА ДИСК ОДНИМ МАХОМ ДЛЯ ОБОХ БАЗ
 				if db_sqlite3:
 					try:
 						conn.commit()  # Один комміт на весь список користувачів!
 						optimize()     # Швидка оптимізація індексів
 					except Exception as e:
 						print(f"err final commit/optimize: {e}")
+				
+				if db_pymysql:
+					try:
+						con.commit()
+					except Exception as e:
+						print(f"err mysql final commit: {e}")
 		
 		########################################################################
 		
