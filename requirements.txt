@@ -1,7 +1,8 @@
 # requirements.txt
 
 Telethon
-asyncio
+#asyncio
 pymysql
 qrcode
 emoji
+pywin32; sys_platform == 'win32'
