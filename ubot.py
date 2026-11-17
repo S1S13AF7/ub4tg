@@ -58,67 +58,70 @@ if is_termux:
 		print('Restart termux [Press CTRL+D or command "exit"]')
 		sys.exit(0)
 
-if not os.path.exists(CONFIG_PATH):
-	api_id = int(input('enter api_id from https://my.telegram.org/ :'))
-	api_hash = input('enter api_hash from https://my.telegram.org/ :')
-	
-	new_config = {
-	'api_id': api_id,
-	'api_hash': api_hash,
-	'db_pymysql': False,
-	'db_sqlite3': True,
-	'mysql': {
+config = {}
+
+def save_config():
+	"""Зберігає поточний config у строго заданому порядку ключів"""
+	ordered_config = {
+		'api_id': int(config.get('api_id', 0)),
+		'api_hash': str(config.get('api_hash', '')),
+		'ch_id': int(config.get('ch_id', -1002236064671)),
+		'db_sqlite3': bool(config.get('db_sqlite3', True)),
+		'db_pymysql': bool(config.get('db_pymysql', False)),
+		'mysql': config.get('mysql') if isinstance(config.get('mysql'), dict) else {
 			'host': 'localhost',
 			'user': 'root',
 			'password': 'V3rY$tR0NgPaS$Sw0Rd',
 			'db': 'db'
 		},
-	'wakelock': False,
-	'farm':  True,
-	'mine':  True,
-	'ch_id': 0
+		'wakelock': bool(config.get('wakelock', False)),
+		'farm': bool(config.get('farm', True)),
+		'mine': bool(config.get('mine', True))
 	}
-	# api_id & api_hash - обов'язкові параметри; 
-	# db_pymysql - чи юзать MySQL? (default: False); 
-	# ch_id - ід чата де відбувається магія. виставить в конфіґу; 
-	# wakelock - чи юзать wakelock (у мене від нього нема толку); 
-	with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
-		json.dump(new_config, configfile,ensure_ascii=False, indent='	')
+	config.clear()
+	config.update(ordered_config)
+	with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+		json.dump(config, f, ensure_ascii=False, indent='\t')
+
+if not os.path.exists(CONFIG_PATH):
+	config = {
+		'api_id': int(input('enter api_id from https://telegram.org :')),
+		'api_hash': input('enter api_hash from https://telegram.org :').strip(),
+		'ch_id': 0
+	}
+	save_config()
 
 with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	#from types import SimpleNamespace
 	config = json.load(configfile)
 	print('✅ config loaded')
-	
-	api_id = int(config['api_id'])
-	api_hash = config['api_hash']
-	
-	db_pymysql = bool(config['db_pymysql'] or False)
-	mysql_conf = config.get('mysql', {}) # якщо в старому конфігу немає блоку
-	# Якщо у старому конфігу немає блоку mysql — додаємо його і зберігаємо файл
-	if 'mysql' not in config or not isinstance(config['mysql'], dict):
-		config['mysql'] = {
-			'host': 'localhost',
-			'user': 'root',
-			'password': 'V3rY$tR0NgPaS$Sw0Rd',
-			'db': 'db'
-		}
-		with open(CONFIG_PATH, "w", encoding="utf-8") as configfile:
-			json.dump(config, configfile, ensure_ascii=False, indent='\t')
-		print('🔄 Дефолтний блок mysql додано до конфігу')
-	db_sqlite3 = bool(True) # Always true; або змініть.
-	ch_id= int(config['ch_id'] or -1002236064671) # чат
-	farm = bool(config['farm'] or False)# вмикать фарм?
-	#mine = bool(config['mine'] or False)# вмикать майн?
-	mine = True # тупо врубаємо всім
-	f_run=False # зразу не запущено
-	m_run=False # зразу не запущено
-	#bio_attacker_bot_ID=6333102398
-	if ch_id>=0:
-		ch_id=-1002236064671
-		save_config_key('ch_id',ch_id)
-		print('неправильний id чата; пробуємо "стандартний" * якщо ти є там?')
-	
+
+api_id = int(config['api_id'])
+api_hash = config['api_hash']
+ch_id = int(config.get('ch_id') or -1002236064671)
+
+if ch_id >= 0:
+	ch_id = -1002236064671
+	config['ch_id'] = ch_id
+	print('неправильний id чата; пробуємо "стандартний" * якщо ти є там?')
+
+db_sqlite3 = True
+db_pymysql = bool(config.get('db_pymysql', False))
+mysql_conf = config.get('mysql') if isinstance(config.get('mysql'), dict) else {
+	'host': 'localhost',
+	'user': 'root',
+	'password': 'V3rY$tR0NgPaS$Sw0Rd',
+	'db': 'db'
+}
+config['mysql'] = mysql_conf
+
+farm = bool(config.get('farm', True))
+mine = True
+f_run = False
+m_run = False
+
+save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
+
 ################################################################################
 
 irises = [707693258,5137994780,5226378684,5434504334,5443619563,8611067852]
