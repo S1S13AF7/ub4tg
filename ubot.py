@@ -64,10 +64,10 @@ if not os.path.exists(CONFIG_PATH):
 	'api_id': api_id,
 	'api_hash': api_hash,
 	'db_pymysql': False,
-	'db_sqlite3': False,
+	'db_sqlite3': True,
 	'wakelock': False,
-	'farm':  False,
-	'mine':  False,
+	'farm':  True,
+	'mine':  True,
 	'ch_id': 0
 	}
 	# api_id & api_hash - обов'язкові параметри; 
@@ -86,7 +86,7 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	api_hash = config['api_hash']
 	
 	db_pymysql = bool(config['db_pymysql'] or False)
-	db_sqlite3 = bool(config['db_sqlite3'] or False)
+	db_sqlite3 = bool(True) # Always true; або змініть.
 	
 	ch_id= int(config['ch_id'] or -1002236064671) # чат
 	farm = bool(config['farm'] or False)# вмикать фарм?
@@ -94,6 +94,7 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	mine = True # тупо врубаємо всім
 	f_run=False # зразу не запущено
 	m_run=False # зразу не запущено
+	#bio_attacker_bot_ID=6333102398
 	if ch_id>=0:
 		ch_id=-1002236064671
 		save_config_key('ch_id',ch_id)
@@ -229,7 +230,33 @@ async def main():
 			except:
 				pass
 		
-		#if db_sqlite3:
+		if db_sqlite3:
+			conn = sqlite3.connect(f"{my_id}.sqlite")#покласти базу рядом?
+			#conn = sqlite3.connect(f"D:\\Misc\\projects\\Python\\{my_id}.sqlite")# Або повністю
+			
+			if is_termux:
+				conn = sqlite3.connect(f"{default_directory}/{my_id}.sqlite")
+			
+			c = conn.cursor()
+			
+			c.execute('''CREATE TABLE IF NOT EXISTS avocado	(
+			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
+			when_int	INTEGER NOT NULL DEFAULT 0,
+			bio_int	INTEGER NOT NULL DEFAULT 1,
+			expr_int	INTEGER NOT NULL DEFAULT 0,
+			expr_str	VARCHAR NOT NULL DEFAULT 0
+			)''');
+			conn.commit()
+			
+			# https://www.sqlite.org/pragma.html
+			c.execute('PRAGMA optimize=0x10002'); conn.commit()
+			
+			def optimize():
+				try:
+					c.execute('PRAGMA optimize'); conn.commit()
+				except Exception as e:
+					print(f"err optimize: {e}")
+			
 			####################################################################
 		
 		########################################################################
@@ -371,7 +398,7 @@ async def main():
 				return
 			m_run = True
 			try:
-				if int(w)>0:
+				if int(w)>1:
 					print(f'⏳ wait {w}')
 				await asyncio.sleep(w)
 				while mine:
@@ -481,6 +508,29 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(incoming=True,from_users=irises,
+		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ)'))
+		async def ферма_ВДАЛО(event):
+			m = event.message
+			t = m.raw_text
+			u = 0 # OR id
+			д = int(time.time())
+			if m.date:
+				д = int(datetime.timestamp(m.date))
+			if m.entities:
+				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
+				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
+				if r:
+					u=int(r[0])
+					if db_pymysql and u>0:
+						await sft(u,д)
+			if m_run:
+				return
+			else:
+				await Mining(1) # Тупо врубаємо майн після успішної ферми
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
 		pattern=r'🎉 New laboratory level'))
 		async def New_level(event):
@@ -503,26 +553,114 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True,from_users=irises,
-		pattern=r'(✅|🔑) (ВДАЛО|ЗАЧЁТ|УСПІХ)'))
-		async def ферма_ВДАЛО(event):
-			m = event.message
-			t = m.raw_text
-			u = 0 # OR id
-			д = int(time.time())
-			if m.date:
-				д = int(datetime.timestamp(m.date))
-			if m.entities:
-				h= utils.sanitize_parse_mode('html').unparse(t,m.entities)
-				r= re.findall(r'<a href="tg://user\?id=([0-9]+)">.+</a>',h)
-				if r:
-					u=int(r[0])
-					if db_pymysql and u>0:
-						await sft(u,д)
-			if m_run:
-				return
+		Active_victims = r'.*(Active\s+victims|Активные\s+жертвы)'
+		@client.on(events.NewMessage(incoming=True, pattern=Active_victims))
+		@client.on(events.MessageEdited(incoming=True, pattern=Active_victims))
+		async def ActiveVictims(event):
+			m = event.message # повідомлення
+			s = m.sender_id # відправник
+			t = m.raw_text # сам текст
+			д = m.date # поточна дата
+			# 1. ПЕРЕСЛАНІ
+			if m.fwd_from:
+				# Отримуємо ID того, ХТО створив оригінал
+				# Бот — це користувач, тому перевіряємо isinstance
+				if isinstance(m.fwd_from.from_id, types.PeerUser):
+					s = m.fwd_from.from_id.user_id
+				else:
+					s = None
+				msg_date = m.fwd_from.date # ДАТА ОРИГІНАЛЬНОГО ПОВІДОМЛЕННЯ
 			else:
-				await Mining(1) # Тупо врубаємо майн після успішної ферми
+				s = m.sender_id # відправник поточного повідомлення
+				msg_date = m.date # поточна дата
+			# 2. ФІЛЬТР ПО БОТУ
+			if s != 6333102398:
+				return
+			# 3. ФІЛЬТР ВІД МИНУЛОРІЧНОЇ / СТАРОЇ ФІГНІ (Фіксована дата перезапуску)
+			# найпростіший і 100% робочий спосіб порівняння через UNIX-timestamp:
+			restart_timestamp = 1793491200  # Це точний UNIX-time для 01.11.2026
+			# Я потом заміню на реальну дату коли її вілкопаю
+			if int(msg_date.timestamp()) < restart_timestamp:
+				return  # Повідомлення згенероване ДО перезапуску гри — ігноруєм
+			д = int(msg_date.timestamp()) # Дата самого повідомлення від бота
+			м = event.is_private and s == 6333102398 and not m.fwd_from # МОЄ
+			if m.entities:
+				h = utils.sanitize_parse_mode('html').unparse(t, m.entities)
+				pattern = re.compile(
+				r"""
+				href="
+				(?:tg://openmessage\?user_id=|https?://t\.me/)  # 1. Посиланя
+				(\d+)                                           # ID користувача (Група 1)
+				"[^>]*>                                         # Закриття тегу <a>
+				[^<]+                                           # Ім'я користувача
+				</a>                                            # Закриваючий тег посилання
+				\s*.—\s*                                        # Крапка і тире
+				(?:<strong>)?                                    # 2. Можливий тег <strong>
+				(\d+)                                           # Кількість (Група 2)
+				(?:</strong>)?                                   # Закриття тегу <strong>
+				\s*🧬\s*(?:until|до)\s+                          # Емодзі та слово "until/до"
+				(?:<code>)?                                     # 3. Тег <code> навколо дати
+				(\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2})             # Дата та час (Група 3)
+				\s+UTC
+				(?:</code>)?                                    # Закриття тегу <code>
+				""",
+				re.IGNORECASE | re.VERBOSE
+				)
+				for r in pattern.finditer(h):
+					user_id = int(r.group(1))
+					bio = int(r.group(2))
+					date_str = r.group(3)
+					until_str = date_str.split(" ")[0] # Отримуємо "27.11.2026"
+					# 1. Конвертуємо в datetime об'єкт (поки без часового поясу)
+					dt = datetime.strptime(date_str, "%d.%m.%Y %H:%M")
+					# 2. Перетворюємо в UNIX timestamp за допомогою модуля time
+					until_ts = int(time.mktime(dt.timetuple()) - time.timezone)
+					# 🛡️ ПЕРЕВІРКА АНТІЛУ: якщо час дії жертви ВЖЕ МИНУВ
+					if until_ts < int(time.time()):
+						#continue # жертва застаріла,
+						until_ts=0# пишемо як не інфікованого
+						until_str="0"
+					
+					# 💾 ЗБЕРЕЖЕННЯ В SQLite (База на телефоні/локально)
+					if db_sqlite3:
+						if м:
+							try:
+								c.execute("""INSERT INTO avocado 
+								(user_id, when_int, bio_int, expr_int, expr_str)
+								VALUES (?, ?, ?, ?, ?)
+								ON CONFLICT(user_id) DO UPDATE SET
+								when_int = excluded.when_int,
+								bio_int = excluded.bio_int,
+								expr_int = excluded.expr_int,
+								expr_str = excluded.expr_str
+								WHERE excluded.expr_int > avocado.expr_int 
+								OR (avocado.expr_int = 0 
+								AND excluded.when_int > avocado.when_int)""", 
+								(int(user_id), int(д), int(bio), int(until_ts), 
+								str(until_str))); conn.commit()
+							except Exception as Err:
+								print(f'err: {Err} avocado')
+						elif user_id != my_id:
+							try:
+								# Вставляєм нового чужого пацієнта, або оновлюєм:
+								c.execute("""INSERT INTO avocado 
+								(user_id, when_int, bio_int, expr_int, expr_str)
+								VALUES (?, ?, ?, 0, '0')
+								ON CONFLICT(user_id) DO UPDATE SET
+								when_int = excluded.when_int,
+								bio_int = excluded.bio_int
+								WHERE avocado.expr_int = 0 
+								AND excluded.when_int > avocado.when_int""", 
+								(int(user_id), int(д), int(bio)));conn.commit()
+							except Exception as Err:
+								print(f'err: {Err} avocado not my')
+					
+					if м:
+						print(f'@{user_id} +{bio} {until_ts} {until_str}')
+				
+				# ⚡ ОПТИМІЗАЦІЯ: викликаємо після того, як цикл повністю завершився
+				if db_sqlite3:
+					optimize()
 		
 		########################################################################
 		
