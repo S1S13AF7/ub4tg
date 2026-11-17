@@ -395,7 +395,9 @@ async def main():
 			if "t.me/" in url:
 				if db_pymysql:
 					try:
-						d.execute("SELECT * FROM `tg_users_url` WHERE `u_link` = '%s' ORDER BY `when_int` DESC" % str(url)); 
+						d.execute("""SELECT * FROM `tg_users_url` 
+						WHERE `u_link` = %s ORDER BY `when_int` DESC""",
+						(str(url),))
 						user = d.fetchone();
 						if user is None:
 							pass
@@ -548,7 +550,7 @@ async def main():
 							if 'Successful mining' in t or 'Удачная попытка' in t:
 								w = random.uniform(7200.0072,7227.7227)
 								if db_pymysql:
-									smt(my_id, д)
+									await smt(my_id, д)
 							elif '👎🏻💔 No luck!' in t:
 								M = re.findall(r'([0-9]{1,2}) min.*',t)
 								if M:
@@ -585,11 +587,22 @@ async def main():
 				f_run = True #	✅ погнали!
 				w = random.uniform(1,14401)
 				д = int(time.time())
-				f = await message_q(
-					text='Ферма',
-					user_id=kuda,
-					mark_read=True,
-					delete=True)
+				try:
+					f = await message_q(
+						text='Ферма',
+						user_id=kuda,
+						mark_read=True,
+						delete=True)
+				except asyncio.TimeoutError:
+					w = random.uniform(300, 600)
+					print(f'⚠️ Таймаут відповіді на Ферму. Повтор через {int(w)} сек...')
+					await asyncio.sleep(w)
+					continue
+				except Exception as e:
+					w = random.uniform(60, 180)
+					print(f'⚠️ Помилка у Фермі: {e}. Повтор через {int(w)} сек...')
+					await asyncio.sleep(w)
+					continue
 				s = f.sender_id
 				if f.date:
 					д = int(datetime.timestamp(f.date))
@@ -670,7 +683,7 @@ async def main():
 			m = event.message
 			print(m.raw_text)
 			if db_pymysql and m.date:
-				smt(my_id, datetime.timestamp(m.date))
+				await smt(my_id, int(datetime.timestamp(m.date)))
 			if m_run:
 				return
 			else:
