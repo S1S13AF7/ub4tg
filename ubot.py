@@ -222,7 +222,7 @@ async def main():
 		try:
 			bio_bot = await client.get_entity(bio_bot_username)
 			bio_attacker_bot_ID = int(bio_bot.id)
-			print(f'🤖 Знайдено бота {bio_attacker_bot_ID}')
+			#print(f'🤖 Знайдено бота {bio_attacker_bot_ID}')
 			
 			# Перевіряємо, чи є вже повідомлення в ЛС із ботом
 			msgs = await client.get_messages(bio_bot, limit=1)
@@ -1025,11 +1025,11 @@ async def main():
 				
 				now_ts = int(time.time())
 				
-				# Беремо 10 найстаріших пацієнтів без активного антилу
+				# Беремо 10 найстаріших пацієнтів без активного антилу або з біо < 5
 				c.execute("""
 					SELECT user_id, bio_int FROM avocado 
 					WHERE user_id NOT IN (?, 6333102398, 1124824021) 
-					AND (expr_int = 0 OR expr_int < ?)
+					AND (expr_int = 0 OR expr_int < ? OR bio_int < 5)
 					ORDER BY when_int ASC 
 					LIMIT 10
 				""", (my_id, now_ts))
