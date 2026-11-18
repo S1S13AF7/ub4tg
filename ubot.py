@@ -692,12 +692,12 @@ async def main():
 		pattern=r'👍🏻❤️ (Successful mining attempt|Удачная попытка майнинга)!'))
 		async def Mine_ok(event):
 			m = event.message
-			print(m.raw_text)
 			if db_pymysql and m.date:
 				await smt(my_id, int(datetime.timestamp(m.date)))
 			if m_run:
 				return
 			else:
+				print(m.raw_text)
 				await Mining(random.uniform(7200.0072,7227.7227))
 		
 		########################################################################
