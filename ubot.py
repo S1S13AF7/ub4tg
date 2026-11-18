@@ -928,16 +928,21 @@ async def main():
 					if ostalos_pt in (0, 1):
 						need_check_victims = True
 				
+				until_ts = when + (letal * 86400)
+				until_str = datetime.fromtimestamp(until_ts, tz=timezone.utc).strftime("%d.%m.%Y")
+				
 				if db_sqlite3:
 					try:
 						c.execute("""INSERT INTO avocado 
 						(user_id, when_int, bio_int, expr_int, expr_str)
-						VALUES (?, ?, ?, 0, '0')
+						VALUES (?, ?, ?, ?, ?)
 						ON CONFLICT(user_id) DO UPDATE SET
 							when_int = excluded.when_int,
-							bio_int = excluded.bio_int
+							bio_int = excluded.bio_int,
+							expr_int = excluded.expr_int,
+							expr_str = excluded.expr_str
 						WHERE excluded.when_int >= avocado.when_int""", 
-						(u2id, when, bio))
+						(u2id, when, bio, until_ts, until_str))
 						conn.commit()
 					except Exception as Err:
 						print(f'err: {Err} (infect sqlite my)')
@@ -946,22 +951,25 @@ async def main():
 					try:
 						d.execute("""INSERT INTO `tg_bio_attack` 
 						(`date`, `who_id`, `user_id`, `profit`, `until_int`, `until_str`) 
-						VALUES (%s, %s, %s, %s, 0, '0')
+						VALUES (%s, %s, %s, %s, %s, %s)
 						ON DUPLICATE KEY UPDATE 
 							date = IF(VALUES(date) >= date, VALUES(date), date),
-							profit = IF(VALUES(date) >= date, VALUES(profit), profit)""", 
-						(when, my_id, u2id, bio))
+							profit = IF(VALUES(date) >= date, VALUES(profit), profit),
+							until_int = IF(VALUES(date) >= date, VALUES(until_int), until_int),
+							until_str = IF(VALUES(date) >= date, VALUES(until_str), until_str)""", 
+						(when, my_id, u2id, bio, until_ts, until_str))
 						d.execute("""INSERT INTO `tg_bio_users` 
 						(`user_id`, `when_int`, `profit`) 
 						VALUES (%s, %s, %s) 
 						ON DUPLICATE KEY UPDATE 
 							profit = IF(VALUES(when_int) >= when_int, VALUES(profit), profit),
-							when_int = IF(VALUES(when_int) >= when_int, VALUES(when_int), when_int)""", (u2id, when, bio))
+							when_int = IF(VALUES(when_int) >= when_int, VALUES(when_int),
+							when_int)""", (u2id, when, bio))
 						con.commit()
 					except Exception as Err:
 						print(f'err: {Err} (infect mysql my)')
 				
-				print(f'☣️ Заражено @{u2id} (+{bio}) | Патів: {ostalos_pt}/{max_pt}')
+				print(f'☣️ Заражено @{u2id} (+{bio}) до {until_str} | Патів: {ostalos_pt}/{max_pt}')
 				
 				if need_check_victims and (time.time() - last_bz_time > 15):
 					last_bz_time = time.time()
