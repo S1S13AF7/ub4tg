@@ -382,8 +382,10 @@ async def main():
 			conn.commit()
 			
 			if del_sqlite > 0:
-				print(f"""🧹 SQLite (avocado): видалено {del_sqlite} записів. 
-				Стискаю базу (VACUUM)...""")
+				print(
+					f"🧹 SQLite (avocado): видалено {del_sqlite} записів.\n"
+					"🗜️ Стискаю базу (VACUUM)..."
+				)
 				c.execute('VACUUM')
 				conn.commit()
 			
@@ -987,10 +989,10 @@ async def main():
 				except Exception as Err:
 					print(f'err: {Err} (infect mysql commit)')
 			
-			prefix = '☣️ [ЛС]' if is_my else '☣️ [Чат]'
-			print(f'{prefix} Заражено @{u2id} (+{bio})')
+			if is_my:
+				print(f'☣️ Заражено @{u2id} (+{bio})')
 			
-			# 5. Якщо залишилось 0 або 1 патогенів — запитуємо /бж в ЛС бота (не частіше ніж раз на 15 сек)
+			# 5. Якщо залишилось 0 або 1 патогенів — запитуємо /бж в ЛС бота
 			if need_check_victims and (time.time() - last_bz_time > 15):
 				last_bz_time = time.time()
 				await asyncio.sleep(random.uniform(1.5, 3.5))
