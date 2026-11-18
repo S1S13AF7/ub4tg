@@ -125,8 +125,12 @@ f_run = False
 m_run = False
 bf_run = False
 scn_run = False
-last_bz_time=0# Коли дивились "бж"
-ostalos_pt=10 # осталось. буде мінятись. 
+last_bz_time=0	# Коли дивились "бж"
+ostalos_pt= 10	# поточні патогени (на старті припускаємо 10)
+max_pt = 10     # макс. запас патогенів (оновиться з лаби)
+kvala = 1       # рівень кваліфікації 1..60 (оновиться з лаби)
+pt_time = int(time.time()) # час останньої фіксації патогенів
+
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
 
 ################################################################################
@@ -838,7 +842,7 @@ async def main():
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
 		pattern=r'☣️\s*(Infection successful|Заражение успешно)'))
 		async def infect(event):
-			global last_bz_time, ostalos_pt
+			global last_bz_time, ostalos_pt, pt_time
 			m = event.message
 			when = int(m.date.timestamp())
 			
@@ -868,6 +872,7 @@ async def main():
 				need_check_victims = False
 				if rem_match:
 					ostalos_pt = int(rem_match.group(1))
+					pt_time = when
 					if ostalos_pt in (0, 1):
 						need_check_victims = True
 				
@@ -904,7 +909,7 @@ async def main():
 					except Exception as Err:
 						print(f'err: {Err} (infect mysql my)')
 				
-				print(f'☣️ Заражено @{u2id} (+{bio})')
+				print(f'☣️ Заражено @{u2id} (+{bio}) | Патів: {ostalos_pt}/{max_pt}')
 				
 				if need_check_victims and (time.time() - last_bz_time > 15):
 					last_bz_time = time.time()
@@ -940,8 +945,7 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:bf|biofuck|жрать)$'))
 		async def cmd_bf_lite(event):
-			
-			global bf_run, ostalos_pt, last_bz_time
+			global bf_run, last_bz_time
 			
 			if not db_sqlite3:
 				await event.edit('❌ SQLite вимкнено в конфігу.')
@@ -951,8 +955,9 @@ async def main():
 				await event.edit('⏳ Жралка вже працює...')
 				return
 			
-			if ostalos_pt <= 1:
-				await event.edit(f'🛑 Мало патогенів ({ostalos_pt} шт.). Відбій.')
+			cur_pt = get_pt()
+			if cur_pt <= 1:
+				await event.edit(f'🛑 Мало патогенів ({cur_pt}/{max_pt} шт.). Відбій.')
 				return
 			
 			bf_run = True
@@ -963,7 +968,7 @@ async def main():
 					last_bz_time = time.time()
 					await event.edit('🔄 Оновлюю список жертв (/бж) перед атакою...')
 					await client.send_message(6333102398, '/бж')
-					await asyncio.sleep(random.uniform(2.5, 3.5)) # Чекаємо ...
+					await asyncio.sleep(random.uniform(2.5,3.5))
 				
 				now_ts = int(time.time())
 				
@@ -982,13 +987,13 @@ async def main():
 					await event.edit('🤷 Немає свіжих цілей без антилу в базі.')
 					return
 				
-				await event.edit(f'☣️ Знайдено цілей: {len(targets)}. Починаю в ЛС бота...')
+				await event.edit(f'☣️ Знайдено цілей: {len(targets)} (патів: ~{cur_pt}/{max_pt}). Починаю...')
 				sent_count = 0
 				
 				for target_id, bio_val in targets:
 					# Зупиняємось, якщо залишився 1 (або 0) патоген
-					if ostalos_pt <= 1:
-						print(f'🛑 Зупинка: залишилось {ostalos_pt} патогенів.')
+					if get_pt() <= 1:
+						print(f'🛑 Зупинка: залишилось {ostalos_pt}/{max_pt} патогенів.')
 						break
 					
 					cmd_text = f'.биоеб {target_id}'
@@ -1005,8 +1010,7 @@ async def main():
 					await asyncio.sleep(random.uniform(1.5, 2.5))
 					await client.send_message(6333102398, '/бж')
 					
-				res_text = f"""✅ Відправлено атак: {sent_count} | 
-				Залишок патогенів: ~{ostalos_pt}"""
+				res_text = f"✅ Відправлено атак: {sent_count} | Залишок патогенів: ~{get_pt()}/{max_pt}"
 				print(res_text)
 				try:
 					await event.edit(res_text)
