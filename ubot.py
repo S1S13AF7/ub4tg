@@ -346,6 +346,10 @@ async def main():
 			d.execute('DELETE FROM `tg_users_url` WHERE `when_int` < %s', (restart_timestamp,))
 			del_urls = d.rowcount
 			
+			# Видаляємо сміттєві ID (< 100000)
+			d.execute('DELETE FROM `tg_bio_attack` WHERE `user_id` < 100000')
+			d.execute('DELETE FROM `tg_bio_users` WHERE `user_id` < 100000')
+			
 			con.commit()
 			
 			if del_attack or del_users or del_urls:
@@ -371,8 +375,9 @@ async def main():
 			)''');
 			conn.commit()
 			
-			# Зачистка старих записів у SQLite
-			c.execute('DELETE FROM avocado WHERE when_int < ?', (restart_timestamp,))
+			# Зачистка старих записів та сміттєвих ID у SQLite
+			c.execute('DELETE FROM avocado WHERE when_int < ? OR user_id<100000', 
+			(restart_timestamp,))
 			del_sqlite = c.rowcount
 			conn.commit()
 			
@@ -759,6 +764,8 @@ async def main():
 				
 				for r in pattern.finditer(h):
 					user_id = int(r.group(1))
+					if user_id < 100000:
+						continue
 					bio = int(r.group(2))
 					date_str = r.group(3)
 					until_str = date_str.split(" ")[0] # Отримуємо "27.11.2026"
@@ -890,6 +897,8 @@ async def main():
 			if not target_match:
 				return
 			u2id = int(target_match.group(1))
+			if u2id < 100000:
+				return
 			
 			# 2. Витягуємо отриманий біо-досвід (bio)
 			bio_match = re.search(
@@ -1028,7 +1037,8 @@ async def main():
 				# Беремо 10 найстаріших пацієнтів без активного антилу або з біо < 5
 				c.execute("""
 					SELECT user_id, bio_int FROM avocado 
-					WHERE user_id NOT IN (?, 6333102398, 1124824021) 
+					WHERE user_id >= 100000
+					AND user_id NOT IN (?, 6333102398, 1124824021) 
 					AND (expr_int = 0 OR expr_int < ? OR bio_int < 5)
 					ORDER BY when_int ASC 
 					LIMIT 10
