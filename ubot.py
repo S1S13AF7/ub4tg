@@ -497,6 +497,26 @@ async def main():
 		
 		########################################################################
 		
+		def get_pt() -> int:
+			global ostalos_pt, pt_time
+			now = int(time.time())
+			if ostalos_pt >= max_pt:
+				pt_time = now
+				return ostalos_pt
+			
+			step_sec = max(60, (61 - kvala) * 60) # 1 лвл = 3600с, 60 лвл = 60с
+			elapsed = now - pt_time
+			if elapsed >= step_sec:
+				regen = elapsed // step_sec
+				ostalos_pt = min(max_pt, ostalos_pt + regen)
+				if ostalos_pt >= max_pt:
+					pt_time = now
+				else:
+					pt_time += regen * step_sec
+			return ostalos_pt
+		
+		########################################################################
+		
 		async def message_q( # спизжено
 				text: str,
 				user_id: int,
@@ -940,6 +960,49 @@ async def main():
 			global last_bz_time
 			if event.chat_id == 6333102398:
 				last_bz_time = time.time()
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True,
+		pattern=r'(?s).*🧪\s*(?:Pathogens|Свободных патогенов):'))
+		async def parse_my_lab(event):
+			global ostalos_pt, max_pt, kvala, pt_time
+			m = event.message
+			if m.fwd_from:
+				s = m.fwd_from.from_id.user_id if isinstance(m.fwd_from.from_id, types.PeerUser) else None
+				msg_ts = int(m.fwd_from.date.timestamp())
+			else:
+				s = m.sender_id
+				msg_ts = int(m.date.timestamp())
+			
+			if s != 6333102398 or msg_ts < restart_timestamp or not m.entities:
+				return
+			
+			# Перевіряємо, що перше посилання в повідомленні — це саме наш my_id
+			h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
+			ids = re.findall(r'href="(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)"', h, re.IGNORECASE)
+			if not ids or int(ids[0]) != my_id:
+				return
+			
+			t = m.raw_text
+			pt_m = re.search(r'🧪\s*(?:Pathogens|Свободных патогенов):\s*(\d+)\s*/\s*(\d+)', t)
+			kv_m = re.search(r'👩🏻‍🔬\s*(?:Qualification|Квалификация):\s*(\d+)', t)
+			nx_m = re.search(r'⏳\s*(?:Next pathogen in|Следующий патоген через)\s*(\d+)\s*(?:min|мин)', t)
+			
+			if kv_m:
+				kvala = max(1, min(60, int(kv_m.group(1))))
+			if pt_m:
+				ostalos_pt = int(pt_m.group(1))
+				max_pt = int(pt_m.group(2))
+				
+				step_sec = max(60, (61 - kvala) * 60)
+				if nx_m and ostalos_pt < max_pt:
+					mins_left = int(nx_m.group(1))
+					pt_time = msg_ts - max(0, step_sec - mins_left * 60)
+				else:
+					pt_time = msg_ts
+				
+				print(f'🧪 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв)')
 		
 		########################################################################
 		
