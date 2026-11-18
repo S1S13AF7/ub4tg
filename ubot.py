@@ -1035,16 +1035,17 @@ async def main():
 					await asyncio.sleep(random.uniform(2.5,3.5))
 				
 				now_ts = int(time.time())
+				need_targets = max(1, get_pt() - 1)
 				
-				# Беремо 10 найстаріших пацієнтів без активного антилу або з біо < 5
+				# Беремо найстаріших пацієнтів без активного антилу або з біо <5
 				c.execute("""
 					SELECT user_id, bio_int FROM avocado 
 					WHERE user_id >= 100000
 					AND user_id NOT IN (?, 6333102398, 1124824021) 
 					AND (expr_int = 0 OR expr_int < ? OR bio_int < 5)
 					ORDER BY when_int ASC 
-					LIMIT 10
-				""", (my_id, now_ts))
+					LIMIT ?
+				""", (my_id, now_ts, need_targets))
 				targets = c.fetchall()
 				
 				if not targets:
