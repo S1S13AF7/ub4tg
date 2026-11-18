@@ -963,8 +963,9 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True,
-		pattern=r'(?s).*🧪\s*(?:Pathogens|Свободных патогенов):'))
+		lab_pattern = r'(?s).*🧪\s*(?:Pathogens|Свободных патогенов):'
+		@client.on(events.NewMessage(incoming=True, pattern=lab_pattern))
+		@client.on(events.MessageEdited(incoming=True, pattern=lab_pattern))
 		async def parse_my_lab(event):
 			global ostalos_pt, max_pt, kvala, pt_time
 			m = event.message
@@ -978,9 +979,9 @@ async def main():
 			if s != 6333102398 or msg_ts < restart_timestamp or not m.entities:
 				return
 			
-			# Перевіряємо, що перше посилання в повідомленні — це саме наш my_id
+			# Перевіряємо, що перше числове посилання в лабі — це саме наш my_id
 			h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
-			ids = re.findall(r'href="(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)"', h, re.IGNORECASE)
+			ids = re.findall(r'tg://openmessage\?user_id=(\d+)', h)
 			if not ids or int(ids[0]) != my_id:
 				return
 			
