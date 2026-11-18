@@ -26,6 +26,7 @@ default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 chts_file = "chts.json"		# чати де працюватимуть "чіти"
 dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
+mlab_file = "mlab.json"		# параметри моєї лаби (квала та макс. патогенів)
 bio_0_url = "https://misc.pp.ua/files/0.zip" # <--- пряме посилання на 0.zip
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
@@ -129,6 +130,7 @@ last_bz_time=0	# Коли дивились "бж"
 ostalos_pt= 10	# поточні патогени (на старті припускаємо 10)
 max_pt = 10     # макс. запас патогенів (оновиться з лаби)
 kvala = 1       # рівень кваліфікації 1..60 (оновиться з лаби)
+letal = 1       # рівень летальності = дні	(оновиться з лаби)
 pt_time = int(time.time()) # час останньої фіксації патогенів
 
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
@@ -201,6 +203,36 @@ try:
 except:
 	with open(dovs_file, "w", encoding="utf-8") as write_file:
 		json.dump(dovs, write_file,ensure_ascii=False, indent='	')
+################################################################################
+mlab = {"kvala": 1, "max_pt": 10, "letal": 1}
+try:
+	with open(mlab_file, "r", encoding="utf-8") as read_file:
+		loaded_mlab = json.load(read_file)
+		if isinstance(loaded_mlab, dict):
+			kvala = max(1, min(60, int(loaded_mlab.get("kvala", 1))))
+			max_pt = max(1, int(loaded_mlab.get("max_pt", 10)))
+			letal = max(1, int(loaded_mlab.get("letal", 1)))
+			ostalos_pt = max_pt
+			mlab.update({"kvala": kvala, "max_pt": max_pt, "letal": letal})
+except Exception:
+	with open(mlab_file, "w", encoding="utf-8") as write_file:
+		json.dump(mlab, write_file, ensure_ascii=False, indent='\t')
+
+def save_mlab(updates: dict):
+	if not updates:
+		return
+	try:
+		current = {}
+		if os.path.exists(mlab_file):
+			with open(mlab_file, "r", encoding="utf-8") as read_file:
+				data = json.load(read_file)
+				if isinstance(data, dict):
+					current = data
+		current.update(updates)
+		with open(mlab_file, "w", encoding="utf-8") as write_file:
+			json.dump(current, write_file, ensure_ascii=False, indent='\t')
+	except Exception as e:
+		print(f'⚠️ Помилка збереження {mlab_file}: {e}')
 ################################################################################
 
 async def main():
@@ -963,11 +995,11 @@ async def main():
 		
 		########################################################################
 		
-		lab_pattern = r'(?s).*🧪\s*(?:Pathogens|Свободных патогенов):'
+		lab_pattern = r'(?s).*(?:🧪\s*(?:Pathogens|Свободных патогенов)|👩🏻‍🔬\s*(?:Qualification|Квалификация)|☠️\s*(?:Mortality|Летальность)):'
 		@client.on(events.NewMessage(incoming=True, pattern=lab_pattern))
 		@client.on(events.MessageEdited(incoming=True, pattern=lab_pattern))
 		async def parse_my_lab(event):
-			global ostalos_pt, max_pt, kvala, pt_time
+			global ostalos_pt, max_pt, kvala, letal, pt_time
 			m = event.message
 			if m.fwd_from:
 				s = m.fwd_from.from_id.user_id if isinstance(m.fwd_from.from_id, types.PeerUser) else None
@@ -980,7 +1012,7 @@ async def main():
 				return
 			
 			# Перевіряємо, що перше числове посилання в лабі — це саме наш my_id
-			h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
+			h = utils.sanitize_parse_mode('html').unparse(m.raw_text,m.entities)
 			ids = re.findall(r'tg://openmessage\?user_id=(\d+)', h)
 			if not ids or int(ids[0]) != my_id:
 				return
@@ -988,13 +1020,23 @@ async def main():
 			t = m.raw_text
 			pt_m = re.search(r'🧪\s*(?:Pathogens|Свободных патогенов):\s*(\d+)\s*/\s*(\d+)', t)
 			kv_m = re.search(r'👩🏻‍🔬\s*(?:Qualification|Квалификация):\s*(\d+)', t)
+			lt_m = re.search(r'☠️\s*(?:Mortality|Летальность):\s*(\d+)', t)
 			nx_m = re.search(r'⏳\s*(?:Next pathogen in|Следующий патоген через)\s*(\d+)\s*(?:min|мин)', t)
+			
+			updates = {}
 			
 			if kv_m:
 				kvala = max(1, min(60, int(kv_m.group(1))))
+				updates["kvala"] = kvala
+			
+			if lt_m:
+				letal = max(1, int(lt_m.group(1)))
+				updates["letal"] = letal
+			
 			if pt_m:
 				ostalos_pt = int(pt_m.group(1))
 				max_pt = int(pt_m.group(2))
+				updates["max_pt"] = max_pt
 				
 				step_sec = max(60, (61 - kvala) * 60)
 				if nx_m and ostalos_pt < max_pt:
@@ -1002,8 +1044,10 @@ async def main():
 					pt_time = msg_ts - max(0, step_sec - mins_left * 60)
 				else:
 					pt_time = msg_ts
-				
-				print(f'🧪 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв)')
+			
+			if updates:
+				save_mlab(updates)
+				print(f'🧪 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.')
 		
 		########################################################################
 		
