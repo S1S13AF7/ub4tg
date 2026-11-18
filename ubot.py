@@ -1826,9 +1826,9 @@ async def main():
 			<code>.ква</code> – шпаргалка по жабах
 			<code>.help</code> – <u>you are here</u>
 			
-			* впливає на <code>.ping</code> і <code>.send</code>
-			** +/-дов через @(ід_кого)
-			*** якщо є дов і вкл. <code>+chts</code>
+			*	впливає на <code>.ping</code> і <code>.send</code>
+			**	+/-дов через @(ід_кого)
+			***	якщо є дов і вкл. <code>+chts</code>
 			
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
 			href="https://github.com/S1S13AF7/ub4tg">code</a>;
