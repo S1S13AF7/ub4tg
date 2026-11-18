@@ -1044,8 +1044,12 @@ async def main():
 			any_id_pattern = re.compile(r'href="(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)"', re.IGNORECASE)
 			stop_dt = datetime.fromtimestamp(restart_timestamp, tz=timezone.utc)
 			scanned_msgs = 0
-			added_sqlite = 0
 			unique_users = set()
+			
+			before_count = 0
+			if db_sqlite3:
+				c.execute('SELECT COUNT(*) FROM avocado')
+				before_count = c.fetchone()[0]
 			
 			try:
 				async for m in client.iter_messages(target_chat, from_user=6333102398):
@@ -1071,8 +1075,6 @@ async def main():
 								c.execute("""INSERT OR IGNORE INTO avocado 
 								(user_id, when_int, bio_int, expr_int, expr_str) 
 								VALUES (?, ?, 1, 0, '0')""", (u_id, msg_ts))
-								if c.rowcount > 0:
-									added_sqlite += 1
 							except Exception:
 								pass
 						if db_pymysql:
@@ -1094,8 +1096,11 @@ async def main():
 							pass
 						await asyncio.sleep(0.5)
 				
+				added_sqlite = 0
 				if db_sqlite3:
 					conn.commit()
+					c.execute('SELECT COUNT(*) FROM avocado')
+					added_sqlite = c.fetchone()[0] - before_count
 					optimize()
 				if db_pymysql:
 					con.commit()
