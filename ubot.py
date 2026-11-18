@@ -574,9 +574,9 @@ async def main():
 								H = re.findall(r'(\d+)\s*(?:h|ч)', t)
 								M = re.findall(r'(\d{1,2})\s*(?:min|мин)', t)
 								if H:
-									w += int(H) * 3600
+									w += int(H[0]) * 3600
 								if M:
-									w += int(M) * 60
+									w += int(M[0]) * 60
 							else:
 								# Якщо був якийсь інший??
 								print(f'відповідь "{t}" не розпізнана')
