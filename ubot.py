@@ -985,6 +985,13 @@ async def main():
 				await asyncio.sleep(random.uniform(1.5, 3.5))
 				await client.send_message(6333102398, '/бж')
 		
+		bz_aliases = r'^(?:[\./!]{1,2})?(?:victims?|бж|жертвы|био(?:ежа|жертвы|доход|зараженные))(?:\s+\d+)?$'
+		@client.on(events.NewMessage(outgoing=True, pattern=re.compile(bz_aliases, re.IGNORECASE)))
+		async def cmd_bz_out(event):
+			nonlocal last_bz_time
+			if event.chat_id == 6333102398:
+				last_bz_time = time.time()
+		
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True,from_users=irises,
