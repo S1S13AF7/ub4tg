@@ -26,7 +26,7 @@ default_directory = '' # "робоча папка" бота
 CONFIG_PATH = "conf.json"	# main config file
 chts_file = "chts.json"		# чати де працюватимуть "чіти"
 dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
-
+bio_0_url = "https://misc.pp.ua/files/0.zip" # <--- пряме посилання на 0.zip
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
 termux_api = False # там нижче буде перевизначено якщо is_termux == True
@@ -1086,6 +1086,150 @@ async def main():
 				print(f'⚠️ Помилка в cmd_bf_lite: {e}')
 			finally:
 				bf_run = False
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.upd$'))
+		async def cmd_upd(event):
+			import urllib.request
+			import urllib.error
+			import zipfile
+			import socket
+			
+			if not db_sqlite3:
+				await event.edit('❌ SQLite вимкнено в конфігу.')
+				return
+			
+			# Визначаємо папку: для Termux туди ж де конфіг, для інших — поруч
+			work_dir = default_directory if (is_termux and default_directory) else '.'
+			zip_path = os.path.join(work_dir, '0.zip')
+			db0_path = os.path.join(work_dir, '0.sqlite')
+			
+			# Попередньо видаляємо старий 0.zip, якщо він уже є
+			if os.path.exists(zip_path):
+				try:
+					os.remove(zip_path)
+				except Exception as e:
+					await event.edit(f'❌ Не вдалося видалити старий 0.zip: {e}')
+					return
+			
+			await event.edit('⏳ Завантажую 0.zip...')
+			
+			# Функція завантаження для запуску без блокування бота
+			def download_zip():
+				req = urllib.request.Request(
+					bio_0_url,
+					headers={'User-Agent': 'Mozilla/5.0'}
+				)
+				with urllib.request.urlopen(req, timeout=20) as resp, open(zip_path, 'wb') as out_f:
+					shutil.copyfileobj(resp, out_f)
+			
+			try:
+				loop = asyncio.get_running_loop()
+				await loop.run_in_executor(None, download_zip)
+			except urllib.error.HTTPError as e:
+				if e.code == 404:
+					await event.edit('❌ Файл 0.zip не знайдено на сервері (404).')
+				else:
+					await event.edit(f'❌ Помилка сервера HTTP {e.code}: {e.reason}')
+				return
+			except urllib.error.URLError as e:
+				await event.edit(f'❌ Хост недоступний або немає з\'єднання: {e.reason}')
+				return
+			except (socket.timeout, TimeoutError):
+				await event.edit('❌ Хост не відповідає (перевищено час очікування).')
+				return
+			except Exception as e:
+				await event.edit(f'❌ Помилка завантаження: {e}')
+				return
+			
+			await event.edit('📦 Розпаковую 0.sqlite...')
+			
+			try:
+				with zipfile.ZipFile(zip_path, 'r') as zf:
+					if '0.sqlite' not in zf.namelist():
+						await event.edit('❌ Усередині архіву 0.zip немає файлу 0.sqlite.')
+						return
+					# Розпаковуємо з заміною існуючого 0.sqlite
+					with zf.open('0.sqlite') as src_f, open(db0_path, 'wb') as dst_f:
+						shutil.copyfileobj(src_f, dst_f)
+			except zipfile.BadZipFile:
+				await event.edit('❌ Завантажений 0.zip пошкоджений або не є архівом.')
+				return
+			except Exception as e:
+				await event.edit(f'❌ Помилка розпакування: {e}')
+				return
+			
+			await event.edit('🔄 Імпортую нових пацієнтів у базу...')
+			
+			added_sqlite = 0
+			total_in_zero = 0
+			
+			try:
+				src_conn = sqlite3.connect(db0_path)
+				src_cur = src_conn.cursor()
+				src_cur.execute(
+					"SELECT user_id, when_int, bio_int FROM avocado WHERE user_id >= 100000 AND when_int >= ?",
+					(restart_timestamp,)
+				)
+				rows = src_cur.fetchall()
+				src_conn.close()
+				total_in_zero = len(rows)
+				
+				for u_id, w_int, b_int in rows:
+					u_id = int(u_id)
+					w_int = int(w_int)
+					b_int = int(b_int)
+					
+					if u_id == my_id or u_id in (6333102398, 1124824021):
+						continue
+					
+					# Додаємо як чужого (expr_int = 0). Якщо юзер вже є як чужий — оновлюємо свіжішою датою або реальним біо
+					c.execute("""
+						INSERT INTO avocado (user_id, when_int, bio_int, expr_int, expr_str)
+						VALUES (?, ?, ?, 0, '0')
+						ON CONFLICT(user_id) DO UPDATE SET
+							when_int = excluded.when_int,
+							bio_int = excluded.bio_int
+						WHERE avocado.expr_int = 0
+							AND (excluded.when_int > avocado.when_int OR (avocado.bio_int = 1 AND excluded.bio_int > 1))
+					""", (u_id, w_int, b_int))
+					
+					if c.rowcount > 0:
+						added_sqlite += 1
+					
+					# Паралельно підливаємо в загальну таблицю MySQL, якщо увімкнено
+					if db_pymysql:
+						try:
+							d.execute("""
+								INSERT INTO `tg_bio_users` (`user_id`, `when_int`, `profit`)
+								VALUES (%s, %s, %s)
+								ON DUPLICATE KEY UPDATE
+									profit = IF(VALUES(when_int) > when_int OR (profit = 1 AND VALUES(profit) > 1), VALUES(profit), profit),
+									when_int = IF(VALUES(when_int) > when_int OR (profit = 1 AND VALUES(profit) > 1), VALUES(when_int), when_int)
+							""", (u_id, w_int, b_int))
+						except Exception:
+							pass
+				
+				conn.commit()
+				optimize()
+				if db_pymysql:
+					con.commit()
+					
+			except Exception as e:
+				await event.edit(f'❌ Помилка читання/імпорту з 0.sqlite: {e}')
+				return
+			
+			res_msg = (
+				f'✅ Базу успішно оновлено!\n'
+				f'📥 Записів у 0.sqlite: {total_in_zero}\n'
+				f'🆕 Додано / оновлено в базі: {added_sqlite}'
+			)
+			print(res_msg)
+			try:
+				await event.edit(res_msg)
+			except Exception:
+				pass
 		
 		########################################################################
 		
