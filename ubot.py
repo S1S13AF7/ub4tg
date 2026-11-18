@@ -562,13 +562,14 @@ async def main():
 								w = random.uniform(7200.0072,7227.7227)
 								if db_pymysql:
 									await smt(my_id, д)
-							elif '👎🏻💔 No luck!' in t:
-								M = re.findall(r'([0-9]{1,2}) min.*',t)
+							elif '👎🏻💔 No luck!' in t or '👎🏻💔 Неудача!' in t:
+								w = random.uniform(2.5, 7.5) # невеликий запас
+								H = re.findall(r'(\d+)\s*(?:h|ч)', t)
+								M = re.findall(r'(\d{1,2})\s*(?:min|мин)', t)
+								if H:
+									w += int(H) * 3600
 								if M:
-									M = int(M[0])
-									w+= int(M*60)
-								if '1 h' in t:
-									w+=3600.0063
+									w += int(M) * 60
 							else:
 								# Якщо був якийсь інший??
 								print(f'відповідь "{t}" не розпізнана')
