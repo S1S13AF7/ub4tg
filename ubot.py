@@ -119,6 +119,7 @@ farm = bool(config.get('farm', True))
 mine = True
 f_run = False
 m_run = False
+bf_run = False
 last_bz_time=0# Коли дивились "бж"
 ostalos_pt=10 # осталось. буде мінятись. 
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
@@ -866,7 +867,7 @@ async def main():
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
 		pattern=r'☣️\s*(Infection successful|Заражение успешно)'))
 		async def infect(event):
-			nonlocal last_bz_time
+			global last_bz_time
 			m = event.message
 			t = m.raw_text
 			when = int(m.date.timestamp())
@@ -988,9 +989,90 @@ async def main():
 		bz_aliases = r'^(?:[\./!]{1,2})?(?:victims?|бж|жертвы|био(?:ежа|жертвы|доход|зараженные))(?:\s+\d+)?$'
 		@client.on(events.NewMessage(outgoing=True, pattern=re.compile(bz_aliases, re.IGNORECASE)))
 		async def cmd_bz_out(event):
-			nonlocal last_bz_time
+			global last_bz_time
 			if event.chat_id == 6333102398:
 				last_bz_time = time.time()
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:bf|biofuck|жрать)$'))
+		async def cmd_bf_lite(event):
+			
+			global bf_run, ostalos_pt, last_bz_time
+			
+			if not db_sqlite3:
+				await event.edit('❌ SQLite вимкнено в конфігу.')
+				return
+			
+			if bf_run:
+				await event.edit('⏳ Жралка вже працює...')
+				return
+			
+			if ostalos_pt <= 1:
+				await event.edit(f'🛑 Мало патогенів ({ostalos_pt} шт.). Відбій.')
+				return
+			
+			bf_run = True
+			
+			try:
+				# Якщо давно (> 5 хв) не оновлювали список активних жертв — спершу запитуємо /бж
+				if time.time() - last_bz_time > 300:
+					last_bz_time = time.time()
+					await event.edit('🔄 Оновлюю список жертв (/бж) перед атакою...')
+					await client.send_message(6333102398, '/бж')
+					await asyncio.sleep(random.uniform(2.5, 3.5)) # Чекаємо ...
+				
+				now_ts = int(time.time())
+				
+				# Беремо 10 найстаріших пацієнтів без активного антилу
+				c.execute("""
+					SELECT user_id, bio_int FROM avocado 
+					WHERE user_id NOT IN (?, 6333102398, 1124824021) 
+					AND (expr_int = 0 OR expr_int < ?)
+					ORDER BY when_int ASC 
+					LIMIT 10
+				""", (my_id, now_ts))
+				targets = c.fetchall()
+				
+				if not targets:
+					await event.edit('🤷 Немає свіжих цілей без антилу в базі.')
+					return
+				
+				await event.edit(f'☣️ Знайдено цілей: {len(targets)}. Починаю в ЛС бота...')
+				sent_count = 0
+				
+				for target_id, bio_val in targets:
+					# Зупиняємось, якщо залишився 1 (або 0) патоген
+					if ostalos_pt <= 1:
+						print(f'🛑 Зупинка: залишилось {ostalos_pt} патогенів.')
+						break
+					
+					cmd_text = f'.биоеб {target_id}'
+					print(f'🎯 [{sent_count + 1}/{len(targets)}] Відправляю: {cmd_text}')
+					await client.send_message(6333102398, cmd_text)
+					sent_count += 1
+					
+					# Чекаємо, щоб бот відповів і хендлер infect оновив ostalos_pt
+					await asyncio.sleep(random.uniform(2.5, 4.5))
+				
+				# Якщо хендлер infect ще не викликав /бж робимо це самі
+				if sent_count > 0 and (time.time() - last_bz_time > 15):
+					last_bz_time = time.time()
+					await asyncio.sleep(random.uniform(1.5, 2.5))
+					await client.send_message(6333102398, '/бж')
+					
+				res_text = f"""✅ Відправлено атак: {sent_count} | 
+				Залишок патогенів: ~{ostalos_pt}"""
+				print(res_text)
+				try:
+					await event.edit(res_text)
+				except Exception:
+					pass
+					
+			except Exception as e:
+				print(f'⚠️ Помилка в cmd_bf_lite: {e}')
+			finally:
+				bf_run = False
 		
 		########################################################################
 		
