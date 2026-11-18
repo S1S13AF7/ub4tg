@@ -2,7 +2,7 @@
 
 import asyncio
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from telethon import TelegramClient, events, functions, types, utils
 
 import os
@@ -61,7 +61,6 @@ if is_termux:
 config = {}
 
 def save_config():
-	"""Зберігає поточний config у строго заданому порядку ключів"""
 	ordered_config = {
 		'api_id': int(config.get('api_id', 0)),
 		'api_hash': str(config.get('api_hash', '')),
@@ -78,6 +77,11 @@ def save_config():
 		'farm': bool(config.get('farm', True)),
 		'mine': bool(config.get('mine', True))
 	}
+	# Дописуємо в кінець усі інші ключі, які вже були в конфігу (старі або кастомні)
+	for k, v in config.items():
+		if k not in ordered_config:
+			ordered_config[k] = v
+			
 	config.clear()
 	config.update(ordered_config)
 	with open(CONFIG_PATH, "w", encoding="utf-8") as f:
@@ -120,6 +124,7 @@ mine = True
 f_run = False
 m_run = False
 bf_run = False
+scn_run = False
 last_bz_time=0# Коли дивились "бж"
 ostalos_pt=10 # осталось. буде мінятись. 
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
@@ -1089,6 +1094,197 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.scn(?:\s+(.+))?$'))
+		async def cmd_scn(event):
+			global scn_run
+			
+			if not db_sqlite3 and not db_pymysql:
+				await event.edit('❌ Обидві бази даних вимкнено в конфігу.')
+				return
+				
+			if scn_run:
+				await event.edit('⏳ Сканування вже запущено...')
+				return
+			
+			scn_run = True
+			
+			# Якщо вказали чат після команди (.scn @chat) — беремо його;
+			# якщо написали в групі — скануємо поточну групу;
+			# якщо в ЛС / Збереженому — беремо офіційний чат @avocado_group
+			arg = event.pattern_match.group(1)
+			if arg:
+				target_chat = arg.strip()
+			elif event.is_group or event.is_channel:
+				target_chat = event.chat_id
+			else:
+				target_chat = '@avocado_group'
+			
+			await event.edit(f'🔍 Починаю лайт-сканування `{target_chat}` до дати перезапуску...')
+			
+			# Регулярка для списків жертв з точним БІО
+			victims_pattern = re.compile(
+				r"""
+				href="
+				(?:tg://openmessage\?user_id=|https?://t\.me/)
+				(\d+)
+				"[^>]*>
+				[^<]+
+				</a>
+				\s*.—\s*
+				(?:<strong>)?
+				(\d+)
+				(?:</strong>)?
+				\s*🧬\s*(?:until|до)\s+
+				(?:<code>)?
+				(\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2})
+				\s+UTC
+				(?:</code>)?
+				""",
+				re.IGNORECASE | re.VERBOSE
+			)
+			
+			# Регулярка для будь-яких згадок ID
+			any_id_pattern = re.compile(
+				r'href="(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)"',
+				re.IGNORECASE
+			)
+			
+			stop_dt = datetime.fromtimestamp(restart_timestamp, tz=timezone.utc)
+			scanned_msgs = 0
+			added_sqlite = 0
+			unique_users = set()
+			
+			try:
+				async for m in client.iter_messages(target_chat, from_user=6333102398):
+					if m.date < stop_dt:
+						break
+						
+					scanned_msgs += 1
+					msg_ts = int(m.date.timestamp())
+					
+					if m.raw_text and m.entities:
+						html_text = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
+						
+						raw_ids = any_id_pattern.findall(html_text)
+						valid_ids = [
+							int(uid) for uid in raw_ids 
+							if int(uid) >= 100000 and int(uid) not in (my_id, 6333102398, 1124824021)
+						]
+						
+						if not valid_ids:
+							continue
+							
+						unique_users.update(valid_ids)
+						parsed_bio_ids = set()
+						
+						# 1. Записи з відомим БІО
+						for r in victims_pattern.finditer(html_text):
+							u_id = int(r.group(1))
+							if u_id < 100000 or u_id in (my_id, 6333102398, 1124824021):
+								continue
+							bio = int(r.group(2))
+							parsed_bio_ids.add(u_id)
+							
+							if db_sqlite3:
+								try:
+									c.execute("""
+										INSERT INTO avocado (user_id, when_int, bio_int, expr_int, expr_str)
+										VALUES (?, ?, ?, 0, '0')
+										ON CONFLICT(user_id) DO UPDATE SET
+											when_int = excluded.when_int,
+											bio_int = excluded.bio_int
+										WHERE avocado.expr_int = 0 
+											AND (avocado.bio_int = 1 AND excluded.bio_int > 1)
+									""", (u_id, msg_ts, bio))
+									if c.rowcount > 0:
+										added_sqlite += 1
+								except Exception:
+									pass
+									
+							if db_pymysql:
+								try:
+									d.execute("""
+										INSERT INTO `tg_bio_users` (`user_id`, `when_int`, `profit`)
+										VALUES (%s, %s, %s)
+										ON DUPLICATE KEY UPDATE
+											when_int = IF(profit = 1 AND VALUES(profit) > 1, VALUES(when_int), when_int),
+											profit = IF(profit = 1 AND VALUES(profit) > 1, VALUES(profit), profit)
+									""", (u_id, msg_ts, bio))
+								except Exception:
+									pass
+						
+						# 2. Решта знайдених ID (пишемо як одинички)
+						for u_id in set(valid_ids):
+							if u_id in parsed_bio_ids:
+								continue
+								
+							if db_sqlite3:
+								try:
+									c.execute("""
+										INSERT OR IGNORE INTO avocado (user_id, when_int, bio_int, expr_int, expr_str)
+										VALUES (?, ?, 1, 0, '0')
+									""", (u_id, msg_ts))
+									if c.rowcount > 0:
+										added_sqlite += 1
+								except Exception:
+									pass
+									
+							if db_pymysql:
+								try:
+									d.execute("""
+										INSERT IGNORE INTO `tg_bio_users` (`user_id`, `when_int`, `profit`)
+										VALUES (%s, %s, 1)
+									""", (u_id, msg_ts))
+								except Exception:
+									pass
+					
+					# Раз на 200 повідомлень фіксуємо транзакцію та оновлюємо прогрес у повідомленні
+					if scanned_msgs % 200 == 0:
+						if db_sqlite3:
+							conn.commit()
+						if db_pymysql:
+							con.commit()
+						try:
+							await event.edit(
+								f'🔍 Сканую `{target_chat}`...\n'
+								f'📨 Перевірено: {scanned_msgs} | 👥 Знайдено: {len(unique_users)}'
+							)
+						except Exception:
+							pass
+						await asyncio.sleep(0.5)
+				
+				# Фінальний коміт і оптимізація
+				if db_sqlite3:
+					conn.commit()
+					optimize()
+				if db_pymysql:
+					con.commit()
+				
+				res_msg = (
+					f'✅ Лайт-скан завершено!\n'
+					f'💬 Чат: `{target_chat}`\n'
+					f'📨 Перевірено повідомлень: {scanned_msgs}\n'
+					f'👥 Унікальних гравців: {len(unique_users)}\n'
+					f'🆕 Додано / оновлено в SQLite: {added_sqlite}'
+				)
+				print(res_msg)
+				try:
+					await event.edit(res_msg)
+				except Exception:
+					pass
+					
+			except Exception as e:
+				err_msg = f'❌ Помилка під час сканування `{target_chat}`: {e}'
+				print(err_msg)
+				try:
+					await event.edit(err_msg)
+				except Exception:
+					pass
+			finally:
+				scn_run = False
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.upd$'))
 		async def cmd_upd(event):
 			import urllib.request
@@ -1609,7 +1805,7 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(outgoing=True, 
-		pattern=r'.(h(e)?lp|х(е)?лп(а)?)$'))
+		pattern=r'^.(?:he?lp|хе?лпа?)$'))
 		async def cmd_help(event):
 			help_message = f'''
 			<blockquote>📃 код і є документація 😈</blockquote>
@@ -1620,15 +1816,22 @@ async def main():
 			<code>+дов @ід</code> – ✅ +дов @ід	**
 			<code>-дов @ід</code> – ❎ -дов @ід	**
 			<code>.send </code> – пише текст***
+			
+			<blockquote>🧬 Авокадо:</blockquote>
+			<code>.bf</code> – атака 10 цілей в ЛС
+			<code>.scn</code> – скан чату в базу
+			<code>.upd</code> – додати в базу +1
+			
+			<blockquote>🐸 Інше:</blockquote>
+			<code>.ква</code> – шпаргалка по жабах
 			<code>.help</code> – <u>you are here</u>
 			
-			*	впливає на <code>.ping</code> і <code>.send</code>
-			**	+/-дов через @(ід_кого)
-			***	якщо є дов і вкл. <code>+chts</code>
+			* впливає на <code>.ping</code> і <code>.send</code>
+			** +/-дов через @(ід_кого)
+			*** якщо є дов і вкл. <code>+chts</code>
 			
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
 			href="https://github.com/S1S13AF7/ub4tg">code</a>;
-			
 			'''
 			try:
 				await asyncio.sleep(random.uniform(0.3,1))
