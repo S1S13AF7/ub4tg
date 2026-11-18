@@ -132,6 +132,7 @@ max_pt = 10     # макс. запас патогенів (оновиться з
 kvala = 1       # рівень кваліфікації 1..60 (оновиться з лаби)
 letal = 1       # рівень летальності = дні	(оновиться з лаби)
 pt_time = int(time.time()) # час останньої фіксації патогенів
+fever_until = 0 # timestamp закінчення гарячки (0 = здоровий)
 
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
 
@@ -969,11 +970,11 @@ async def main():
 					except Exception as Err:
 						print(f'err: {Err} (infect mysql my)')
 				
-				print(f'☣️ Заражено @{u2id} (+{bio}) до {until_str} | Патів: {ostalos_pt}/{max_pt}')
+				print(f'☣️ Заражено @{u2id} (+{bio}) | Патів: {ostalos_pt}/{max_pt}')
 				
 				if need_check_victims and (time.time() - last_bz_time > 15):
 					last_bz_time = time.time()
-					await asyncio.sleep(random.uniform(1.5, 3.5))
+					await asyncio.sleep(random.uniform(1.5,3.5))
 					await client.send_message(6333102398, '/бж')
 			else:
 				# Чуже зараження в групі: просто додаємо ціль як одиничку, якщо її ще немає в базі
@@ -1007,7 +1008,7 @@ async def main():
 		@client.on(events.NewMessage(incoming=True, pattern=lab_pattern))
 		@client.on(events.MessageEdited(incoming=True, pattern=lab_pattern))
 		async def parse_my_lab(event):
-			global ostalos_pt, max_pt, kvala, letal, pt_time
+			global ostalos_pt, max_pt, kvala, letal, pt_time, fever_until
 			m = event.message
 			if m.fwd_from:
 				s = m.fwd_from.from_id.user_id if isinstance(m.fwd_from.from_id, types.PeerUser) else None
@@ -1019,7 +1020,6 @@ async def main():
 			if s != 6333102398 or msg_ts < restart_timestamp or not m.entities:
 				return
 			
-			# Перевіряємо, що перше числове посилання в лабі — це саме наш my_id
 			h = utils.sanitize_parse_mode('html').unparse(m.raw_text,m.entities)
 			ids = re.findall(r'tg://openmessage\?user_id=(\d+)', h)
 			if not ids or int(ids[0]) != my_id:
@@ -1030,6 +1030,8 @@ async def main():
 			kv_m = re.search(r'👩🏻‍🔬\s*(?:Qualification|Квалификация):\s*(\d+)', t)
 			lt_m = re.search(r'☠️\s*(?:Mortality|Летальность):\s*(\d+)', t)
 			nx_m = re.search(r'⏳\s*(?:Next pathogen in|Следующий патоген через)\s*(\d+)\s*(?:min|мин)', t)
+			fv_m = re.search(r'🌡\s*(?:You have a fever\. Time left:|У тебя горячка\. Осталось)\s*(\d+)\s*(?:min|мин)', t)
+			fv_less = re.search(r'🌡.*(?:less than a minute|меньше минуты)', t, re.IGNORECASE)
 			
 			updates = {}
 			
@@ -1053,91 +1055,144 @@ async def main():
 				else:
 					pt_time = msg_ts
 			
+			if fv_m:
+				fever_until = msg_ts + (int(fv_m.group(1)) + 1) * 60
+			elif fv_less:
+				fever_until = msg_ts + 90 # 1.5 хв запасу, якщо залишилось менше хвилини
+			elif '🌡' not in t and event.is_private and not m.fwd_from:
+				fever_until = 0
+			
 			if updates:
 				save_mlab(updates)
-				print(f'🧪 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.')
+				fv_info = f' | 🌡 Гарячка: {max(0, (fever_until - int(time.time())) // 60)} хв' if fever_until > time.time() else ''
+				print(f'🧪 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.{fv_info}')
+		
+		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
+		pattern=r'(?s).*(?:🤒\s*(?:The laboratory is in fever|Лаборатория в горячке)|💉\s*(?:Fever cured|Горячка вылечена)|✅\s*(?:No fever detected|Горячки нет|Горячка не обнаружена))'))
+		async def track_fever(event):
+			global fever_until
+			m = event.message
+			if not event.is_private or m.fwd_from:
+				return
+			t = m.raw_text
+			msg_ts = int(m.date.timestamp())
+			
+			if '🤒' in t:
+				if re.search(r'(?:less than a minute|меньше минуты)', t, re.IGNORECASE):
+					fever_until = msg_ts + 90
+					print('🤒 Спіймали гарячку (менше хвилини)! Спимо ~1.5 хв.')
+				else:
+					mins_m = re.search(r'(\d+)\s*(?:min|мин)', t)
+					mins_left = int(mins_m.group(1)) if mins_m else 10
+					fever_until = msg_ts + (mins_left + 1) * 60
+					print(f'🤒 Спіймали гарячку! Спимо ~{mins_left + 1} хв.')
+			else:
+				fever_until = 0
+				print('💉 Гарячки немає, можна працювати.')
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:bf_?stop|стоп)$'))
+		async def cmd_bf_stop(event):
+			global bf_run
+			if bf_run:
+				bf_run = False
+				await event.edit('🛑 Зупиняю цикл жралки...')
+			else:
+				await event.edit('💤 Жралка і так не запущена.')
+		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:bf|biofuck|жрать)$'))
 		async def cmd_bf_lite(event):
-			global bf_run, last_bz_time
+			global bf_run, last_bz_time, fever_until
 			
 			if not db_sqlite3:
 				await event.edit('❌ SQLite вимкнено в конфігу.')
 				return
 			
 			if bf_run:
-				await event.edit('⏳ Жралка вже працює...')
-				return
-			
-			cur_pt = get_pt()
-			if cur_pt <= 1:
-				await event.edit(f'🛑 Мало патогенів ({cur_pt}/{max_pt} шт.). Відбій.')
+				await event.edit('⏳ Цикл жралки вже працює... (зупинка: <code>.стоп</code>)')
 				return
 			
 			bf_run = True
+			await event.edit('♻️ Запущено циклічну жралку! (зупинка: <code>.стоп</code>)')
 			
 			try:
-				# Якщо давно (> 5 хв) не оновлювали список активних жертв — спершу запитуємо /бж
-				if time.time() - last_bz_time > 300:
-					last_bz_time = time.time()
-					await event.edit('🔄 Оновлюю список жертв (/бж) перед атакою...')
-					await client.send_message(6333102398, '/бж')
-					await asyncio.sleep(random.uniform(2.5,3.5))
-				
-				now_ts = int(time.time())
-				need_targets = max(1, get_pt() - 1)
-				
-				# Беремо найстаріших пацієнтів без активного антилу або з біо <5
-				c.execute("""
-					SELECT user_id, bio_int FROM avocado 
-					WHERE user_id >= 100000
-					AND user_id NOT IN (?, 6333102398, 1124824021) 
-					AND (expr_int = 0 OR expr_int < ? OR bio_int < 5)
-					ORDER BY when_int ASC 
-					LIMIT ?
-				""", (my_id, now_ts, need_targets))
-				targets = c.fetchall()
-				
-				if not targets:
-					await event.edit('🤷 Немає свіжих цілей без антилу в базі.')
-					return
-				
-				await event.edit(f'☣️ Знайдено цілей: {len(targets)} (патів: ~{cur_pt}/{max_pt}). Починаю...')
-				sent_count = 0
-				
-				for target_id, bio_val in targets:
-					# Зупиняємось, якщо залишився 1 (або 0) патоген
-					if get_pt() <= 1:
-						print(f'🛑 Зупинка: залишилось {ostalos_pt}/{max_pt} патогенів.')
-						break
+				while bf_run:
+					now_ts = int(time.time())
 					
-					cmd_text = f'.биоеб {target_id}'
-					print(f'🎯 [{sent_count + 1}/{len(targets)}] Відправляю: {cmd_text}')
-					await client.send_message(6333102398, cmd_text)
-					sent_count += 1
+					# 1. Якщо є гарячка — спимо до її завершення (+1 хв вже закладено у fever_until)
+					if fever_until > now_ts:
+						wait_fv = fever_until - now_ts
+						print(f'🤒 Гарячка ще {wait_fv // 60} хв {wait_fv % 60} сек. Спимо...')
+						await asyncio.sleep(min(wait_fv, 60)) # перевіряємо щохвилини
+						continue
 					
-					# Чекаємо, щоб бот відповів і хендлер infect оновив ostalos_pt
-					await asyncio.sleep(random.uniform(2.5, 4.5))
-				
-				# Якщо хендлер infect ще не викликав /бж робимо це самі
-				if sent_count > 0 and (time.time() - last_bz_time > 15):
-					last_bz_time = time.time()
-					await asyncio.sleep(random.uniform(1.5, 2.5))
-					await client.send_message(6333102398, '/бж')
+					# 2. Перевіряємо патогени. Якщо <= 1, чекаємо поки буде хоча б половина ємності
+					target_threshold = max(2, max_pt // 2)
+					cur_pt = get_pt()
+					if cur_pt <= 1:
+						print(f'⏳ Мало патів ({cur_pt}/{max_pt}). Чекаємо мінімум {target_threshold} шт. (перевірка раз на годину)...')
+						while bf_run and get_pt() < target_threshold:
+							await asyncio.sleep(3600)
+						continue
 					
-				res_text = f"✅ Відправлено атак: {sent_count} | Залишок патогенів: ~{get_pt()}/{max_pt}"
-				print(res_text)
-				try:
-					await event.edit(res_text)
-				except Exception:
-					pass
+					# 3. Оновлюємо список жертв (/бж), якщо не дивилися більше 5 хвилин
+					if time.time() - last_bz_time > 300:
+						last_bz_time = time.time()
+						await client.send_message(6333102398, '/бж')
+						await asyncio.sleep(random.uniform(2.5, 3.5))
+					
+					now_ts = int(time.time())
+					need_targets = max(1, get_pt() - 1)
+					
+					c.execute("""
+						SELECT user_id, bio_int FROM avocado 
+						WHERE user_id >= 100000
+						AND user_id NOT IN (?, 6333102398, 1124824021) 
+						AND (expr_int = 0 OR expr_int < ? OR bio_int < 5)
+						ORDER BY when_int ASC 
+						LIMIT ?
+					""", (my_id, now_ts, need_targets))
+					targets = c.fetchall()
+					
+					if not targets:
+						print('🤷 Немає свіжих цілей без антилу в базі. Пауза 1 година...')
+						await asyncio.sleep(3600)
+						continue
+					
+					print(f'☣️ Серія атак: цілей {len(targets)} (патів: ~{get_pt()}/{max_pt})')
+					sent_count = 0
+					
+					for target_id, bio_val in targets:
+						if not bf_run:
+							break
+						# Якщо щойно спіймали гарячку — 
+						if fever_until > int(time.time()):
+							break
+						if get_pt() <= 1:
+							print(f'🛑 Зупинка серії: залишилось {ostalos_pt}/{max_pt} патогенів.')
+							break
+						
+						cmd_text = f'.биоеб {target_id}'
+						print(f'🎯 [{sent_count + 1}/{len(targets)}] Відправляю: {cmd_text}')
+						await client.send_message(6333102398, cmd_text)
+						sent_count += 1
+						
+						await asyncio.sleep(random.uniform(2.5, 4.5))
+					
+					if sent_count > 0 and (time.time() - last_bz_time > 15) and fever_until <= int(time.time()):
+						last_bz_time = time.time()
+						await asyncio.sleep(random.uniform(1.5, 2.5))
+						await client.send_message(6333102398, '/бж')
+					
+					# Невелика пауза перед наступним витком циклу
+					await asyncio.sleep(3)
 					
 			except Exception as e:
-				print(f'⚠️ Помилка в cmd_bf_lite: {e}')
+				print(f'⚠️ Помилка в циклі cmd_bf_lite: {e}')
 			finally:
 				bf_run = False
+				print('🛑 Цикл жралки завершено.')
 		
 		########################################################################
 		
@@ -1783,9 +1838,10 @@ async def main():
 			<code>.send </code> – пише текст***
 			
 			<blockquote>🧬 Авокадо:</blockquote>
-			<code>.bf</code> – атака 10 цілей в ЛС
+			<code>.bf</code> – атака цілей в ЛС
 			<code>.scn</code> – скан чату в базу
 			<code>.upd</code> – додати в базу +1
+			<code>.стоп</code> – вирубаємо .bf
 			
 			<blockquote>🐸 Інше:</blockquote>
 			<code>.ква</code> – шпаргалка по жабах
