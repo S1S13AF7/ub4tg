@@ -119,7 +119,8 @@ farm = bool(config.get('farm', True))
 mine = True
 f_run = False
 m_run = False
-
+last_bz_time=0# Коли дивились "бж"
+ostalos_pt=10 # осталось. буде мінятись. 
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
 
 ################################################################################
@@ -216,11 +217,17 @@ async def main():
 		
 		bio_bot_username = '@bio_attacker_bot' # <--- правильний юзернейм
 		restart_timestamp = 1794601985 # 13.11.2026 20:33:05 UTC (перезапуск гри)
-
+		
 		try:
 			bio_bot = await client.get_entity(bio_bot_username)
 			bio_attacker_bot_ID = int(bio_bot.id)
-			print(f'🤖 Знайдено бота {bio_bot_username}: {bio_attacker_bot_ID}')
+			print(f'🤖 Знайдено бота {bio_attacker_bot_ID}')
+			
+			# Перевіряємо, чи є вже повідомлення в ЛС із ботом
+			msgs = await client.get_messages(bio_bot, limit=1)
+			if not msgs:
+				await client.send_message(bio_bot, '/start')
+				print(f'👋 ЛС було порожнім — надіслано /start для {bio_bot_username}')
 		except Exception as e:
 			print(f'❌ Не вдалося знайти {bio_bot_username}: {e}')
 			bio_attacker_bot_ID = 6333102398 # резервний ID, якщо виникла помилка
@@ -853,6 +860,130 @@ async def main():
 						con.commit()
 					except Exception as e:
 						print(f"err mysql final commit: {e}")
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
+		pattern=r'☣️\s*(Infection successful|Заражение успешно)'))
+		async def infect(event):
+			nonlocal last_bz_time
+			m = event.message
+			t = m.raw_text
+			when = int(m.date.timestamp())
+			
+			# Перевірка на перезапуск гри
+			if when < restart_timestamp:
+				return
+			
+			if not m.entities:
+				return
+				
+			h = utils.sanitize_parse_mode('html').unparse(t, m.entities)
+			
+			# 1. Витягуємо ID жертви (u2id) з блоку Target / Цель
+			target_match = re.search(
+				r'(?:Target|Цель):\s*<a href="(?:tg://openmessage\?user_id=|https?://t\.me/)(\d+)"',
+				h, re.IGNORECASE
+			)
+			if not target_match:
+				return
+			u2id = int(target_match.group(1))
+			
+			# 2. Витягуємо отриманий біо-досвід (bio)
+			bio_match = re.search(
+				r'(?:Bio-experience gained|Получено био-опыта):\s*(?:<strong>)?\+?(\d+)(?:</strong>)?',
+				h, re.IGNORECASE
+			)
+			bio = int(bio_match.group(1)) if bio_match else 1
+			
+			# Своїм вважаємо ТІЛЬКИ те, що прийшло в ЛС бота (не переслане)
+			is_my = bool(event.is_private and not m.fwd_from)
+			need_check_victims = False
+			
+			# Якщо це в ЛС бота — перевіряємо залишок патогенів
+			if is_my:
+				rem_match = re.search(
+					r'(?:Pathogens remaining|Осталось патогенов):\s*(?:<strong>)?(\d+)(?:</strong>)?',
+					h, re.IGNORECASE
+				)
+				if rem_match:
+					global ostalos_pt
+					ostalos_pt = int(rem_match.group(1))
+					if ostalos_pt in (0, 1):
+						need_check_victims = True
+			
+			# 3. ЗБЕРЕЖЕННЯ В SQLite (avocado)
+			if db_sqlite3:
+				if is_my:
+					try:
+						# Свій пацієнт (в ЛС): оновлюємо дату і біо, зберігаючи expr_int якщо він вже є
+						c.execute("""INSERT INTO avocado 
+						(user_id, when_int, bio_int, expr_int, expr_str)
+						VALUES (?, ?, ?, 0, '0')
+						ON CONFLICT(user_id) DO UPDATE SET
+						when_int = excluded.when_int,
+						bio_int = excluded.bio_int
+						WHERE excluded.when_int >= avocado.when_int""",
+						(u2id, when, bio))
+						conn.commit()
+					except Exception as Err:
+						print(f'err: {Err} (infect sqlite my)')
+				elif u2id != my_id:
+					try:
+						# Чужий пацієнт (усі з чатів): оновлюємо тільки якщо немає активного антилу
+						c.execute("""INSERT INTO avocado 
+						(user_id, when_int, bio_int, expr_int, expr_str)
+						VALUES (?, ?, ?, 0, '0')
+						ON CONFLICT(user_id) DO UPDATE SET
+						when_int = excluded.when_int,
+						bio_int = excluded.bio_int
+						WHERE (avocado.expr_int = 0 OR avocado.expr_int < excluded.when_int)
+						AND excluded.when_int >= avocado.when_int""",
+						(u2id, when, bio))
+						conn.commit()
+					except Exception as Err:
+						print(f'err: {Err} (infect sqlite other)')
+			
+			# 4. ЗБЕРЕЖЕННЯ В MySQL
+			if db_pymysql:
+				# А) В особисту таблицю атак — ТІЛЬКИ якщо це в ЛС бота
+				if is_my:
+					try:
+						d.execute("""INSERT INTO `tg_bio_attack` 
+						(`date`, `who_id`, `user_id`, `profit`, `until_int`, `until_str`) 
+						VALUES (%s, %s, %s, %s, 0, '0')
+						ON DUPLICATE KEY UPDATE 
+						date = IF(VALUES(date) >= date, VALUES(date), date),
+						profit = IF(VALUES(date) >= date, VALUES(profit), profit)""",
+						(when, my_id, u2id, bio))
+					except Exception as Err:
+						print(f'err: {Err} (infect tg_bio_attack)')
+				
+				# Б) У загальну таблицю юзерів — пишемо всіх з реальним біо та свіжою датою
+				try:
+					d.execute("""INSERT INTO `tg_bio_users` 
+					(`user_id`, `when_int`, `profit`) 
+					VALUES (%s, %s, %s) 
+					ON DUPLICATE KEY UPDATE 
+					profit = IF(VALUES(when_int) >= when_int, VALUES(profit), profit),
+					when_int = IF(VALUES(when_int) >= when_int, VALUES(when_int), when_int)""",
+					(u2id, when, bio))
+				except Exception as Err:
+					print(f'err: {Err} (infect tg_bio_users target)')
+				
+				try:
+					con.commit()
+				except Exception as Err:
+					print(f'err: {Err} (infect mysql commit)')
+			
+			prefix = '☣️ [ЛС]' if is_my else '☣️ [Чат]'
+			print(f'{prefix} Заражено @{u2id} (+{bio})')
+			
+			# 5. Якщо залишилось 0 або 1 патогенів — запитуємо /бж в ЛС бота (не частіше ніж раз на 15 сек)
+			if need_check_victims and (time.time() - last_bz_time > 15):
+				last_bz_time = time.time()
+				await asyncio.sleep(random.uniform(1.5, 3.5))
+				await client.send_message(6333102398, '/бж')
 		
 		########################################################################
 		
