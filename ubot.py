@@ -213,10 +213,10 @@ async def main():
 			ch_id = MAINchatID
 			config['ch_id'] = ch_id
 			save_config()
-
+		
 		def is_allowed_chat(event) -> bool:
 			if event.is_private:
-				return event.chat_id != 6333102398
+				return event.chat_id not in irises and event.chat_id not in (6333102398, 1124824021)
 			return event.chat_id in (ch_id, MAINchatID)
 		
 		bio_bot_username = '@bio_attacker_bot'
