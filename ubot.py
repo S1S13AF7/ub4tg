@@ -1041,7 +1041,56 @@ async def main():
 					print(f'🤒 Спіймали гарячку! Спимо ~{mins_left + 1} хв.')
 			else:
 				fever_until = 0
-				print('💉 Гарячки немає, можна працювати.')
+				#print('💉 Гарячки немає, можна працювати.')
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, 
+		pattern=re.compile(r'^(?:\.п|[\./!]?мл)$', re.IGNORECASE)))
+		async def cmd_mlab(event):
+			if event.chat_id == 6333102398 or event.chat_id in irises:
+				return
+			
+			try:
+				async with client.conversation(6333102398, exclusive=False) as conv:
+					await conv.send_message('/Lab')
+					resp = await conv.get_response(timeout=15)
+				
+				if not resp or not resp.raw_text:
+					await event.edit('❌ Не вдалося отримати дані лаби.')
+					return
+				
+				t = resp.raw_text
+				pt_m = re.search(r'🧪\s*(?:Pathogens|Свободных патогенов):\s*([^\n]+)', t)
+				xp_m = re.search(r'☢️\s*(?:Bio-experience|Био-опыт):\s*([^\n]+)', t)
+				res_m = re.search(r'🧬\s*(?:Bio-resource|Био-ресурс):\s*([^\n]+)', t)
+				fv_m = re.search(r'🌡\s*(?:You have a fever\. Time left:|У тебя горячка\. Осталось)\s*(\d+)\s*(?:min|мин)', t)
+				fv_less = re.search(r'🌡.*(?:less than a minute|меньше минуты)', t, re.IGNORECASE)
+				
+				lines = []
+				if pt_m:
+					lines.append(f'🧪 {pt_m.group(1).strip()}')
+				if xp_m:
+					lines.append(f'☣️ {xp_m.group(1).strip()}')
+				if res_m:
+					lines.append(f'🧬 {res_m.group(1).strip()}')
+				
+				if fv_m:
+					lines.append(f'🌡 Гарячка: {fv_m.group(1)} хв')
+				elif fv_less:
+					lines.append('🌡 Гарячка: < 1 хв')
+				else:
+					lines.append('✅ ok')
+				
+				if not lines:
+					await event.edit('❌ Не розпізнано формат лаби.')
+					return
+				
+				await event.edit('\n'.join(lines))
+			except asyncio.TimeoutError:
+				await event.edit('⏳ Бот не відповів вчасно.')
+			except Exception as e:
+				await event.edit(f'❌ Помилка: {e}')
 		
 		########################################################################
 		
