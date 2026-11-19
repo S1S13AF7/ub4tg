@@ -1,31 +1,26 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-
-from datetime import datetime, timedelta, timezone
-from telethon import TelegramClient, events, functions, sync, types, utils
-from telethon.tl.functions.messages import CheckChatInviteRequest, ImportChatInviteRequest
-
-import os
-import re
-import random
-import time
+import calendar
 import json
-
-import sqlite3
-
+import os
+import random
+import re
 import shutil
+import sqlite3
+import time
 import typing
+from datetime import datetime, timedelta, timezone
+
+from telethon import TelegramClient, events, functions, sync, types, utils
 
 if os.name == 'nt':
 	import win32api
 
-import calendar
-
 sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = ''		# "робоча папка" бота
-MAINchatID = -1002236064671	# основний+резервний
-CONFIG_PATH = "conf.json"	# main config file
+MAINchatID = -1002236064671 # основний+резервний
+CONFIG_PATH = "conf.json" # main config file
 chts_file = "chts.json"		# чати де дови+"чіти"+.send
 dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
 mlab_file = "mlab.json"		# параметри моєї лаби (квала та макс. патогенів)
@@ -37,7 +32,6 @@ termux_api = False # там нижче буде перевизначено як�
 
 if is_termux:
 	import sys
-	# майже все що для термукса я вкрав з форка бота.
 	print('Termux detected, checking permissions...')
 	termux_api = os.system('termux-api-start') == 0 #	штука для сповіщеннь.
 	if (os.environ.get('TERMUX_APP__APK_RELEASE') or os.environ.get('TERMUX_APK_RELEASE')) not in ('F_DROID', 'GITHUB'):
@@ -45,16 +39,14 @@ if is_termux:
 		print('F-droid termux release here: https://f-droid.org/packages/com.termux/')
 		print('Github termux release here: https://github.com/termux/termux-app/releases')
 	if float((os.environ.get('TERMUX_VERSION') or '0.119')[:5]) < 0.118:
-		print('You use old version of termux, highly recommended that you update to v0.119.0 or higher ASAP for various bug fixes, including a critical world-readable vulnerability')
+		print('You use old version of termux, highly recommended that you update to v0.119.0 or higher ASAP')
 	if termux_api:
 		print('✅ termux API work')
 	if os.access('/sdcard', os.W_OK):
 		print('✅ дозвіл на запис')
 		default_directory = '/sdcard/ub4tg'
-		os.system(f'mkdir -p {default_directory}')
-		CONFIG_PATH = f'{default_directory}/conf.json' # в доступну без рута
-		#chts_file = f'{default_directory}/{chts_file}' # в доступну без рута
-		#dovs_file = f'{default_directory}/{dovs_file}' # в доступну без рута
+		os.makedirs(default_directory, exist_ok=True)
+		CONFIG_PATH = f'{default_directory}/conf.json'
 	else:
 		print('permission denied to write on internal storage')
 		print('trying get permission...')
@@ -82,19 +74,11 @@ def save_config():
 		'farm': bool(config.get('farm', True)),
 		'mine': bool(config.get('mine', True))
 	}
-	# Дописуємо в кінець усі інші ключі, які вже були в конфігу (старі або кастомні)
 	for k, v in config.items():
 		if k not in ordered_config:
 			ordered_config[k] = v
 	with open(CONFIG_PATH, "w", encoding="utf-8") as write_file:
 		json.dump(ordered_config, write_file, ensure_ascii=False, indent='\t')
-
-def get_config_key(key, default=None):
-	return config.get(key, default)
-
-def save_config_key(key, value):
-	config[key] = value
-	save_config()
 
 if not os.path.exists(CONFIG_PATH):
 	with open(CONFIG_PATH, "w", encoding="utf-8") as write_file:
@@ -109,7 +93,7 @@ if not os.path.exists(CONFIG_PATH):
 				"password": "V3rY$tR0NgPaS$Sw0Rd",
 				"db": "db"
 			},
-			"ch_id": 0
+			"ch_id": MAINchatID
 		}, write_file, ensure_ascii=False, indent='\t')
 
 with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
@@ -123,7 +107,6 @@ ch_id = int(config.get('ch_id') or 0)
 if ch_id > 0:
 	ch_id = 0
 	print('неправильний id чата')
-inviteURL = str(config.get('inviteURL') or inviteURL).strip()
 
 db_sqlite3 = True
 db_pymysql = bool(config.get('db_pymysql', False))
@@ -136,7 +119,7 @@ mysql_conf = config.get('mysql') if isinstance(config.get('mysql'), dict) else {
 config['mysql'] = mysql_conf
 
 farm = bool(config.get('farm', True))
-mine = True
+mine = bool(config.get('mine', True))
 f_run = False
 m_run = False
 bf_run = False
@@ -157,69 +140,24 @@ irises = [707693258,5137994780,5226378684,5434504334,5443619563,8611067852]
 
 ################################################################################
 
-def get_config_key(key: str) -> typing.Union[str, bool]:
-	"""
-	Parse and return key from config
-	:param key: Key name in config
-	:return: Value of config key or `False`, if it doesn't exist
-	"""
-	try:
-		with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-			config = json.load(f)
-
-		return config.get(key, False)
-	except FileNotFoundError:
-		return False
-
-################################################################################
-
-def save_config_key(key: str, value: str) -> bool:
-	"""
-	Save `key` with `value` to config
-	:param key: Key name in config
-	:param value: Desired value in config
-	:return: `True` on success, otherwise `False`
-	"""
-	try:
-		# Try to open our newly created json config
-		with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-			config = json.load(f)
-	except FileNotFoundError:
-		# If it doesn't exist, just default config to none
-		# It won't cause problems, bc after new save
-		# we will create new one
-		config = {}
-	
-	# Assign config value
-	config[key] = value
-	
-	# And save config
-	with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-		json.dump(config, f,ensure_ascii=False, indent='	')
-	
-	return True
-
-################################################################################
-chts=[]
+chts = []
 if ch_id < 0:
 	chts.append(ch_id)
 try:
-	chts_file = "chts.json"		# чати:
-	with open(chts_file, "r") as read_file:
+	with open(chts_file, "r", encoding="utf-8") as read_file:
 		chts = json.load(read_file)
-except:
+except Exception:
 	with open(chts_file, "w", encoding="utf-8") as write_file:
-		json.dump(chts, write_file,ensure_ascii=False, indent='	')
-################################################################################
-dovs=[]
+		json.dump(chts, write_file, ensure_ascii=False, indent='\t')
+
+dovs = []
 try:
-	dovs_file = "dovs.json"		# дови:
-	with open(dovs_file, "r") as read_file:
+	with open(dovs_file, "r", encoding="utf-8") as read_file:
 		dovs = json.load(read_file)
-except:
+except Exception:
 	with open(dovs_file, "w", encoding="utf-8") as write_file:
-		json.dump(dovs, write_file,ensure_ascii=False, indent='	')
-################################################################################
+		json.dump(dovs, write_file, ensure_ascii=False, indent='\t')
+
 mlab = {"kvala": 1, "max_pt": 10, "letal": 1}
 try:
 	with open(mlab_file, "r", encoding="utf-8") as read_file:
@@ -252,30 +190,38 @@ def save_mlab(updates: dict):
 ################################################################################
 
 async def main():
-	global db_pymysql
-	async with TelegramClient(sessdb,api_id,api_hash,timeout=300) as client:
+	global db_pymysql, ch_id, mine
+	async with TelegramClient(sessdb, api_id, api_hash, timeout=300) as client:
 		client.parse_mode="HTML"
 		print('User-Bot started')
-		me= await client.get_me()
+		me = await client.get_me()
 		my_id = int(me.id)
 		my_uz = me.username
 		print(f'🆔 {my_id}')
-		
+
 		if os.name == 'nt':
 			win32api.SetConsoleTitle(f'{my_id}')
 		elif os.name == 'posix':
 			print(f'\33]0;{my_id}\a', end='', flush=True)
-		
-		if is_termux:
-			if get_config_key("wakelock"):
-				# якщо у конфіґу "wakelock": true,
-				print('Prevent killing termux by android, getting wakelock...')
-				os.system('termux-wake-lock')
-				print('This can cause battery drain!')
-		
-		bio_bot_username = '@bio_attacker_bot' # <--- правильний юзернейм
-		restart_timestamp = 1794601985 # 13.11.2026 20:33:05 UTC (перезапуск гри)
-		
+
+		if is_termux and config.get("wakelock"):
+			print('Prevent killing termux by android, getting wakelock...')
+			os.system('termux-wake-lock')
+			print('This can cause battery drain!')
+
+		if ch_id == 0:
+			ch_id = MAINchatID
+			config['ch_id'] = ch_id
+			save_config()
+
+		def is_allowed_chat(event) -> bool:
+			if event.is_private:
+				return event.chat_id != 6333102398
+			return event.chat_id in (ch_id, MAINchatID)
+
+		bio_bot_username = '@bio_attacker_bot'
+		restart_timestamp = 1794601985 # 13.11.2026 20:33:05 UTC
+
 		try:
 			bio_bot = await client.get_entity(bio_bot_username)
 			bio_attacker_bot_ID = int(bio_bot.id)
@@ -297,8 +243,9 @@ async def main():
 			except ImportError:
 				print('❌ Бібліотека pymysql не встановлена. Вимикаю MySQL...')
 				db_pymysql = False
-				save_config_key('db_pymysql', False)
-		
+				config['db_pymysql'] = False
+				save_config()
+
 		if db_pymysql:
 			while True:
 				try:
@@ -313,37 +260,28 @@ async def main():
 					)
 					d = con.cursor()
 					print('✅ Підключено до MySQL')
-					save_config_key('mysql', mysql_conf)
+					save_config()
 					break
-				
 				except pymysql.err.OperationalError as e:
 					err_code = e.args[0] if e.args else 0
-					
 					if err_code == 1045:
 						print(f'⚠️ Невірний пароль для MySQL ({mysql_conf.get("user")}@{mysql_conf.get("host")}).')
 						new_pass = input('Введіть правильний пароль (або натисніть Enter, щоб вимкнути MySQL): ').strip()
 						if new_pass:
 							mysql_conf['password'] = new_pass
 							continue
-						else:
-							print('🚫 MySQL вимкнено для цієї та наступних сесій.')
-							db_pymysql = False
-							save_config_key('db_pymysql', False)
-							break
-					else:
-						print(f'❌ Не вдалося підключитися до MySQL (код {err_code}): {e}')
-						print('🚫 MySQL автоматично вимкнено в конфігу. Бот працюватиме на SQLite.')
-						db_pymysql = False
-						save_config_key('db_pymysql', False)
-						break
-				
+					print(f'❌ MySQL вимкнено в конфігу (код {err_code}): {e}')
+					db_pymysql = False
+					config['db_pymysql'] = False
+					save_config()
+					break
 				except Exception as e:
 					print(f'❌ Невідома помилка MySQL: {e}')
 					db_pymysql = False
-					save_config_key('db_pymysql', False)
+					config['db_pymysql'] = False
+					save_config()
 					break
-		
-		# Окремий блок: виконується ТІЛЬКИ якщо підключення вище пройшло успішно
+
 		if db_pymysql:
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bot_users` (
 			`user_id` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
