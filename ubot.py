@@ -1196,6 +1196,149 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:btop|топ)$'))
+		async def cmd_btop(event):
+			global bf_run, last_bz_time
+			
+			if not db_sqlite3:
+				await event.edit('❌ SQLite вимкнено в конфігу.')
+				return
+			if bf_run:
+				await event.edit('⏳ Зараз працює циклічна жралка (<code>.стоп</code>).')
+				return
+			if fever_until > int(time.time()):
+				await event.edit(f'🤒 Зараз гарячка ще ~{(fever_until - int(time.time())) // 60 + 1} хв.')
+				return
+			
+			cur_pt = get_pt()
+			if cur_pt <= 1:
+				await event.edit(f'🛑 Мало патогенів ({cur_pt}/{max_pt} шт.).')
+				return
+			
+			bf_run = True
+			await event.edit('🔍 Збираю 1-шу та 2-гу сторінки Биоб...')
+			
+			try:
+				pages_html = []
+				async with client.conversation(6333102398, exclusive=False) as conv:
+					await conv.send_message('Биоб')
+					msg1 = await conv.get_response(timeout=15)
+					if msg1 and msg1.raw_text:
+						pages_html.append(utils.sanitize_parse_mode('html').unparse(msg1.raw_text, msg1.entities or []))
+						
+						# Переходимо на 2-гу сторінку по кнопці "2"
+						if msg1.buttons:
+							next_btn = None
+							for row in msg1.buttons:
+								for btn in row:
+									if btn.text.strip() == '2':
+										next_btn = btn
+										break
+								if next_btn:
+									break
+							if next_btn:
+								await next_btn.click()
+								await asyncio.sleep(random.uniform(1.2, 2.0))
+								msg2 = await client.get_messages(6333102398, ids=msg1.id)
+								if msg2 and msg2.raw_text:
+									h2 = utils.sanitize_parse_mode('html').unparse(msg2.raw_text, msg2.entities or [])
+									if h2 not in pages_html:
+										pages_html.append(h2)
+				
+				if not pages_html:
+					await event.edit('❌ Не вдалося отримати топ біо-досвіду.')
+					return
+				
+				# Парсимо всі рядки з 1-ї та 2-ї сторінок по порядку
+				row_pattern = re.compile(
+					r'<a href="tg://openmessage\?user_id=(\d+)"[^>]*>[^<]+</a>\s*\|\s*[\d\s]+\s*\|\s*\+(\d+)',
+					re.IGNORECASE
+				)
+				any_id_pattern = re.compile(r'tg://openmessage\?user_id=(\d+)', re.IGNORECASE)
+				
+				now_ts = int(time.time())
+				candidates_ordered = [] # від 1-го до останнього місця
+				seen_ids = set()
+				
+				for h_page in pages_html:
+					# Заодно тихо підливаємо всіх із топу в базу як одинички
+					for uid_s in any_id_pattern.findall(h_page):
+						uid_i = int(uid_s)
+						if uid_i >= 100000 and uid_i not in (my_id, 6333102398, 1124824021):
+							c.execute("INSERT OR IGNORE INTO avocado (user_id, when_int, bio_int, expr_int, expr_str) VALUES (?, ?, 1, 0, '0')", (uid_i, now_ts))
+					
+					# Відбираємо рядки без ⏳ і з активним +X
+					for m_row in row_pattern.finditer(h_page):
+						uid = int(m_row.group(1))
+						plus_val = int(m_row.group(2))
+						if uid in seen_ids or uid < 100000 or uid in (my_id, 6333102398, 1124824021):
+							continue
+						seen_ids.add(uid)
+						candidates_ordered.append((uid, plus_val))
+				
+				conn.commit()
+				
+				# Розвертаємо список: спочатку низ 2-ї сторінки, потім низ 1-ї сторінки
+				candidates_ordered.reverse()
+				
+				valid_targets = []
+				need_limit = max(1, get_pt() - 1)
+				
+				for uid, plus_val in candidates_ordered:
+					c.execute("SELECT bio_int, expr_int FROM avocado WHERE user_id = ?", (uid,))
+					row_db = c.fetchone()
+					if row_db:
+						old_bio, expr_int = map(int, row_db)
+						# Якщо активний наш антил — пропускаємо
+						if expr_int > now_ts:
+							continue
+						# Якщо вже заражали раніше — б'ємо тільки якщо плюс у топі двозначний (>= 10)
+						if old_bio > 1 and plus_val < 10:
+							continue
+					
+					valid_targets.append((uid, plus_val))
+					if len(valid_targets) >= need_limit:
+						break
+				
+				if not valid_targets:
+					await event.edit('🤷 У топі немає підходящих цілей (у всіх КД або менший профіт).')
+					return
+				
+				await event.edit(f'🎯 Знайдено {len(valid_targets)} цілей знизу топу. Атакую...')
+				sent_count = 0
+				
+				for uid, plus_val in valid_targets:
+					if not bf_run or fever_until > int(time.time()) or get_pt() <= 1:
+						break
+					cmd_text = f'.биоеб {uid}'
+					print(f'🏆 [Биоб {sent_count + 1}/{len(valid_targets)}] {cmd_text} (очікуємо +{plus_val})')
+					await client.send_message(6333102398, cmd_text)
+					sent_count += 1
+					await asyncio.sleep(random.uniform(2.5, 4.5))
+				
+				if sent_count > 0 and (time.time() - last_bz_time > 15) and fever_until <= int(time.time()):
+					last_bz_time = time.time()
+					await asyncio.sleep(random.uniform(1.5, 2.5))
+					await client.send_message(6333102398, '/бж')
+				
+				res_txt = f'✅ Простріл топу завершено! Атак: {sent_count} | Залишок патів: ~{get_pt()}/{max_pt}'
+				print(res_txt)
+				try:
+					await event.edit(res_txt)
+				except Exception:
+					pass
+				
+			except Exception as e:
+				print(f'⚠️ Помилка в cmd_btop: {e}')
+				try:
+					await event.edit(f'❌ Помилка: {e}')
+				except Exception:
+					pass
+			finally:
+				bf_run = False
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.scn(?:\s+(.+))?$'))
 		async def cmd_scn(event):
 			global scn_run
@@ -1840,8 +1983,8 @@ async def main():
 			<blockquote>🧬 Авокадо:</blockquote>
 			<code>.bf</code> – атака цілей в ЛС
 			<code>.scn</code> – скан чату в базу
-			<code>.upd</code> – додати в базу +1
 			<code>.стоп</code> – вирубаємо .bf
+			<code>.топ</code> – жрем биоб
 			
 			<blockquote>🐸 Інше:</blockquote>
 			<code>.ква</code> – шпаргалка по жабах
