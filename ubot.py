@@ -339,7 +339,7 @@ async def main():
 			d.execute('DELETE FROM `tg_users_url` WHERE `when_int` < %s', (restart_timestamp,))
 			del_urls = d.rowcount
 			
-			# Видаляємо сміттєві ID (< 100000)
+			d.execute('UPDATE `tg_bio_users` SET `profit`=0 WHERE `profit`=1')
 			d.execute('DELETE FROM `tg_bio_attack` WHERE `user_id` < 100000')
 			d.execute('DELETE FROM `tg_bio_users` WHERE `user_id` < 100000')
 			
@@ -366,6 +366,10 @@ async def main():
 			expr_int	INTEGER NOT NULL DEFAULT 0,
 			expr_str	VARCHAR NOT NULL DEFAULT 0
 			)''');
+			conn.commit()
+			
+			c.execute("""UPDATE avocado SET bio_int = 0 WHERE bio_int = 1 
+			AND expr_int < %d""" % int(time.time()))
 			conn.commit()
 			
 			# Зачистка старих записів та сміттєвих ID у SQLite
@@ -778,14 +782,14 @@ async def main():
 						try:
 							c.execute("""INSERT OR IGNORE INTO avocado 
 							(user_id, when_int, bio_int, expr_int, expr_str) 
-							VALUES (?, ?, 1, 0, '0')""", (user_id, д))
+							VALUES (?, ?, 0, 0, '0')""", (user_id, д))
 						except Exception:
 							pass
 					if db_pymysql:
 						try:
 							d.execute("""INSERT IGNORE INTO `tg_bio_users` 
 							(`user_id`, `when_int`, `profit`) 
-							VALUES (%s, %s, 1)""", (user_id, д))
+							VALUES (%s, %s, 0)""",(user_id,д))
 						except Exception:
 							pass
 			
