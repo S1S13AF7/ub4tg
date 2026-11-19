@@ -3,7 +3,8 @@
 import asyncio
 
 from datetime import datetime, timedelta, timezone
-from telethon import TelegramClient, events, functions, types, utils
+from telethon import TelegramClient, events, functions, sync, types, utils
+from telethon.tl.functions.messages import CheckChatInviteRequest, ImportChatInviteRequest
 
 import os
 import re
@@ -22,12 +23,14 @@ if os.name == 'nt':
 import calendar
 
 sessdb = 'tl-ub' # назва бази сесії telethon
-default_directory = '' # "робоча папка" бота
+default_directory = ''		# "робоча папка" бота
+MAINchatID = -1002236064671	# основний+резервний
 CONFIG_PATH = "conf.json"	# main config file
-chts_file = "chts.json"		# чати де працюватимуть "чіти"
+chts_file = "chts.json"		# чати де дови+"чіти"+.send
 dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
 mlab_file = "mlab.json"		# параметри моєї лаби (квала та макс. патогенів)
 bio_0_url = "https://misc.pp.ua/files/0.zip" # <--- пряме посилання на 0.zip
+inviteURL = "https://t.me/+kIo5ZwN0XesyMGEy" # <--- пряме посилання на ch_id
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
 
 termux_api = False # там нижче буде перевизначено якщо is_termux == True
@@ -65,7 +68,7 @@ def save_config():
 	ordered_config = {
 		'api_id': int(config.get('api_id', 0)),
 		'api_hash': str(config.get('api_hash', '')),
-		'ch_id': int(config.get('ch_id', -1002236064671)),
+		'inviteURL': str(config.get('inviteURL') or inviteURL).strip(),
 		'db_sqlite3': bool(config.get('db_sqlite3', True)),
 		'db_pymysql': bool(config.get('db_pymysql', False)),
 		'mysql': config.get('mysql') if isinstance(config.get('mysql'), dict) else {
@@ -74,6 +77,7 @@ def save_config():
 			'password': 'V3rY$tR0NgPaS$Sw0Rd',
 			'db': 'db'
 		},
+		'ch_id': int(config.get('ch_id', MAINchatID)),
 		'wakelock': bool(config.get('wakelock', False)),
 		'farm': bool(config.get('farm', True)),
 		'mine': bool(config.get('mine', True))
@@ -82,19 +86,31 @@ def save_config():
 	for k, v in config.items():
 		if k not in ordered_config:
 			ordered_config[k] = v
-			
-	config.clear()
-	config.update(ordered_config)
-	with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-		json.dump(config, f, ensure_ascii=False, indent='\t')
+	with open(CONFIG_PATH, "w", encoding="utf-8") as write_file:
+		json.dump(ordered_config, write_file, ensure_ascii=False, indent='\t')
+
+def get_config_key(key, default=None):
+	return config.get(key, default)
+
+def save_config_key(key, value):
+	config[key] = value
+	save_config()
 
 if not os.path.exists(CONFIG_PATH):
-	config = {
-		'api_id': int(input('enter api_id from https://telegram.org :')),
-		'api_hash': input('enter api_hash from https://telegram.org :').strip(),
-		'ch_id': 0
-	}
-	save_config()
+	with open(CONFIG_PATH, "w", encoding="utf-8") as write_file:
+		json.dump({
+			"api_id": 123456,
+			"api_hash": "your_api_hash",
+			"inviteURL": inviteURL,
+			"db_pymysql": False,
+			"mysql": {
+				"host": "localhost",
+				"user": "root",
+				"password": "V3rY$tR0NgPaS$Sw0Rd",
+				"db": "db"
+			},
+			"ch_id": 0
+		}, write_file, ensure_ascii=False, indent='\t')
 
 with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 	#from types import SimpleNamespace
@@ -103,12 +119,11 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as configfile:
 
 api_id = int(config['api_id'])
 api_hash = config['api_hash']
-ch_id = int(config.get('ch_id') or -1002236064671)
-
-if ch_id >= 0:
-	ch_id = -1002236064671
-	config['ch_id'] = ch_id
-	print('неправильний id чата; пробуємо "стандартний" * якщо ти є там?')
+ch_id = int(config.get('ch_id') or 0)
+if ch_id > 0:
+	ch_id = 0
+	print('неправильний id чата')
+inviteURL = str(config.get('inviteURL') or inviteURL).strip()
 
 db_sqlite3 = True
 db_pymysql = bool(config.get('db_pymysql', False))
