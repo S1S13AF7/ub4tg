@@ -907,6 +907,43 @@ async def main():
 					except Exception:
 						pass
 		
+		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
+		pattern=r'(?s).*🦠\s*(?:Your laboratory was infected|Лаборатория заражена)'))
+		
+		async def collect_attacker(event):
+			m = event.message
+			when = int(m.date.timestamp())
+			if when < restart_timestamp or not m.entities:
+				return
+			
+			h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
+			att_match = re.search(r'tg://openmessage\?user_id=(\d+)', h)
+			if not att_match:
+				return
+			
+			att_id = int(att_match.group(1))
+			if att_id < 100000 or att_id in (my_id, 6333102398, 1124824021):
+				return
+			
+			if db_sqlite3:
+				try:
+					c.execute("""INSERT OR IGNORE INTO avocado 
+					(user_id, when_int, bio_int, expr_int, expr_str) 
+					VALUES (?, ?, 1, 0, '0')""", (att_id, when))
+					conn.commit()
+				except Exception:
+					pass
+			if db_pymysql:
+				try:
+					d.execute("""INSERT IGNORE INTO `tg_bio_users` 
+					(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 1)""", 
+					(att_id, when))
+					con.commit()
+				except Exception:
+					pass
+			print(f'🛡 Зібрано нападника @{att_id} в базу.')
+
+		
 		bz_aliases = r'^(?:[\./!]{1,2})?(?:victims?|бж|жертвы|био(?:ежа|жертвы|доход|зараженные))(?:\s+\d+)?$'
 		@client.on(events.NewMessage(outgoing=True, pattern=re.compile(bz_aliases, re.IGNORECASE)))
 		async def cmd_bz_out(event):
@@ -1006,6 +1043,8 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:bf_?stop|стоп)$'))
 		async def cmd_bf_stop(event):
+			if not is_allowed_chat(event):
+				return
 			global bf_run
 			if bf_run:
 				bf_run = False
@@ -1015,6 +1054,8 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:bf|biofuck|жрать)$'))
 		async def cmd_bf_lite(event):
+			if not is_allowed_chat(event):
+				return
 			global bf_run, last_bz_time, fever_until
 			
 			if not db_sqlite3:
@@ -1110,6 +1151,9 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:btop|топ)$'))
 		async def cmd_btop(event):
+			if not is_allowed_chat(event):
+				return
+				
 			global bf_run, last_bz_time
 			
 			if not db_sqlite3:
@@ -1253,6 +1297,8 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.scn(?:\s+(.+))?$'))
 		async def cmd_scn(event):
+			if not is_allowed_chat(event):
+				return
 			global scn_run
 			if not db_sqlite3 and not db_pymysql:
 				await event.edit('❌ Обидві бази даних вимкнено в конфігу.')
@@ -1362,6 +1408,8 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.upd$'))
 		async def cmd_upd(event):
+			if not is_allowed_chat(event):
+				return
 			import urllib.request
 			import urllib.error
 			import zipfile
