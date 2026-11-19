@@ -617,7 +617,7 @@ async def main():
 			kuda=ch_id
 			if f_run:
 				return
-			while (get_config_key("farm")):
+			while config.get("farm")):
 				f_run = True #	✅ погнали!
 				w = random.uniform(1,14401)
 				д = int(time.time())
@@ -1990,7 +1990,7 @@ async def main():
 		
 		########################################################################
 		
-		if get_config_key("farm") and ch_id<0:
+		config.get("farm") and ch_id<0:
 			await ферма()
 		
 		########################################################################
