@@ -218,15 +218,13 @@ async def main():
 			if event.is_private:
 				return event.chat_id != 6333102398
 			return event.chat_id in (ch_id, MAINchatID)
-
+		
 		bio_bot_username = '@bio_attacker_bot'
 		restart_timestamp = 1794601985 # 13.11.2026 20:33:05 UTC
-
+		
 		try:
 			bio_bot = await client.get_entity(bio_bot_username)
 			bio_attacker_bot_ID = int(bio_bot.id)
-			#print(f'🤖 Знайдено бота {bio_attacker_bot_ID}')
-			
 			# Перевіряємо, чи є вже повідомлення в ЛС із ботом
 			msgs = await client.get_messages(bio_bot, limit=1)
 			if not msgs:
@@ -234,7 +232,7 @@ async def main():
 				print(f'👋 ЛС було порожнім — надіслано /start для {bio_bot_username}')
 		except Exception as e:
 			print(f'❌ Не вдалося знайти {bio_bot_username}: {e}')
-			bio_attacker_bot_ID = 6333102398 # резервний ID, якщо виникла помилка
+			bio_attacker_bot_ID = 6333102398 # резервний ID
 		
 		if db_pymysql:
 			try:
@@ -399,46 +397,6 @@ async def main():
 		
 		########################################################################
 		
-		async def get_id(url):
-			user_id = 0
-			if "tg://openmessage?user_id=" in url or "tg://user?id=" in url:
-				user_id = int(re.findall(r'id=([0-9]+)',url)[0])
-				#print(user_id)# розкоментувать якщо нада бачить
-				return user_id
-			if "t.me/" in url:
-				if db_pymysql:
-					try:
-						d.execute("""SELECT * FROM `tg_users_url` 
-						WHERE `u_link` = %s ORDER BY `when_int` DESC""",
-						(str(url),))
-						user = d.fetchone();
-						if user is None:
-							pass
-						else:
-							user_id = int(user['user_id'])
-							print(f'{url} in db: @{user_id}')
-					except:
-							pass
-				if user_id==0:
-					#return user_id # fucking limit # розкоментуйте щоб не резолв.
-					try:
-						user_entity = await client.get_entity(url)
-						if user_entity.id:
-							user_id = int(user_entity.id)
-							user_fn = user_entity.first_name or ''
-							print(f'✅ ok: {url} @{user_id}')
-							if db_pymysql:
-								try:
-									d.execute("INSERT INTO `tg_users_url` (`when_int`,`user_id`,`u_link`,`f_name`) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE user_id = VALUES (user_id),u_link = VALUES (u_link),f_name = VALUES (f_name),when_int = VALUES (when_int);", (int(time.time()),int(user_id),str(url),str(user_fn))); con.commit()
-								except Exception as Err:
-									print(f'E:{Err}')
-					except Exception as Err:
-						print(f'E:{Err}')
-						#pass
-			return user_id
-		
-		########################################################################
-		
 		async def id_dov(u:int):
 			if u==0 or u==my_id:
 				return u
@@ -448,7 +406,8 @@ async def main():
 				with open(dovs_file, "r") as read_file:
 					dovs = json.load(read_file)
 			except Exception as wtf:
-				print(wtf)	# print
+				#print(wtf)	# print
+				pass
 			if u in dovs:
 				return u
 			return False
@@ -617,7 +576,7 @@ async def main():
 			kuda=ch_id
 			if f_run:
 				return
-			while config.get("farm")):
+			while config.get("farm"):
 				f_run = True #	✅ погнали!
 				w = random.uniform(1,14401)
 				д = int(time.time())
@@ -720,7 +679,7 @@ async def main():
 			if m_run:
 				return
 			else:
-				print(m.raw_text)
+				#print(m.raw_text)
 				await Mining(random.uniform(7200.0072,7227.7227))
 		
 		########################################################################
@@ -1982,7 +1941,7 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
 		async def cmd_ping(event):
-			print ('✅ 𝐏𝐎𝐍𝐆!')
+			# print ('✅ 𝐏𝐎𝐍𝐆!')
 			# Say "𝐏𝐎𝐍𝐆!",delete messages.
 			m = await event.reply('𝐏𝐎𝐍𝐆!')
 			await asyncio.sleep(random.uniform(4,8))
@@ -1990,7 +1949,7 @@ async def main():
 		
 		########################################################################
 		
-		config.get("farm") and ch_id<0:
+		if config.get("farm") and ch_id < 0:
 			await ферма()
 		
 		########################################################################
