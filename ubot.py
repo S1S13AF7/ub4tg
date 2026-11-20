@@ -1928,8 +1928,12 @@ async def main():
 				except Exception:
 					pass
 			
-			await client.disconnect()
-			os.execv(sys.executable, [sys.executable] + sys.argv)
+			try:
+				await asyncio.wait_for(client.disconnect(), timeout=2.0)
+			except Exception:
+				pass
+			
+			os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
 		
 		########################################################################
 		
