@@ -1268,15 +1268,16 @@ async def main():
 				for h_page in pages_html:
 					for uid_s in any_id_pattern.findall(h_page):
 						uid_i = int(uid_s)
-						c.execute("""INSERT OR IGNORE INTO avocado 
-						(user_id, when_int, bio_int, expr_int, expr_str) 
-						VALUES (?, ?, 0, 0, '0')""", (uid_i, now_ts))
+						if uid_i >= 100000:
+							c.execute("""INSERT OR IGNORE INTO avocado 
+							(user_id, when_int, bio_int, expr_int, expr_str) 
+							VALUES (?, ?, 0, 0, '0')""", (uid_i, now_ts))
 					
 					# Відбираємо рядки без ⏳ і з активним +X
 					for m_row in row_pattern.finditer(h_page):
 						uid = int(m_row.group(1))
 						plus_val = int(m_row.group(2))
-						if uid in seen_ids or uid < 100000 or uid in (my_id, 6333102398, 1124824021):
+						if uid in seen_ids or uid < 100000 or uid == my_id:
 							continue
 						seen_ids.add(uid)
 						candidates_ordered.append((uid, plus_val))
