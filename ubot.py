@@ -942,8 +942,7 @@ async def main():
 					con.commit()
 				except Exception:
 					pass
-			print(f'🛡 Зібрано нападника @{att_id} в базу.')
-
+			print(f'➕ Зібрано нападника @{att_id} в базу.')
 		
 		bz_aliases = r'^(?:[\./!]{1,2})?(?:victims?|бж|жертвы|био(?:ежа|жертвы|доход|зараженные))(?:\s+\d+)?$'
 		@client.on(events.NewMessage(outgoing=True, pattern=re.compile(bz_aliases, re.IGNORECASE)))
@@ -1014,8 +1013,8 @@ async def main():
 			
 			if updates:
 				save_mlab(updates)
-				fv_info = f' | 🌡 Гарячка: {max(0, (fever_until - int(time.time())) // 60)} хв' if fever_until > time.time() else ''
-				print(f'🧪 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.{fv_info}')
+				fv_info = f' | ⏳ Гарячка: {max(0, (fever_until - int(time.time())) // 60)} хв' if fever_until > time.time() else ''
+				print(f'🔬 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.{fv_info}')
 		
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
 		pattern=r'(?s).*(?:🤒\s*(?:The laboratory is in fever|Лаборатория в горячке)|💉\s*(?:Fever cured|Горячка вылечена)|✅\s*(?:No fever detected|Горячки нет|Горячка не обнаружена))'))
