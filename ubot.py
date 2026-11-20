@@ -1834,7 +1834,6 @@ async def main():
 			<code>.мл</code> – мікролаба
 			
 			<blockquote>🐸 Інше:</blockquote>
-			<code>.upd</code> – оновлення бота
 			<code>.ква</code> – шпаргалка по жабах
 			<code>.help</code> – <u>you are here</u>
 			
@@ -1850,97 +1849,6 @@ async def main():
 				await event.edit(help_message) # ред.
 			except:
 				pass
-		
-		########################################################################
-		
-		@client.on(events.NewMessage(pattern=r'^\.(?:upd|update)$'))
-		async def cmd_upd(event):
-			sender_id = int(event.sender_id or 0)
-			if event.out:
-				if not is_allowed_chat(event):
-					return
-			else:
-				if event.chat_id not in (MAINchatID, 
-				ch_id) or not await id_dov(sender_id):
-					return
-			
-			import sys
-			import subprocess
-			
-			if event.out:
-				await event.edit('⏳ Перевіряю оновлення (git pull)...')
-			else:
-				await asyncio.sleep(random.uniform(0.5, 3.0))
-			
-			repo_dir = os.path.dirname(os.path.abspath(__file__))
-			try:
-				loop = asyncio.get_running_loop()
-				proc = await loop.run_in_executor(
-					None,
-					lambda: subprocess.run(
-						['git', 'pull'],
-						cwd=repo_dir,
-						capture_output=True,
-						text=True,
-						timeout=30
-					)
-				)
-			except Exception as e:
-				err_txt = f'❌ Помилка git pull: {e}'
-				print(f'[{my_id}] {err_txt}')
-				if event.out:
-					await event.edit(err_txt)
-				return
-			
-			out_text = (proc.stdout or '').strip()
-			err_text = (proc.stderr or '').strip()
-			
-			if proc.returncode != 0:
-				fail_msg = f'❌ Git помилка:\n<code>{err_text or out_text}</code>'
-				print(f'[{my_id}] Git fail: {err_text or out_text}')
-				if event.out:
-					await event.edit(fail_msg, parse_mode='html')
-				return
-			
-			if 'Already up to date' in out_text or 'Уже актуально' in out_text:
-				print(f'[{my_id}] ✅ Оновлень немає.')
-				if event.out:
-					await event.edit('✅ Усе вже актуально (Already up to date).')
-				return
-			
-			short_out = out_text[:300]
-			ok_msg = f'🔄 Оновлено! Перезапускаюсь...\n<code>{short_out}</code>'
-			print(f'[{my_id}] 🔄 Оновлено через git pull. Рестарт...')
-			if event.out:
-				await event.edit(ok_msg, parse_mode='html')
-			else:
-				try:
-					await event.reply(f'🔄 <code>{my_id}</code> оновлено, перезапускаюсь...', parse_mode='html')
-				except Exception:
-					pass
-			
-			await asyncio.sleep(1.0)
-			if db_sqlite3 and conn:
-				try:
-					conn.close()
-				except Exception:
-					pass
-			if db_pymysql and con:
-				try:
-					con.close()
-				except Exception:
-					pass
-			
-			global need_restart
-			need_restart = True
-			try:
-				await asyncio.wait_for(client.disconnect(), timeout=1.5)
-			except Exception:
-				pass
-			
-			os.execl(sys.executable, sys.executable, os.path.abspath(__file__), *sys.argv[1:])
-
-			return
 		
 		########################################################################
 		
@@ -1986,6 +1894,3 @@ async def main():
 		########################################################################
 		
 asyncio.run(main())
-if need_restart:
-	import sys
-	os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
