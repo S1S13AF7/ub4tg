@@ -74,6 +74,7 @@ def save_config():
 		'farm': bool(config.get('farm', True)),
 		'mine': bool(config.get('mine', True))
 	}
+	# Дописуємо в кінець усі інші ключі, які вже були в конфігу (старі або кастомні)
 	for k, v in config.items():
 		if k not in ordered_config:
 			ordered_config[k] = v
@@ -912,7 +913,7 @@ async def main():
 						pass
 		
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
-		pattern=r'(?s).*🦠\s*(?:Your laboratory was infected|Лаборатория заражена)'))
+		pattern=r'(?s).*(?:Organizer|Организатор)'))
 		
 		async def collect_attacker(event):
 			m = event.message
@@ -926,21 +927,19 @@ async def main():
 				return
 			
 			att_id = int(att_match.group(1))
-			if att_id < 100000 or att_id in (my_id, 6333102398, 1124824021):
-				return
 			
 			if db_sqlite3:
 				try:
 					c.execute("""INSERT OR IGNORE INTO avocado 
 					(user_id, when_int, bio_int, expr_int, expr_str) 
-					VALUES (?, ?, 1, 0, '0')""", (att_id, when))
+					VALUES (?, ?, 0, 0, '0')""", (att_id, when))
 					conn.commit()
 				except Exception:
 					pass
 			if db_pymysql:
 				try:
 					d.execute("""INSERT IGNORE INTO `tg_bio_users` 
-					(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 1)""", 
+					(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 0)""", 
 					(att_id, when))
 					con.commit()
 				except Exception:
