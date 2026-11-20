@@ -1852,6 +1852,51 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(pattern=r'^\.pull$'))
+		async def cmd_pull(event):
+			sender_id = int(event.sender_id or 0)
+			if event.out:
+				if not is_allowed_chat(event):
+					return
+			else:
+				if event.chat_id not in (MAINchatID, ch_id) or not await id_dov(sender_id):
+					return
+			
+			import subprocess
+			if event.out:
+				await event.edit('⏳ Підтягую git pull...')
+			else:
+				await asyncio.sleep(random.uniform(0.5, 3.0))
+			
+			repo_dir = os.path.dirname(os.path.abspath(__file__))
+			try:
+				loop = asyncio.get_running_loop()
+				proc = await loop.run_in_executor(
+					None,
+					lambda: subprocess.run(
+						['git', 'pull'],
+						cwd=repo_dir,
+						capture_output=True,
+						text=True,
+						timeout=30
+					)
+				)
+			except Exception as e:
+				print(f'[{my_id}] ❌ Помилка git pull: {e}')
+				if event.out:
+					await event.edit(f'❌ Помилка: {e}')
+				return
+			
+			out_text = (proc.stdout or proc.stderr or '').strip()
+			print(f'[{my_id}] git pull: {out_text}')
+			if event.out:
+				await event.edit(
+					f'📥 <b>git pull:</b>\n<code>{out_text[:400]}</code>',
+					parse_mode='html'
+				)
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(incoming=True, pattern='.ping'))
 		async def cmd_ping_in(event):
 			c = event.chat_id
