@@ -847,7 +847,9 @@ async def main():
 						try:
 							c.execute("""INSERT OR IGNORE INTO avocado 
 							(user_id, when_int, bio_int, expr_int, expr_str) 
-							VALUES (?, ?, 0, 0, '0')""", (user_id, д))
+							VALUES (?, ?, 1, ?, ?)""",
+							(user_id, д, restart_timestamp, restart_date_str))
+
 						except Exception:
 							pass
 					if db_pymysql:
@@ -1026,8 +1028,8 @@ async def main():
 			# ВАРІАНТ А: 2 і більше ID (нападник + жертва)
 			# ================================================================
 			if len(ids) >= 2:
-				u1id = ids
-				u2id = ids
+				u1id = ids[0]
+				u2id = ids[1]
 				
 				if not is_infect_msg:
 					save_unknown_victim(u1id)
@@ -1142,7 +1144,7 @@ async def main():
 			# ================================================================
 			# ВАРІАНТ Б: Рівно 1 ID (нападник зі сповіщення або невідомий формат)
 			# ================================================================
-			uid_single = ids
+			uid_single = ids[0]
 			if uid_single == my_id:
 				return
 			
@@ -1225,39 +1227,7 @@ async def main():
 			if db_pymysql:
 				con.commit()
 		
-		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
-		pattern=r'(?s).*(?:Organizer|Организатор)'))
 		
-		async def collect_attacker(event):
-			m = event.message
-			when = int(m.date.timestamp())
-			if when < restart_timestamp or not m.entities:
-				return
-			
-			h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
-			att_match = re.search(r'tg://openmessage\?user_id=(\d+)', h)
-			if not att_match:
-				return
-			
-			att_id = int(att_match.group(1))
-			
-			if db_sqlite3:
-				try:
-					c.execute("""INSERT OR IGNORE INTO avocado 
-					(user_id, when_int, bio_int, expr_int, expr_str) 
-					VALUES (?, ?, 0, 0, '0')""", (att_id, when))
-					conn.commit()
-				except Exception:
-					pass
-			if db_pymysql:
-				try:
-					d.execute("""INSERT IGNORE INTO `tg_bio_users` 
-					(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 0)""", 
-					(att_id, when))
-					con.commit()
-				except Exception:
-					pass
-			print(f'➕ Зібрано нападника @{att_id} в базу.')
 		
 		bz_aliases = r'^(?:[\./!]{1,2})?(?:victims?|бж|жертвы|био(?:ежа|жертвы|доход|зараженные))(?:\s+\d+)?$'
 		@client.on(events.NewMessage(outgoing=True, pattern=re.compile(bz_aliases, re.IGNORECASE)))
