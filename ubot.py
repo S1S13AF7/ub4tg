@@ -296,7 +296,7 @@ async def main():
 			`date` int(11) unsigned NOT NULL DEFAULT '0',
 			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`profit` int(11) unsigned NOT NULL DEFAULT '1',
+			`profit` int(11) unsigned NOT NULL DEFAULT '0',
 			`until_int` int(11) unsigned NOT NULL DEFAULT '0',
 			`until_str` varchar(11) NOT NULL DEFAULT '0',
 			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
@@ -306,7 +306,7 @@ async def main():
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_users` (
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`profit` int(11) unsigned NOT NULL DEFAULT '1',
+			`profit` int(11) unsigned NOT NULL DEFAULT '0',
 			UNIQUE KEY `user_id` (`user_id`)
 			);''');
 			con.commit()
@@ -363,7 +363,7 @@ async def main():
 			c.execute('''CREATE TABLE IF NOT EXISTS avocado (
 			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
 			when_int	INTEGER NOT NULL DEFAULT 0,
-			bio_int	INTEGER NOT NULL DEFAULT 1,
+			bio_int	INTEGER NOT NULL DEFAULT 0,
 			expr_int	INTEGER NOT NULL DEFAULT 0,
 			expr_str	VARCHAR NOT NULL DEFAULT 0
 			)''');
@@ -828,8 +828,6 @@ async def main():
 				return
 			
 			u2id = int(target_match.group(1))
-			if u2id < 100000 or u2id in (my_id, 6333102398, 1124824021):
-				return
 			
 			is_my = bool(event.is_private and not m.fwd_from)
 			
@@ -899,7 +897,7 @@ async def main():
 					try:
 						c.execute("""INSERT OR IGNORE INTO avocado 
 						(user_id, when_int, bio_int, expr_int, expr_str) 
-						VALUES (?, ?, 1, 0, '0')""", (u2id, when))
+						VALUES (?, ?, 0, 0, '0')""", (u2id, when))
 						conn.commit()
 					except Exception:
 						pass
@@ -1269,11 +1267,11 @@ async def main():
 				seen_ids = set()
 				
 				for h_page in pages_html:
-					# Заодно тихо підливаємо всіх із топу в базу як одинички
 					for uid_s in any_id_pattern.findall(h_page):
 						uid_i = int(uid_s)
-						if uid_i >= 100000 and uid_i not in (my_id, 6333102398, 1124824021):
-							c.execute("INSERT OR IGNORE INTO avocado (user_id, when_int, bio_int, expr_int, expr_str) VALUES (?, ?, 1, 0, '0')", (uid_i, now_ts))
+						c.execute("""INSERT OR IGNORE INTO avocado 
+						(user_id, when_int, bio_int, expr_int, expr_str) 
+						VALUES (?, ?, 0, 0, '0')""", (uid_i, now_ts))
 					
 					# Відбираємо рядки без ⏳ і з активним +X
 					for m_row in row_pattern.finditer(h_page):
@@ -1377,7 +1375,14 @@ async def main():
 				target_ref = '@' + t_match.group(1)
 			elif re.fullmatch(r'-?\d+', arg):
 				num_id = int(arg)
-				target_ref = num_id if num_id {arg}</code>: {e}', parse_mode='html')
+				target_ref = -abs(num_id)
+			else:
+				target_ref = arg if arg.startswith('@') else '@' + arg
+			
+			try:
+				target = await client.get_entity(target_ref)
+			except Exception as e:
+				await event.edit(f'❌ Не вдалося знайти чат <code>{arg}</code>: {e}', parse_mode='html')
 				return
 			
 			if getattr(target, 'first_name', None) is not None and getattr(target, 'id', 0) != 6333102398:
@@ -1426,10 +1431,12 @@ async def main():
 				
 				res_msg = f'✅ Скан <b>{title}</b> завершено!\nПеревірено: {checked} | Нових ID: {len(found)}'
 				if save_txt and dump_lines:
-					fname = f"scan_{target.id}.txt"
+					work_dir = default_directory if (is_termux and default_directory) else '.'
+					fname = os.path.join(work_dir, f"scan_{target.id}.txt")
 					with open(fname, "w", encoding="utf-8") as tf:
 						tf.write("\n".join(dump_lines))
 					res_msg += f'\n💾 Дамп: <code>{fname}</code>'
+				
 				await event.edit(res_msg, parse_mode='html')
 			except Exception as e:
 				await event.edit(f'❌ Помилка скану: {e}')
@@ -1537,7 +1544,8 @@ async def main():
 					
 					# Додаємо як чужого (expr_int = 0). Якщо юзер вже є як чужий — оновлюємо свіжішою датою або реальним біо
 					c.execute("""
-						INSERT INTO avocado (user_id, when_int, bio_int, expr_int, expr_str)
+						INSERT INTO avocado 
+						(user_id, when_int, bio_int, expr_int, expr_str)
 						VALUES (?, ?, ?, 0, '0')
 						ON CONFLICT(user_id) DO UPDATE SET
 							when_int = excluded.when_int,
@@ -1553,7 +1561,8 @@ async def main():
 					if db_pymysql:
 						try:
 							d.execute("""
-								INSERT INTO `tg_bio_users` (`user_id`, `when_int`, `profit`)
+								INSERT INTO `tg_bio_users` 
+								(`user_id`, `when_int`, `profit`)
 								VALUES (%s, %s, %s)
 								ON DUPLICATE KEY UPDATE
 									profit = IF(VALUES(when_int) > when_int OR (profit = 1 AND VALUES(profit) > 1), VALUES(profit), profit),
