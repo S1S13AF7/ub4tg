@@ -1832,6 +1832,7 @@ async def main():
 			<code>.мл</code> – мікролаба
 			
 			<blockquote>🐸 Інше:</blockquote>
+			<code>.upd</code> – оновлення бота
 			<code>.ква</code> – шпаргалка по жабах
 			<code>.help</code> – <u>you are here</u>
 			
