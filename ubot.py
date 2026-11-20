@@ -125,6 +125,7 @@ f_run = False
 m_run = False
 bf_run = False
 scn_run = False
+need_restart = False
 last_bz_time=0	# Коли дивились "бж"
 ostalos_pt= 10	# поточні патогени (на старті припускаємо 10)
 max_pt = 10     # макс. запас патогенів (оновиться з лаби)
@@ -1929,12 +1930,10 @@ async def main():
 				except Exception:
 					pass
 			
-			try:
-				await asyncio.wait_for(client.disconnect(), timeout=2.0)
-			except Exception:
-				pass
-			
-			os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
+			global need_restart
+			need_restart = True
+			await client.disconnect()
+			return
 		
 		########################################################################
 		
@@ -1980,3 +1979,6 @@ async def main():
 		########################################################################
 		
 asyncio.run(main())
+if need_restart:
+	import sys
+	os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
