@@ -225,6 +225,9 @@ async def main():
 		
 		bio_bot_username = '@bio_attacker_bot'
 		restart_timestamp = 1794601985 # 13.11.2026 20:33:05 UTC
+		restart_date_str = datetime.fromtimestamp(
+			restart_timestamp, tz=timezone.utc
+		).strftime("%d.%m.%Y")
 		
 		try:
 			bio_bot = await client.get_entity(bio_bot_username)
@@ -344,6 +347,11 @@ async def main():
 			del_urls = d.rowcount
 			
 			d.execute('UPDATE `tg_bio_users` SET `profit`=1 WHERE `profit`!=1')
+			d.execute(
+				'UPDATE `tg_bio_attack` SET `until_int`=%s, `until_str`=%s '
+				'WHERE `until_int` < %s',
+				(restart_timestamp, restart_date_str, restart_timestamp)
+			)
 			
 			con.commit()
 			
@@ -361,23 +369,27 @@ async def main():
 			conn = sqlite3.connect(sqlite_path)
 			c = conn.cursor()
 			
-			c.execute('''CREATE TABLE IF NOT EXISTS avocado (
+			c.execute(f """CREATE TABLE IF NOT EXISTS avocado (
 			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
 			when_int	INTEGER NOT NULL DEFAULT 0,
 			bio_int	INTEGER NOT NULL DEFAULT 1,
-			expr_int	INTEGER NOT NULL DEFAULT 0,
-			expr_str	VARCHAR NOT NULL DEFAULT 0
-			)''');
-			conn.commit()
-			
-			c.execute("""UPDATE avocado SET bio_int = 1 WHERE bio_int != 1 
-			AND expr_int < %d""" % int(time.time()))
+			expr_int	INTEGER NOT NULL DEFAULT {restart_timestamp},
+			expr_str	VARCHAR NOT NULL DEFAULT '{restart_date_str}'
+			)""");
 			conn.commit()
 			
 			# Зачистка старих записів та сміттєвих ID у SQLite
-			c.execute('DELETE FROM avocado WHERE when_int < ? OR user_id<100', 
+			c.execute('DELETE FROM avocado WHERE when_int < ? OR user_id < 100', 
 			(restart_timestamp,))
 			del_sqlite = c.rowcount
+			conn.commit()
+			
+			# Усім незараженим або з протухлим антилом ставимо bio_int=1 і restart_timestamp
+			c.execute(
+				"""UPDATE avocado SET bio_int = 1, expr_int = ?, expr_str = ?
+				WHERE expr_int < ?""",
+				(restart_timestamp, restart_date_str, int(time.time()))
+			)
 			conn.commit()
 			
 			if del_sqlite > 0:
@@ -398,6 +410,57 @@ async def main():
 					conn.commit()
 				except Exception as e:
 					print(f"err optimize: {e}")
+			
+			def import_0sqlite(db0_file: str, remove_after: bool = False):
+				if not os.path.exists(db0_file):
+					return 0
+				added = 0
+				try:
+					con0 = sqlite3.connect(db0_file)
+					cur0 = con0.cursor()
+					cur0.execute(
+						"SELECT user_id, when_int FROM avocado "
+						"WHERE user_id >= 100"
+					)
+					now_s = int(time.time())
+					for uid_0, wh_0 in cur0.fetchall():
+						u_i = int(uid_0)
+						if u_i in (my_id, 6333102398, 1124824021):
+							continue
+						w_i = int(wh_0 or now_s)
+						c.execute(
+							"""INSERT OR IGNORE INTO avocado
+							(user_id, when_int, bio_int, expr_int, expr_str)
+							VALUES (?, ?, 1, ?, ?)""",
+							(u_i, w_i, restart_timestamp, restart_date_str)
+						)
+						if c.rowcount > 0:
+							added += 1
+					conn.commit()
+					con0.close()
+					if remove_after:
+						try:
+							os.remove(db0_file)
+						except Exception:
+							pass
+					if added > 0:
+						print(f'📦 [0.sqlite] Залито нових ID: {added}')
+				except Exception as e:
+					print(f'⚠️ [0.sqlite] Помилка імпорту: {e}')
+				return added
+			
+			# Якщо 0.sqlite вже лежить у робочій папці — заливаємо одразу при старті
+			init_work_dir = '.'
+			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
+				init_work_dir = r"D:\Misc\projects\Python"
+			elif is_termux and default_directory:
+				init_work_dir = default_directory
+			init_db0 = os.path.join(init_work_dir, '0.sqlite')
+			if os.path.exists(init_db0):
+				import_0sqlite(
+					init_db0,
+					remove_after=os.path.exists(os.path.join(init_work_dir, '0.zip'))
+				)
 			
 			####################################################################
 		
@@ -1676,10 +1739,11 @@ async def main():
 								if db_sqlite3:
 									c.execute("""INSERT OR IGNORE INTO avocado 
 									(user_id, when_int, bio_int, expr_int, expr_str) 
-									VALUES (?, ?, 0, 0, '0')""", (u_id, msg_ts))
+									VALUES (?, ?, 1, ?, ?)""",
+									(u_id, msg_ts, restart_timestamp, restart_date_str))
 								if db_pymysql:
 									d.execute("""INSERT IGNORE INTO `tg_bio_users` 
-									(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 0)""", 
+									(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 1)""", 
 									(u_id, msg_ts))
 					if checked % 100 == 0:
 						if db_sqlite3:
@@ -2422,6 +2486,8 @@ async def main():
 						None, check_and_fetch
 					)
 					if status == 'updated' and os.path.exists(db0_path):
+						import_0sqlite(db0_path, remove_after=True)
+						
 						added = 0
 						con0 = sqlite3.connect(db0_path)
 						cur0 = con0.cursor()
