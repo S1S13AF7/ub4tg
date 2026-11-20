@@ -1018,7 +1018,8 @@ async def main():
 			r'(?s).*(?:🤒\s*(?:The laboratory is in fever|Лаборатория в горячке)|'
 			r'💉\s*(?:Fever cured|Горячка вылечена)|'
 			r'✅\s*(?:No fever detected|Горячки нет|Горячка не обнаружена)|'
-			r'🧪\s*(?:No pathogens available|Нет доступных патогенов))'
+			r'🧪\s*(?:No pathogens available|Нет доступных патогенов)|'
+			r'👑\s*(?:The operation to infect|Операция по заражению))'
 		)))
 		
 		async def track_fever(event):
@@ -1034,6 +1035,13 @@ async def main():
 				pt_time = msg_ts
 				print('🛑 Патогени закінчились (0)! Зупиняю серію.')
 				return
+			
+			if 'operation to infect' in t or 'Операция по заражению' in t:
+				rem_m = re.search(r'(?:Left|Осталось):\s*(\d+)', t, re.IGNORECASE)
+				if rem_m:
+					ostalos_pt = int(rem_m.group(1))
+					pt_time = msg_ts
+					print(f'🛡️ Невдала атака! Залишилось патів: {ostalos_pt}/{max_pt}')
 			
 			if '🤒' in t:
 				if re.search(r'(?:less than a minute|меньше минуты)', t, re.IGNORECASE):
