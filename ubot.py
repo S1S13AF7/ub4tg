@@ -72,6 +72,7 @@ def save_config():
 			'db': 'db'
 		},
 		'ch_id': int(config.get('ch_id', MAINchatID)),
+		'spy_mode': bool(config.get('spy_mode', False)),
 		'wakelock': bool(config.get('wakelock', False)),
 		'farm': bool(config.get('farm', True)),
 		'mine': bool(config.get('mine', True))
@@ -2443,7 +2444,7 @@ async def main():
 		asyncio.create_task(auto_pull())
 		asyncio.create_task(auto_sync_0zip())
 		
-		if config.get("farm") and ch_id < 0:
+		if not spy_mode and config.get("farm") and ch_id < 0:
 			await ферма()
 		
 		########################################################################
