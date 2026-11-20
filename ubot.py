@@ -343,8 +343,8 @@ async def main():
 			del_urls = d.rowcount
 			
 			d.execute('UPDATE `tg_bio_users` SET `profit`=0 WHERE `profit`=1')
-			d.execute('DELETE FROM `tg_bio_attack` WHERE `user_id` < 100000')
-			d.execute('DELETE FROM `tg_bio_users` WHERE `user_id` < 100000')
+			d.execute('DELETE FROM `tg_bio_attack` WHERE `user_id` < 100')
+			d.execute('DELETE FROM `tg_bio_users` WHERE `user_id` < 100')
 			
 			con.commit()
 			
@@ -376,7 +376,7 @@ async def main():
 			conn.commit()
 			
 			# Зачистка старих записів та сміттєвих ID у SQLite
-			c.execute('DELETE FROM avocado WHERE when_int < ? OR user_id<100000', 
+			c.execute('DELETE FROM avocado WHERE when_int < ? OR user_id<100', 
 			(restart_timestamp,))
 			del_sqlite = c.rowcount
 			conn.commit()
@@ -723,7 +723,7 @@ async def main():
 				)
 				for r in pattern.finditer(h):
 					user_id = int(r.group(1))
-					if user_id < 100000:
+					if user_id < 100:
 						continue
 					bio = int(r.group(2))
 					date_str = r.group(3)
@@ -779,7 +779,7 @@ async def main():
 				raw_ids = re.findall(r'href="(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)"', h, re.IGNORECASE)
 				for uid_str in set(raw_ids):
 					user_id = int(uid_str)
-					if user_id < 100000 or user_id in (my_id, 6333102398, 1124824021):
+					if user_id < 100 or user_id in (my_id, 6333102398, 1124824021):
 						continue
 					if db_sqlite3:
 						try:
@@ -811,101 +811,329 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
-		pattern=r'(?:☣️\s*(?:Infection successful|Заражение успешно)|🔬\s*(?:Laboratory|Лаборатория)\s+.+\s+(?:infected|заразила)\s+)'))
-		async def infect(event):
-			global last_bz_time, ostalos_pt, pt_time
+		infect_verbs = (
+			r'(?:infected|заразил[ао]?|подверг(?:ла|ся)?|йобнув|сикди|'
+			r'насрал[ао]?|выебал[ао]?|атаковал[ао]?|инфицировал[ао]?|'
+			r'напугал[ао]?|нокаутировал[ао]?|обманул[ао]?|оглушил[ао]?|'
+			r'поставил[ао]?|рассмешил[ао]?|угостил[ао]?)'
+		)
+		skip_router_re = (
+			r'(?s).*(?:Active\s+victims|Активные\s+жертвы|'
+			r'🧪\s*(?:Pathogens|Свободных патогенов)|'
+			r'👩🏻‍🔬\s*(?:Qualification|Квалификация))'
+		)
+		
+		@client.on(events.NewMessage(incoming=True, from_users=6333102398))
+		async def infect_router(event):
+			global last_bz_time, ostalos_pt, pt_time, letal
 			m = event.message
 			when = int(m.date.timestamp())
-			
 			if when < restart_timestamp or not m.entities:
 				return
 			
-			h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
-			all_ids = re.findall(r'tg://openmessage\?user_id=(\d+)', h)
-			if not all_ids:
+			t = m.raw_text
+			if re.search(skip_router_re, t, re.IGNORECASE):
 				return
 			
-			u2id = int(all_ids[1]) if len(all_ids) >= 2 else int(all_ids[0])
-			is_my = bool(event.is_private and not m.fwd_from)
+			h = utils.sanitize_parse_mode('html').unparse(t, m.entities)
+			raw_ids = re.findall(r'tg://openmessage\?user_id=(\d+)', h)
+			if not raw_ids:
+				return
 			
-			if is_my:
-				bio_match = re.search(r'(?:Profit|Прибыль|Bio-experience gained|Получено био-опыта):\s*(?:<strong>)?\+?(\d+)(?:</strong>)?', h, re.IGNORECASE)
-				bio = int(bio_match.group(1)) if bio_match else 1
+			ids = [
+				int(x) for x in raw_ids
+				if int(x) >= 100 and int(x) not in (6333102398, 1124824021)
+			]
+			if not ids:
+				return
+			
+			is_pm = bool(event.is_private and not m.fwd_from)
+			is_infect_msg = bool(re.search(infect_verbs, t, re.IGNORECASE))
+			
+			def parse_details(html_txt: str, plain_txt: str):
+				p_bio = None
+				p_days = None
+				p_rem = None
+				p_vir = ''
+				try:
+					bm = re.search(
+						r'(?:Profit|Прибыль|Bio-experience gained|'
+						r'верир|потери|приносит|корма):\s*'
+						r'(?:<strong>)?\+?([\d\.,]+k?)(?:</strong>)?',
+						html_txt, re.IGNORECASE
+					)
+					if bm:
+						rb = bm.group(1).replace(',', '.')
+						if rb.lower().endswith('k'):
+							val = int(float(rb[:-1]) * 1000)
+						else:
+							val = int(float(rb))
+						if val >= 1:
+							p_bio = val
+				except Exception:
+					pass
 				
-				rem_match = re.search(r'(?:Left|Осталось|Pathogens remaining|Осталось патогенов):\s*(?:<strong>)?(\d+)(?:</strong>)?', h, re.IGNORECASE)
-				need_check_victims = False
-				if rem_match:
-					ostalos_pt = int(rem_match.group(1))
-					pt_time = when
-					if ostalos_pt in (0, 1):
-						need_check_victims = True
+				try:
+					dm = re.search(
+						r'(?:Infection duration|Длительность заражения|'
+						r'на|for|ещё)\s*:?\s*(\d{1,3})\s*(?:d|д)',
+						plain_txt, re.IGNORECASE
+					)
+					if dm:
+						d_val = int(dm.group(1))
+						if 1 <= d_val <= 365:
+							p_days = d_val
+				except Exception:
+					pass
 				
-				until_ts = when + (letal * 86400)
-				until_str = datetime.fromtimestamp(until_ts, tz=timezone.utc).strftime("%d.%m.%Y")
+				try:
+					rm = re.search(
+						r'(?:Left|Осталось|Pathogens remaining|'
+						r'Remaining):\s*(?:<strong>)?(\d+)(?:</strong>)?',
+						html_txt, re.IGNORECASE
+					)
+					if rm:
+						r_val = int(rm.group(1))
+						if 0 <= r_val <= 500:
+							p_rem = r_val
+				except Exception:
+					pass
 				
+				try:
+					vm = re.search(r'[«“"]([^»”"\n]{2,40})[»”"]', plain_txt)
+					if vm:
+						p_vir = vm.group(1).strip()
+				except Exception:
+					pass
+				
+				return p_bio, p_days, p_rem, p_vir
+			
+			def save_unknown_victim(uid: int):
+				if uid == my_id or uid < 100:
+					return
 				if db_sqlite3:
 					try:
-						c.execute("""INSERT INTO avocado 
-						(user_id, when_int, bio_int, expr_int, expr_str)
-						VALUES (?, ?, ?, ?, ?)
-						ON CONFLICT(user_id) DO UPDATE SET
-							when_int = excluded.when_int,
-							bio_int = excluded.bio_int,
-							expr_int = excluded.expr_int,
-							expr_str = excluded.expr_str
-						WHERE excluded.when_int >= avocado.when_int""", 
-						(u2id, when, bio, until_ts, until_str))
-						conn.commit()
-					except Exception as Err:
-						print(f'err: {Err} (infect sqlite my)')
-				
-				if db_pymysql:
-					try:
-						d.execute("""INSERT INTO `tg_bio_attack` 
-						(`date`, `who_id`, `user_id`, `profit`, `until_int`, `until_str`) 
-						VALUES (%s, %s, %s, %s, %s, %s)
-						ON DUPLICATE KEY UPDATE 
-							date = IF(VALUES(date) >= date, VALUES(date), date),
-							profit = IF(VALUES(date) >= date, VALUES(profit), profit),
-							until_int = IF(VALUES(date) >= date, VALUES(until_int), until_int),
-							until_str = IF(VALUES(date) >= date, VALUES(until_str), until_str)""", 
-						(when, my_id, u2id, bio, until_ts, until_str))
-						d.execute("""INSERT INTO `tg_bio_users` 
-						(`user_id`, `when_int`, `profit`) 
-						VALUES (%s, %s, %s) 
-						ON DUPLICATE KEY UPDATE 
-							profit = IF(VALUES(when_int) >= when_int, VALUES(profit), profit),
-							when_int = IF(VALUES(when_int) >= when_int, VALUES(when_int),
-							when_int)""", (u2id, when, bio))
-						con.commit()
-					except Exception as Err:
-						print(f'err: {Err} (infect mysql my)')
-				
-				print(f'☣️ Заражено @{u2id} (+{bio}) | Патів: {ostalos_pt}/{max_pt}')
-				
-				if need_check_victims and (time.time() - last_bz_time > 15):
-					last_bz_time = time.time()
-					await asyncio.sleep(random.uniform(1.5,3.5))
-					await client.send_message(6333102398, '/бж')
-			else:
-				# Чуже зараження в групі: просто додаємо ціль як одиничку, якщо її ще немає в базі
-				if db_sqlite3:
-					try:
-						c.execute("""INSERT OR IGNORE INTO avocado 
-						(user_id, when_int, bio_int, expr_int, expr_str) 
-						VALUES (?, ?, 0, 0, '0')""", (u2id, when))
-						conn.commit()
+						c.execute(
+							"""INSERT OR IGNORE INTO avocado
+							(user_id, when_int, bio_int, expr_int, expr_str)
+							VALUES (?, ?, 1, 0, '0')""",
+							(uid, when)
+						)
 					except Exception:
 						pass
 				if db_pymysql:
 					try:
-						d.execute("""INSERT IGNORE INTO `tg_bio_users` 
-						(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 0)""", 
-						(u2id, when))
-						con.commit()
+						d.execute(
+							"""INSERT IGNORE INTO `tg_bio_users`
+							(`user_id`, `when_int`, `profit`)
+							VALUES (%s, %s, 1)""",
+							(uid, when)
+						)
 					except Exception:
 						pass
+			
+			# ================================================================
+			# ВАРІАНТ А: 2 і більше ID (нападник + жертва)
+			# ================================================================
+			if len(ids) >= 2:
+				u1id = ids
+				u2id = ids
+				
+				if not is_infect_msg:
+					save_unknown_victim(u1id)
+					save_unknown_victim(u2id)
+					if db_sqlite3:
+						conn.commit()
+					if db_pymysql:
+						con.commit()
+					return
+				
+				if u2id == my_id and u1id != my_id:
+					save_unknown_victim(u1id)
+					if db_sqlite3:
+						conn.commit()
+					if db_pymysql:
+						con.commit()
+					print(f'➕ Мене заразив @{u1id} — додано в базу.')
+					return
+				
+				if u1id == my_id:
+					p_bio, p_days, p_rem, p_vir = parse_details(h, t)
+					bio = p_bio if p_bio is not None else 1
+					if p_days is not None:
+						days = p_days
+					else:
+						days = letal if letal > 0 else 1
+					if p_days and p_days > letal:
+						letal = p_days
+						save_mlab({"letal": letal})
+					
+					until_ts = when + (days * 86400)
+					until_str = datetime.fromtimestamp(
+						until_ts, tz=timezone.utc
+					).strftime("%d.%m.%Y")
+					
+					need_bz = False
+					if p_rem is not None:
+						ostalos_pt = p_rem
+						pt_time = when
+						if ostalos_pt in (0, 1):
+							need_bz = True
+					
+					if db_sqlite3:
+						try:
+							c.execute(
+								"""INSERT INTO avocado
+								(user_id, when_int, bio_int,
+								expr_int, expr_str)
+								VALUES (?, ?, ?, ?, ?)
+								ON CONFLICT(user_id) DO UPDATE SET
+									when_int = excluded.when_int,
+									bio_int = excluded.bio_int,
+									expr_int = excluded.expr_int,
+									expr_str = excluded.expr_str
+								WHERE excluded.when_int >= avocado.when_int""",
+								(u2id, when, bio, until_ts, until_str)
+							)
+							conn.commit()
+						except Exception as e:
+							print(f'err: {e} (infect sqlite my)')
+					
+					if db_pymysql:
+						try:
+							d.execute(
+								"""INSERT INTO `tg_bio_attack`
+								(`date`, `who_id`, `user_id`, `profit`,
+								`until_int`, `until_str`)
+								VALUES (%s, %s, %s, %s, %s, %s)
+								ON DUPLICATE KEY UPDATE
+									date = IF(VALUES(date) >= date,
+										VALUES(date), date),
+									profit = IF(VALUES(date) >= date,
+										VALUES(profit), profit),
+									until_int = IF(VALUES(date) >= date,
+										VALUES(until_int), until_int),
+									until_str = IF(VALUES(date) >= date,
+										VALUES(until_str), until_str)""",
+								(when, my_id, u2id, bio, until_ts, until_str)
+							)
+							d.execute(
+								"""INSERT INTO `tg_bio_users`
+								(`user_id`, `when_int`, `profit`)
+								VALUES (%s, %s, %s)
+								ON DUPLICATE KEY UPDATE
+									profit = IF(VALUES(when_int) >= when_int,
+										VALUES(profit), profit),
+									when_int = IF(VALUES(when_int) >= when_int,
+										VALUES(when_int), when_int)""",
+								(u2id, when, bio)
+							)
+							con.commit()
+						except Exception as e:
+							print(f'err: {e} (infect mysql my)')
+					
+					print(
+						f'☣️ Заражено @{u2id} (+{bio}, {days}д) | '
+						f'Патів: {ostalos_pt}/{max_pt}'
+					)
+					if need_bz and (time.time() - last_bz_time > 15):
+						last_bz_time = time.time()
+						await asyncio.sleep(random.uniform(1.5, 3.5))
+						await client.send_message(6333102398, '/бж')
+				else:
+					save_unknown_victim(u1id)
+					save_unknown_victim(u2id)
+					if db_sqlite3:
+						conn.commit()
+					if db_pymysql:
+						con.commit()
+				return
+			
+			# ================================================================
+			# ВАРІАНТ Б: Рівно 1 ID (нападник зі сповіщення або невідомий формат)
+			# ================================================================
+			uid_single = ids
+			if uid_single == my_id:
+				return
+			
+			save_unknown_victim(uid_single)
+			
+			if is_pm:
+				p_bio, p_days, p_rem, p_vir = parse_details(h, t)
+				if any(x is not None for x in (p_bio, p_days, p_rem)):
+					bio = p_bio if p_bio is not None else 1
+					if p_days is not None:
+						days = p_days
+					else:
+						days = letal if letal > 0 else 1
+					until_ts = when + (days * 86400)
+					until_str = datetime.fromtimestamp(
+						until_ts, tz=timezone.utc
+					).strftime("%d.%m.%Y")
+					
+					if p_rem is not None:
+						ostalos_pt = p_rem
+						pt_time = when
+					
+					if db_sqlite3:
+						try:
+							c.execute(
+								"""INSERT INTO avocado
+								(user_id, when_int, bio_int,
+								expr_int, expr_str)
+								VALUES (?, ?, ?, ?, ?)
+								ON CONFLICT(user_id) DO UPDATE SET
+									when_int = excluded.when_int,
+									bio_int = excluded.bio_int,
+									expr_int = excluded.expr_int,
+									expr_str = excluded.expr_str
+								WHERE excluded.when_int >= avocado.when_int""",
+								(uid_single, when, bio, until_ts, until_str)
+							)
+						except Exception:
+							pass
+					if db_pymysql:
+						try:
+							d.execute(
+								"""INSERT INTO `tg_bio_attack`
+								(`date`, `who_id`, `user_id`, `profit`,
+								`until_int`, `until_str`)
+								VALUES (%s, %s, %s, %s, %s, %s)
+								ON DUPLICATE KEY UPDATE
+									date = IF(VALUES(date) >= date,
+										VALUES(date), date),
+									profit = IF(VALUES(date) >= date,
+										VALUES(profit), profit),
+									until_int = IF(VALUES(date) >= date,
+										VALUES(until_int), until_int),
+									until_str = IF(VALUES(date) >= date,
+										VALUES(until_str), until_str)""",
+								(when, my_id, uid_single, bio, until_ts, until_str)
+							)
+							d.execute(
+								"""INSERT INTO `tg_bio_users`
+								(`user_id`, `when_int`, `profit`)
+								VALUES (%s, %s, %s)
+								ON DUPLICATE KEY UPDATE
+									profit = IF(VALUES(when_int) >= when_int,
+										VALUES(profit), profit),
+									when_int = IF(VALUES(when_int) >= when_int,
+										VALUES(when_int), when_int)""",
+								(uid_single, when, bio)
+							)
+						except Exception:
+							pass
+					print(
+						f'☣️ [1-ID PM] Заражено @{uid_single} '
+						f'(+{bio}, {days}д) | Патів: {ostalos_pt}/{max_pt}'
+					)
+				else:
+					print(f'➕ Зібрано гравця @{uid_single} в базу.')
+			
+			if db_sqlite3:
+				conn.commit()
+			if db_pymysql:
+				con.commit()
 		
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
 		pattern=r'(?s).*(?:Organizer|Организатор)'))
@@ -1166,7 +1394,7 @@ async def main():
 					
 					c.execute("""
 						SELECT user_id, bio_int FROM avocado 
-						WHERE user_id >= 100000
+						WHERE user_id >= 100
 						AND user_id NOT IN (?, 6333102398, 1124824021) 
 						AND (expr_int = 0 OR expr_int < ? OR bio_int < 5)
 						ORDER BY when_int ASC 
@@ -1285,7 +1513,7 @@ async def main():
 				for h_page in pages_html:
 					for uid_s in any_id_pattern.findall(h_page):
 						uid_i = int(uid_s)
-						if uid_i >= 100000:
+						if uid_i >= 100:
 							c.execute("""INSERT OR IGNORE INTO avocado 
 							(user_id, when_int, bio_int, expr_int, expr_str) 
 							VALUES (?, ?, 0, 0, '0')""", (uid_i, now_ts))
@@ -1294,7 +1522,7 @@ async def main():
 					for m_row in row_pattern.finditer(h_page):
 						uid = int(m_row.group(1))
 						plus_val = int(m_row.group(2))
-						if uid in seen_ids or uid < 100000 or uid == my_id:
+						if uid in seen_ids or uid < 100 or uid == my_id:
 							continue
 						seen_ids.add(uid)
 						candidates_ordered.append((uid, plus_val))
@@ -1416,7 +1644,7 @@ async def main():
 							dump_lines.append(f"=== MSG ID: {m.id} | {m.date.strftime('%d.%m.%Y %H:%M:%S')} UTC ===\n{h}\n")
 						for uid_s in re.findall(r'tg://openmessage\?user_id=(\d+)', h):
 							u_id = int(uid_s)
-							if u_id >= 100000 and u_id not in (my_id, 6333102398, 1124824021):
+							if u_id >= 100 and u_id not in (my_id, 6333102398, 1124824021):
 								found.add(u_id)
 								if db_sqlite3:
 									c.execute("""INSERT OR IGNORE INTO avocado 
