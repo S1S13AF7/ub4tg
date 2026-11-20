@@ -1436,154 +1436,6 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.upd$'))
-		async def cmd_upd(event):
-			if not is_allowed_chat(event):
-				return
-			import urllib.request
-			import urllib.error
-			import zipfile
-			import socket
-			
-			if not db_sqlite3:
-				await event.edit('❌ SQLite вимкнено в конфігу.')
-				return
-			
-			# Визначаємо папку: для Termux туди ж де конфіг, для інших — поруч
-			work_dir = default_directory if (is_termux and default_directory) else '.'
-			zip_path = os.path.join(work_dir, '0.zip')
-			db0_path = os.path.join(work_dir, '0.sqlite')
-			
-			# Попередньо видаляємо старий 0.zip, якщо він уже є
-			if os.path.exists(zip_path):
-				try:
-					os.remove(zip_path)
-				except Exception as e:
-					await event.edit(f'❌ Не вдалося видалити старий 0.zip: {e}')
-					return
-			
-			await event.edit('⏳ Завантажую 0.zip...')
-			
-			# Функція завантаження для запуску без блокування бота
-			def download_zip():
-				req = urllib.request.Request(
-					bio_0_url,
-					headers={'User-Agent': 'Mozilla/5.0'}
-				)
-				with urllib.request.urlopen(req, timeout=20) as resp, open(zip_path, 'wb') as out_f:
-					shutil.copyfileobj(resp, out_f)
-			
-			try:
-				loop = asyncio.get_running_loop()
-				await loop.run_in_executor(None, download_zip)
-			except urllib.error.HTTPError as e:
-				if e.code == 404:
-					await event.edit('❌ Файл 0.zip не знайдено на сервері (404).')
-				else:
-					await event.edit(f'❌ Помилка сервера HTTP {e.code}: {e.reason}')
-				return
-			except urllib.error.URLError as e:
-				await event.edit(f'❌ Хост недоступний або немає з\'єднання: {e.reason}')
-				return
-			except (socket.timeout, TimeoutError):
-				await event.edit('❌ Хост не відповідає (перевищено час очікування).')
-				return
-			except Exception as e:
-				await event.edit(f'❌ Помилка завантаження: {e}')
-				return
-			
-			await event.edit('📦 Розпаковую 0.sqlite...')
-			
-			try:
-				with zipfile.ZipFile(zip_path, 'r') as zf:
-					if '0.sqlite' not in zf.namelist():
-						await event.edit('❌ Усередині архіву 0.zip немає файлу 0.sqlite.')
-						return
-					# Розпаковуємо з заміною існуючого 0.sqlite
-					with zf.open('0.sqlite') as src_f, open(db0_path, 'wb') as dst_f:
-						shutil.copyfileobj(src_f, dst_f)
-			except zipfile.BadZipFile:
-				await event.edit('❌ Завантажений 0.zip пошкоджений або не є архівом.')
-				return
-			except Exception as e:
-				await event.edit(f'❌ Помилка розпакування: {e}')
-				return
-			
-			await event.edit('🔄 Імпортую нових пацієнтів у базу...')
-			
-			added_sqlite = 0
-			total_in_zero = 0
-			
-			try:
-				src_conn = sqlite3.connect(db0_path)
-				src_cur = src_conn.cursor()
-				src_cur.execute(
-					"SELECT user_id, when_int, bio_int FROM avocado WHERE user_id >= 100000 AND when_int >= ?",
-					(restart_timestamp,)
-				)
-				rows = src_cur.fetchall()
-				src_conn.close()
-				total_in_zero = len(rows)
-				
-				for u_id, w_int, b_int in rows:
-					u_id = int(u_id)
-					w_int = int(w_int)
-					b_int = int(b_int)
-					
-					if u_id == my_id or u_id in (6333102398, 1124824021):
-						continue
-					
-					# Додаємо як чужого (expr_int = 0). Якщо юзер вже є як чужий — оновлюємо свіжішою датою або реальним біо
-					c.execute("""
-						INSERT INTO avocado 
-						(user_id, when_int, bio_int, expr_int, expr_str)
-						VALUES (?, ?, ?, 0, '0')
-						ON CONFLICT(user_id) DO UPDATE SET
-							when_int = excluded.when_int,
-							bio_int = excluded.bio_int
-						WHERE avocado.expr_int = 0
-							AND (excluded.when_int > avocado.when_int OR (avocado.bio_int = 1 AND excluded.bio_int > 1))
-					""", (u_id, w_int, b_int))
-					
-					if c.rowcount > 0:
-						added_sqlite += 1
-					
-					# Паралельно підливаємо в загальну таблицю MySQL, якщо увімкнено
-					if db_pymysql:
-						try:
-							d.execute("""
-								INSERT INTO `tg_bio_users` 
-								(`user_id`, `when_int`, `profit`)
-								VALUES (%s, %s, %s)
-								ON DUPLICATE KEY UPDATE
-									profit = IF(VALUES(when_int) > when_int OR (profit = 1 AND VALUES(profit) > 1), VALUES(profit), profit),
-									when_int = IF(VALUES(when_int) > when_int OR (profit = 1 AND VALUES(profit) > 1), VALUES(when_int), when_int)
-							""", (u_id, w_int, b_int))
-						except Exception:
-							pass
-				
-				conn.commit()
-				optimize()
-				if db_pymysql:
-					con.commit()
-					
-			except Exception as e:
-				await event.edit(f'❌ Помилка читання/імпорту з 0.sqlite: {e}')
-				return
-			
-			res_msg = (
-				f'✅ Базу успішно оновлено!\n'
-				f'📥 Записів у 0.sqlite: {total_in_zero}\n'
-				f'🆕 Додано / оновлено в базі: {added_sqlite}'
-			)
-			print(res_msg)
-			try:
-				await event.edit(res_msg)
-			except Exception:
-				pass
-		
-		########################################################################
-		
 		@client.on(events.NewMessage(incoming=True,from_users=irises,
 		pattern=r'🗓 Ачивки.*')) # Дивляться в жабах, але пише й Іріс
 		async def уже(event):
@@ -1995,6 +1847,88 @@ async def main():
 				await event.edit(help_message) # ред.
 			except:
 				pass
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(pattern=r'^\.(?:upd|update)$'))
+		async def cmd_upd(event):
+			sender_id = int(event.sender_id or 0)
+			if event.out:
+				if not is_allowed_chat(event):
+					return
+						else:
+				if event.chat_id not in (MAINchatID, ch_id) or not await id_dov(sender_id):
+					return
+			
+			import sys
+			import subprocess
+			
+			if event.out:
+				await event.edit('⏳ Перевіряю оновлення (git pull)...')
+			else:
+				await asyncio.sleep(random.uniform(0.5, 3.0))
+			
+			repo_dir = os.path.dirname(os.path.abspath(__file__))
+			try:
+				loop = asyncio.get_running_loop()
+				proc = await loop.run_in_executor(
+					None,
+					lambda: subprocess.run(
+						['git', 'pull'],
+						cwd=repo_dir,
+						capture_output=True,
+						text=True,
+						timeout=30
+					)
+				)
+			except Exception as e:
+				err_txt = f'❌ Помилка git pull: {e}'
+				print(f'[{my_id}] {err_txt}')
+				if event.out:
+					await event.edit(err_txt)
+				return
+			
+			out_text = (proc.stdout or '').strip()
+			err_text = (proc.stderr or '').strip()
+			
+			if proc.returncode != 0:
+				fail_msg = f'❌ Git помилка:\n<code>{err_text or out_text}</code>'
+				print(f'[{my_id}] Git fail: {err_text or out_text}')
+				if event.out:
+					await event.edit(fail_msg, parse_mode='html')
+				return
+			
+			if 'Already up to date' in out_text or 'Уже актуально' in out_text:
+				print(f'[{my_id}] ✅ Оновлень немає.')
+				if event.out:
+					await event.edit('✅ Усе вже актуально (Already up to date).')
+				return
+			
+			short_out = out_text[:300]
+			ok_msg = f'🔄 Оновлено! Перезапускаюсь...\n<code>{short_out}</code>'
+			print(f'[{my_id}] 🔄 Оновлено через git pull. Рестарт...')
+			if event.out:
+				await event.edit(ok_msg, parse_mode='html')
+			else:
+				try:
+					await event.reply(f'🔄 <code>{my_id}</code> оновлено, перезапускаюсь...', parse_mode='html')
+				except Exception:
+					pass
+			
+			await asyncio.sleep(1.0)
+			if db_sqlite3 and conn:
+				try:
+					conn.close()
+				except Exception:
+					pass
+			if db_pymysql and con:
+				try:
+					con.close()
+				except Exception:
+					pass
+			
+			await client.disconnect()
+			os.execv(sys.executable, [sys.executable] + sys.argv)
 		
 		########################################################################
 		
