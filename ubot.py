@@ -1856,8 +1856,9 @@ async def main():
 			if event.out:
 				if not is_allowed_chat(event):
 					return
-						else:
-				if event.chat_id not in (MAINchatID, ch_id) or not await id_dov(sender_id):
+			else:
+				if event.chat_id not in (MAINchatID, 
+				ch_id) or not await id_dov(sender_id):
 					return
 			
 			import sys
