@@ -8,6 +8,7 @@ import random
 import re
 import shutil
 import sqlite3
+import subprocess
 import sys
 import time
 import typing
@@ -2137,6 +2138,73 @@ async def main():
 					f'📥 <b>git pull:</b>\n<code>{out_text[:400]}</code>',
 					parse_mode='html'
 				)
+		
+		########################################################################
+		
+		async def auto_pull():
+			import subprocess
+			repo_dir = os.path.dirname(os.path.abspath(__file__))
+			if not os.path.isdir(os.path.join(repo_dir, '.git')):
+				return
+			
+			await asyncio.sleep(random.uniform(60, 180))
+			loop = asyncio.get_running_loop()
+			err_notified = False
+			
+			while True:
+				try:
+					proc = await loop.run_in_executor(
+						None,
+						lambda: subprocess.run(
+							['git', 'pull'],
+							cwd=repo_dir,
+							capture_output=True,
+							text=True,
+							timeout=30
+						)
+					)
+					out_s = (proc.stdout or '').strip()
+					err_s = (proc.stderr or '').strip()
+					
+					if proc.returncode != 0:
+						if not err_notified:
+							err_notified = True
+							msg_err = (
+								f'⚠️ [{my_id}] Помилка автооновлення '
+								f'(локальні зміни або конфлікт git):\n'
+								f'{(err_s or out_s)[:300]}'
+							)
+							print(msg_err)
+							if is_termux and termux_api:
+								safe_t = msg_err.replace("'", '"')
+								os.system(
+									f"termux-notification "
+									f"--title '{my_id} git pull' "
+									f"--content '{safe_t[:180]}'"
+								)
+							else:
+								try:
+									await client.send_message(
+										'me',
+										f'⚠️ <b>Помилка git pull</b> '
+										f'(<code>{my_id}</code>):\n'
+										f'<code>{(err_s or out_s)[:400]}</code>',
+										parse_mode='html'
+									)
+								except Exception:
+									pass
+					else:
+						err_notified = False
+						if (
+							out_s
+							and 'Already up to date' not in out_s
+							and 'Уже актуально' not in out_s
+						):
+							print(f'📥 [auto_pull] Оновлено:\n{out_s[:300]}')
+				except Exception as e:
+					print(f'⚠️ [auto_pull] Виняток: {e}')
+				
+				await asyncio.sleep(random.uniform(1800, 2700))
 		
 		########################################################################
 		
