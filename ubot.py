@@ -1347,112 +1347,92 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.scn(?:\s+(.+))?$'))
+		@client.on(events.NewMessage(outgoing=True,pattern=r'^\.scn(?:\s+(.+))?$'))
 		async def cmd_scn(event):
 			if not is_allowed_chat(event):
 				return
 			global scn_run
-			if not db_sqlite3 and not db_pymysql:
-				await event.edit('❌ Обидві бази даних вимкнено в конфігу.')
-				return
 			if scn_run:
-				await event.edit('⏳ Сканування вже запущено...')
+				await event.edit('⏳ Скан уже триває...')
+				return
+			
+			raw_arg = (event.pattern_match.group(1) or '').strip()
+			if not raw_arg:
+				opts = [
+					'🔍 <b>Оберіть що сканувати:</b>',
+					'💬 Оф. чат: <code>.scn @avocado_group</code>',
+					'🤖 ЛС з Авокадо: <code>.scn @bio_attacker_bot</code>',
+				]
+				await event.edit('\n'.join(opts), parse_mode='html')
+				return
+			
+			save_txt = bool(re.search(r'(?:^|\s)\+txt(?:\s|$)', raw_arg, re.IGNORECASE))
+			arg = re.sub(r'(?:^|\s)\+txt(?:\s|$)', ' ', raw_arg, flags=re.IGNORECASE).strip()
+			if not arg:
+				await event.edit('❌ Вкажіть чат або @username для скану.')
+				return
+			
+			t_match = re.search(r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})', arg)
+			if t_match:
+				target_ref = '@' + t_match.group(1)
+			elif re.fullmatch(r'-?\d+', arg):
+				num_id = int(arg)
+				target_ref = num_id if num_id {arg}</code>: {e}', parse_mode='html')
+				return
+			
+			if getattr(target, 'first_name', None) is not None and getattr(target, 'id', 0) != 6333102398:
+				await event.edit('❌ Приватні чати з користувачами не скануються.')
 				return
 			
 			scn_run = True
-			arg = event.pattern_match.group(1)
-			if arg:
-				target_chat = arg.strip()
-			elif event.is_group or event.is_channel:
-				target_chat = event.chat_id
-			else:
-				target_chat = '@avocado_group'
+			title = getattr(target, 'title', None) or getattr(target, 'username', str(target.id))
+			await event.edit(f'🔍 Сканую <b>{title}</b> (від рестарту)...', parse_mode='html')
 			
-			await event.edit(f'🔍 Починаю сканування `{target_chat}`')
-			
-			any_id_pattern = re.compile(r'href="(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)"', re.IGNORECASE)
-			stop_dt = datetime.fromtimestamp(restart_timestamp, tz=timezone.utc)
-			scanned_msgs = 0
-			unique_users = set()
-			
-			before_count = 0
-			if db_sqlite3:
-				c.execute('SELECT COUNT(*) FROM avocado')
-				before_count = c.fetchone()[0]
-			
+			found = set()
+			checked = 0
+			dump_lines = []
 			try:
-				async for m in client.iter_messages(target_chat, from_user=6333102398):
-					if m.date < stop_dt:
-						break
-					scanned_msgs += 1
-					if not m.raw_text or not m.entities:
-						continue
-					
+				async for m in client.iter_messages(target, from_user=6333102398):
 					msg_ts = int(m.date.timestamp())
-					html_text = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
-					valid_ids = {
-						int(uid) for uid in any_id_pattern.findall(html_text)
-						if int(uid) >= 100000 and int(uid) not in (my_id, 6333102398, 1124824021)
-					}
-					if not valid_ids:
-						continue
-					
-					unique_users.update(valid_ids)
-					for u_id in valid_ids:
-						if db_sqlite3:
-							try:
-								c.execute("""INSERT OR IGNORE INTO avocado 
-								(user_id, when_int, bio_int, expr_int, expr_str) 
-								VALUES (?, ?, 1, 0, '0')""", (u_id, msg_ts))
-							except Exception:
-								pass
-						if db_pymysql:
-							try:
-								d.execute("""INSERT IGNORE INTO `tg_bio_users` 
-								(`user_id`, `when_int`, `profit`) 
-								VALUES (%s, %s, 1)""", (u_id, msg_ts))
-							except Exception:
-								pass
-					
-					if scanned_msgs % 200 == 0:
+					if msg_ts < restart_timestamp:
+						break
+					checked += 1
+					if m.raw_text:
+						h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities or [])
+						if save_txt:
+							dump_lines.append(f"=== MSG ID: {m.id} | {m.date.strftime('%d.%m.%Y %H:%M:%S')} UTC ===\n{h}\n")
+						for uid_s in re.findall(r'tg://openmessage\?user_id=(\d+)', h):
+							u_id = int(uid_s)
+							if u_id >= 100000 and u_id not in (my_id, 6333102398, 1124824021):
+								found.add(u_id)
+								if db_sqlite3:
+									c.execute("""INSERT OR IGNORE INTO avocado 
+									(user_id, when_int, bio_int, expr_int, expr_str) 
+									VALUES (?, ?, 0, 0, '0')""", (u_id, msg_ts))
+								if db_pymysql:
+									d.execute("""INSERT IGNORE INTO `tg_bio_users` 
+									(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 0)""", 
+									(u_id, msg_ts))
+					if checked % 100 == 0:
 						if db_sqlite3:
 							conn.commit()
 						if db_pymysql:
 							con.commit()
-						try:
-							await event.edit(f'🔍 Сканую `{target_chat}`...\n📨 Перевірено: {scanned_msgs} | 👥 Знайдено: {len(unique_users)}')
-						except Exception:
-							pass
 						await asyncio.sleep(0.5)
-				
-				added_sqlite = 0
 				if db_sqlite3:
 					conn.commit()
-					c.execute('SELECT COUNT(*) FROM avocado')
-					added_sqlite = c.fetchone()[0] - before_count
-					optimize()
 				if db_pymysql:
 					con.commit()
 				
-				res_msg = (
-					f'✅ Лайт-скан завершено!\n'
-					f'💬 Чат: `{target_chat}`\n'
-					f'📨 Перевірено повідомлень: {scanned_msgs}\n'
-					f'👥 Унікальних гравців: {len(unique_users)}\n'
-					f'🆕 Додано в SQLite: {added_sqlite}'
-				)
-				print(res_msg)
-				try:
-					await event.edit(res_msg)
-				except Exception:
-					pass
+				res_msg = f'✅ Скан <b>{title}</b> завершено!\nПеревірено: {checked} | Нових ID: {len(found)}'
+				if save_txt and dump_lines:
+					fname = f"scan_{target.id}.txt"
+					with open(fname, "w", encoding="utf-8") as tf:
+						tf.write("\n".join(dump_lines))
+					res_msg += f'\n💾 Дамп: <code>{fname}</code>'
+				await event.edit(res_msg, parse_mode='html')
 			except Exception as e:
-				err_msg = f'❌ Помилка під час сканування `{target_chat}`: {e}'
-				print(err_msg)
-				try:
-					await event.edit(err_msg)
-				except Exception:
-					pass
+				await event.edit(f'❌ Помилка скану: {e}')
 			finally:
 				scn_run = False
 		
