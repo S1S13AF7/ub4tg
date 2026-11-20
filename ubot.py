@@ -812,7 +812,7 @@ async def main():
 		########################################################################
 		
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
-		pattern=r'☣️\s*(Infection successful|Заражение успешно)'))
+		pattern=r'(?:☣️\s*(?:Infection successful|Заражение успешно)|🔬\s*(?:Laboratory|Лаборатория)\s+.+\s+(?:infected|заразила)\s+)'))
 		async def infect(event):
 			global last_bz_time, ostalos_pt, pt_time
 			m = event.message
@@ -822,23 +822,18 @@ async def main():
 				return
 			
 			h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
-			target_match = re.search(
-				r'(?:Target|Цель):\s*<a href="(?:tg://openmessage\?user_id=|https?://t\.me/)(\d+)"',
-				h, re.IGNORECASE
-			)
-			if not target_match:
+			all_ids = re.findall(r'tg://openmessage\?user_id=(\d+)', h)
+			if not all_ids:
 				return
 			
-			u2id = int(target_match.group(1))
-			
+			u2id = int(all_ids[1]) if len(all_ids) >= 2 else int(all_ids[0])
 			is_my = bool(event.is_private and not m.fwd_from)
 			
 			if is_my:
-				# Своє зараження в ЛС: беремо точний прибуток і залишок патогенів
-				bio_match = re.search(r'(?:Bio-experience gained|Получено био-опыта):\s*(?:<strong>)?\+?(\d+)(?:</strong>)?', h, re.IGNORECASE)
+				bio_match = re.search(r'(?:Profit|Прибыль|Bio-experience gained|Получено био-опыта):\s*(?:<strong>)?\+?(\d+)(?:</strong>)?', h, re.IGNORECASE)
 				bio = int(bio_match.group(1)) if bio_match else 1
 				
-				rem_match = re.search(r'(?:Pathogens remaining|Осталось патогенов):\s*(?:<strong>)?(\d+)(?:</strong>)?', h, re.IGNORECASE)
+				rem_match = re.search(r'(?:Left|Осталось|Pathogens remaining|Осталось патогенов):\s*(?:<strong>)?(\d+)(?:</strong>)?', h, re.IGNORECASE)
 				need_check_victims = False
 				if rem_match:
 					ostalos_pt = int(rem_match.group(1))
@@ -1019,14 +1014,26 @@ async def main():
 				print(f'🔬 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.{fv_info}')
 		
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
-		pattern=r'(?s).*(?:🤒\s*(?:The laboratory is in fever|Лаборатория в горячке)|💉\s*(?:Fever cured|Горячка вылечена)|✅\s*(?:No fever detected|Горячки нет|Горячка не обнаружена))'))
+		pattern=(
+			r'(?s).*(?:🤒\s*(?:The laboratory is in fever|Лаборатория в горячке)|'
+			r'💉\s*(?:Fever cured|Горячка вылечена)|'
+			r'✅\s*(?:No fever detected|Горячки нет|Горячка не обнаружена)|'
+			r'🧪\s*(?:No pathogens available|Нет доступных патогенов))'
+		)))
+		
 		async def track_fever(event):
-			global fever_until
+			global fever_until, ostalos_pt, pt_time
 			m = event.message
 			if not event.is_private or m.fwd_from:
 				return
 			t = m.raw_text
 			msg_ts = int(m.date.timestamp())
+			
+			if 'No pathogens available' in t or 'Нет доступных патогенов' in t:
+				ostalos_pt = 0
+				pt_time = msg_ts
+				print('🛑 Патогени закінчились (0)! Зупиняю серію.')
+				return
 			
 			if '🤒' in t:
 				if re.search(r'(?:less than a minute|меньше минуты)', t, re.IGNORECASE):
