@@ -888,12 +888,17 @@ async def main():
 			if not win_dump_path:
 				return
 			try:
-				mode = "a"
-				if os.path.exists(win_dump_path):
-					if os.path.getsize(win_dump_path) >= 524288:
-						mode = "w"
+				if (
+					not os.path.exists(win_dump_path)
+					or os.path.getsize(win_dump_path) >= 524288
+				):
+					mode = "w"
+					enc = "utf-8-sig"
+				else:
+					mode = "a"
+					enc = "utf-8"
 				dt_s = msg_obj.date.strftime('%d.%m.%Y %H:%M:%S')
-				with open(win_dump_path, mode, encoding="utf-8") as wf:
+				with open(win_dump_path, mode, encoding=enc) as wf:
 					wf.write(
 						f"=== MSG {msg_obj.id} | {dt_s} UTC ===\n"
 						f"{html_txt}\n\n"
@@ -1730,7 +1735,7 @@ async def main():
 				if save_txt and dump_lines:
 					work_dir = default_directory if (is_termux and default_directory) else '.'
 					fname = os.path.join(work_dir, f"scan_{target.id}.txt")
-					with open(fname, "w", encoding="utf-8") as tf:
+					with open(fname, "w", encoding="utf-8-sig") as tf:
 						tf.write("\n".join(dump_lines))
 					res_msg += f'\n💾 Дамп: <code>{fname}</code>'
 				
