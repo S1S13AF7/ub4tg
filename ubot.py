@@ -904,7 +904,7 @@ async def main():
 				if db_pymysql:
 					try:
 						d.execute("""INSERT IGNORE INTO `tg_bio_users` 
-						(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 1)""", 
+						(`user_id`, `when_int`, `profit`) VALUES (%s, %s, 0)""", 
 						(u2id, when))
 						con.commit()
 					except Exception:
@@ -1199,7 +1199,7 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:btop|топ)$'))
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:btop|бтоп)$'))
 		async def cmd_btop(event):
 			if not is_allowed_chat(event):
 				return
@@ -1985,7 +1985,8 @@ async def main():
 			<code>.bf</code> – атака цілей в ЛС
 			<code>.scn</code> – скан чату в базу
 			<code>.стоп</code> – вирубаємо .bf
-			<code>.топ</code> – жрем биоб
+			<code>.бтоп</code> – жрем биоб
+			<code>.мл</code> – мікролаба
 			
 			<blockquote>🐸 Інше:</blockquote>
 			<code>.ква</code> – шпаргалка по жабах
