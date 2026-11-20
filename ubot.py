@@ -1806,6 +1806,8 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			т = '@toadbot Гонка 50'
+			if spy_mode:
+				return
 			if c in chts or c==-1001186908367:
 				await client.send_message(c,т)
 		
@@ -1829,6 +1831,8 @@ async def main():
 		async def нуждается_в_реанимации(event):
 			c = event.chat_id
 			m = event.message
+			if spy_mode:
+				return
 			if m.mentioned:
 				now = datetime.now()
 				hours = now.hour
@@ -1870,6 +1874,8 @@ async def main():
 			c = event.chat_id
 			m = event.message
 			t = m.raw_text
+			if spy_mode:
+				return
 			if m.mentioned:
 				now = datetime.now()
 				hours=int(now.hour)
@@ -1942,22 +1948,6 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True,from_users=1968071106))
-		# той бот пише рекламу. тому "слухаємо" все (без патерна)
-		async def уже(event):
-			c = event.chat_id
-			m = event.message
-			t = m.raw_text
-			needdel=False
-			if c not in chts:
-				return
-			# А що саме будемо видаляти перерахую нижче. пока "подарок":
-			if 'Получен Подарок' in t:
-				needdel=True # якщо параметрів буде більше це нам знадобиться.
-				await client.delete_messages(event.chat_id, m.id) # try delete
-		
-		########################################################################
-		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'.chts$'))
 		async def sv_cheats(event):
 			c = event.chat_id
@@ -1965,6 +1955,8 @@ async def main():
 			t = m.raw_text
 			global chts
 			pong = '??'
+			if spy_mode:
+				return
 			try:
 				with open(chts_file, "r") as read_file:
 					chts = json.load(read_file)
@@ -2014,7 +2006,8 @@ async def main():
 			t = m.raw_text
 			u = 0 #user id
 			global dovs
-			
+			if spy_mode:
+				return
 			try:
 				with open(dovs_file, "r") as read_file:
 					dovs = json.load(read_file)
@@ -2067,6 +2060,8 @@ async def main():
 			u = int(m.sender_id)
 			д = await id_dov(u)
 			т = str(re.findall(r"\.send .*",t)[0]) or False
+			if spy_mode:
+				return
 			if t=='.send' or t=='.send ':
 				т = 'А текст?' # .send т
 			if т:
@@ -2172,7 +2167,6 @@ async def main():
 				if event.chat_id not in (MAINchatID, ch_id) or not await id_dov(sender_id):
 					return
 			
-			#import subprocess
 			if event.out:
 				await event.edit('⏳ Підтягую git pull...')
 			else:
@@ -2425,6 +2419,8 @@ async def main():
 				elif await id_dov(s):
 					needsend=True
 				else:
+					needsend=False
+				if spy_mode:
 					needsend=False
 			if needsend:
 				m = await event.reply(pong)
