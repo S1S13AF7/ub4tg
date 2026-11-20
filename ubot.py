@@ -21,7 +21,7 @@ if os.name == 'nt':
 
 sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = ''		# "робоча папка" бота
-MAINchatID = -1002236064671 # основний+резервний
+MAINchatID = -1002236064671	# основний+резервний
 CONFIG_PATH = "conf.json"	# main config file
 chts_file = "chts.json"		# чати де дови+"чіти"+.send
 dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
