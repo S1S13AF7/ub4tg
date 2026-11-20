@@ -8,6 +8,7 @@ import random
 import re
 import shutil
 import sqlite3
+import sys
 import time
 import typing
 from datetime import datetime, timedelta, timezone
@@ -20,7 +21,7 @@ if os.name == 'nt':
 sessdb = 'tl-ub' # назва бази сесії telethon
 default_directory = ''		# "робоча папка" бота
 MAINchatID = -1002236064671 # основний+резервний
-CONFIG_PATH = "conf.json" # main config file
+CONFIG_PATH = "conf.json"	# main config file
 chts_file = "chts.json"		# чати де дови+"чіти"+.send
 dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
 mlab_file = "mlab.json"		# параметри моєї лаби (квала та макс. патогенів)
