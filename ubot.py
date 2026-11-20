@@ -1199,7 +1199,7 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:btop|бтоп)$'))
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.btop$'))
 		async def cmd_btop(event):
 			if not is_allowed_chat(event):
 				return
@@ -1345,7 +1345,7 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(outgoing=True,pattern=r'^\.scn(?:\s+(.+))?$'))
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.scn(?:\s+(.+))?$'))
 		async def cmd_scn(event):
 			if not is_allowed_chat(event):
 				return
@@ -1354,21 +1354,12 @@ async def main():
 				await event.edit('⏳ Скан уже триває...')
 				return
 			
-			raw_arg = (event.pattern_match.group(1) or '').strip()
-			if not raw_arg:
-				opts = [
-					'🔍 <b>Оберіть що сканувати:</b>',
-					'💬 Оф. чат: <code>.scn @avocado_group</code>',
-					'🤖 ЛС з Авокадо: <code>.scn @bio_attacker_bot</code>',
-				]
-				await event.edit('\n'.join(opts), parse_mode='html')
-				return
+			raw_arg = (event.pattern_match.group(1) or "@avocado_group").strip()
 			
 			save_txt = bool(re.search(r'(?:^|\s)\+txt(?:\s|$)', raw_arg, re.IGNORECASE))
 			arg = re.sub(r'(?:^|\s)\+txt(?:\s|$)', ' ', raw_arg, flags=re.IGNORECASE).strip()
 			if not arg:
-				await event.edit('❌ Вкажіть чат або @username для скану.')
-				return
+				arg="@avocado_group"
 			
 			t_match = re.search(r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})', arg)
 			if t_match:
@@ -1391,13 +1382,13 @@ async def main():
 			
 			scn_run = True
 			title = getattr(target, 'title', None) or getattr(target, 'username', str(target.id))
-			await event.edit(f'🔍 Сканую <b>{title}</b> (від рестарту)...', parse_mode='html')
+			await event.edit(f'🔍 Сканую <b>{title}</b>...', parse_mode='html')
 			
 			found = set()
 			checked = 0
 			dump_lines = []
 			try:
-				async for m in client.iter_messages(target, from_user=6333102398):
+				async for m in client.iter_messages(target,from_user=6333102398):
 					msg_ts = int(m.date.timestamp())
 					if msg_ts < restart_timestamp:
 						break
@@ -1985,7 +1976,7 @@ async def main():
 			<code>.bf</code> – атака цілей в ЛС
 			<code>.scn</code> – скан чату в базу
 			<code>.стоп</code> – вирубаємо .bf
-			<code>.бтоп</code> – жрем биоб
+			<code>.btop</code> – жрем биоб
 			<code>.мл</code> – мікролаба
 			
 			<blockquote>🐸 Інше:</blockquote>
