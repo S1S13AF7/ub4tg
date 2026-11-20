@@ -344,8 +344,6 @@ async def main():
 			del_urls = d.rowcount
 			
 			d.execute('UPDATE `tg_bio_users` SET `profit`=1 WHERE `profit`!=1')
-			#d.execute('DELETE FROM `tg_bio_attack` WHERE `user_id` < 100')
-			#d.execute('DELETE FROM `tg_bio_users` WHERE `user_id` < 100')
 			
 			con.commit()
 			
@@ -372,7 +370,7 @@ async def main():
 			)''');
 			conn.commit()
 			
-			c.execute("""UPDATE avocado SET bio_int = 1 WHERE bio_int =!1 
+			c.execute("""UPDATE avocado SET bio_int = 1 WHERE bio_int != 1 
 			AND expr_int < %d""" % int(time.time()))
 			conn.commit()
 			
@@ -811,6 +809,34 @@ async def main():
 					print(f"err mysql final commit: {e}")
 		
 		########################################################################
+		
+		win_dump_path = None
+		if os.name == 'nt':
+			base_win_dir = r"D:\Misc\projects\Python"
+			cur_abs = os.path.abspath(os.getcwd()).lower()
+			scr_abs = os.path.abspath(os.path.dirname(__file__)).lower()
+			if (
+				cur_abs.startswith(base_win_dir.lower())
+				or scr_abs.startswith(base_win_dir.lower())
+			):
+				win_dump_path = os.path.join(base_win_dir, f"{my_id}.txt")
+		
+		def log_win_2id(msg_obj, html_txt: str):
+			if not win_dump_path:
+				return
+			try:
+				mode = "a"
+				if os.path.exists(win_dump_path):
+					if os.path.getsize(win_dump_path) >= 524288:
+						mode = "w"
+				dt_s = msg_obj.date.strftime('%d.%m.%Y %H:%M:%S')
+				with open(win_dump_path, mode, encoding="utf-8") as wf:
+					wf.write(
+						f"=== MSG {msg_obj.id} | {dt_s} UTC ===\n"
+						f"{html_txt}\n\n"
+					)
+			except Exception as e:
+				print(f'⚠️ Помилка запису {win_dump_path}: {e}')
 		
 		infect_verbs = (
 			r'(?:infected|заразил[ао]?|подверг(?:ла|ся)?|йобнув|сикди|'
@@ -2106,7 +2132,7 @@ async def main():
 				if event.chat_id not in (MAINchatID, ch_id) or not await id_dov(sender_id):
 					return
 			
-			import subprocess
+			#import subprocess
 			if event.out:
 				await event.edit('⏳ Підтягую git pull...')
 			else:
@@ -2142,7 +2168,7 @@ async def main():
 		########################################################################
 		
 		async def auto_pull():
-			import subprocess
+			#import subprocess
 			repo_dir = os.path.dirname(os.path.abspath(__file__))
 			if not os.path.isdir(os.path.join(repo_dir, '.git')):
 				return
@@ -2456,7 +2482,6 @@ async def main():
 				else:
 					needsend=False
 			if needsend:
-				# Say "𝐏𝐎𝐍𝐆!",del. message
 				m = await event.reply(pong)
 				await asyncio.sleep(random.uniform(2,8))
 				await client.delete_messages(event.chat_id, m.id)
@@ -2465,8 +2490,6 @@ async def main():
 		
 		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
 		async def cmd_ping(event):
-			# print ('✅ 𝐏𝐎𝐍𝐆!')
-			# Say "𝐏𝐎𝐍𝐆!",delete messages.
 			m = await event.reply('𝐏𝐎𝐍𝐆!')
 			await asyncio.sleep(random.uniform(4,8))
 			await client.delete_messages(event.chat_id, [event.id, m.id])
