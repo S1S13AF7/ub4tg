@@ -785,17 +785,15 @@ async def main():
 				)
 				for r in pattern.finditer(h):
 					user_id = int(r.group(1))
-					if user_id < 100:
-						continue
 					bio = int(r.group(2))
 					date_str = r.group(3)
 					until_str = date_str.split(" ")[0]
-					dt = datetime.strptime(date_str, "%d.%m.%Y %H:%M")
+					dt=datetime.strptime(date_str,"%d.%m.%Y %H:%M")
 					until_ts = int(calendar.timegm(dt.timetuple()))
 					
 					if until_ts < int(time.time()):
-						until_ts = 0 # пишемо як не інфікованого
-						until_str = "0"
+						until_ts = restart_timestamp
+						until_str = restart_date_str
 					
 					if db_sqlite3:
 						try:
@@ -856,7 +854,7 @@ async def main():
 						try:
 							d.execute("""INSERT IGNORE INTO `tg_bio_users` 
 							(`user_id`, `when_int`, `profit`) 
-							VALUES (%s, %s, 0)""",(user_id,д))
+							VALUES (%s, %s, 1)""",(user_id,д))
 						except Exception:
 							pass
 			
@@ -1000,7 +998,7 @@ async def main():
 				
 				return p_bio, p_days, p_rem, p_vir
 			
-			def save_unknown_victim(uid: int):
+			def save_unknown_victim(uid:int):
 				if uid == my_id or uid < 100:
 					return
 				if db_sqlite3:
@@ -1008,8 +1006,8 @@ async def main():
 						c.execute(
 							"""INSERT OR IGNORE INTO avocado
 							(user_id, when_int, bio_int, expr_int, expr_str)
-							VALUES (?, ?, 1, 0, '0')""",
-							(uid, when)
+							VALUES (?, ?, 1, ?, ?)""",
+							(uid, when, restart_timestamp, restart_date_str)
 						)
 					except Exception:
 						pass
@@ -1028,6 +1026,7 @@ async def main():
 			# ВАРІАНТ А: 2 і більше ID (нападник + жертва)
 			# ================================================================
 			if len(ids) >= 2:
+				log_win_2id(m,h)
 				u1id = ids[0]
 				u2id = ids[1]
 				
@@ -1573,10 +1572,11 @@ async def main():
 				for h_page in pages_html:
 					for uid_s in any_id_pattern.findall(h_page):
 						uid_i = int(uid_s)
-						if uid_i >= 100:
+						if uid_i not in (6333102398, 1124824021):
 							c.execute("""INSERT OR IGNORE INTO avocado 
 							(user_id, when_int, bio_int, expr_int, expr_str) 
-							VALUES (?, ?, 0, 0, '0')""", (uid_i, now_ts))
+							VALUES (?, ?, 1, ?, ?)""",
+							(uid_i, now_ts,restart_timestamp,restart_date_str))
 					
 					# Відбираємо рядки без ⏳ і з активним +X
 					for m_row in row_pattern.finditer(h_page):
@@ -2390,36 +2390,6 @@ async def main():
 					)
 					if status == 'updated' and os.path.exists(db0_path):
 						import_0sqlite(db0_path, remove_after=True)
-						
-						added = 0
-						con0 = sqlite3.connect(db0_path)
-						cur0 = con0.cursor()
-						cur0.execute(
-							"SELECT user_id, when_int FROM avocado "
-							"WHERE user_id >= 100"
-						)
-						now_s = int(time.time())
-						for uid_0, wh_0 in cur0.fetchall():
-							u_i = int(uid_0)
-							if u_i in (my_id, 6333102398, 1124824021):
-								continue
-							w_i = int(wh_0 or now_s)
-							c.execute(
-								"""INSERT OR IGNORE INTO avocado
-								(user_id, when_int, bio_int,
-								expr_int, expr_str)
-								VALUES (?, ?, 1, 0, '0')""",
-								(u_i, w_i)
-							)
-							if c.rowcount > 0:
-								added += 1
-						conn.commit()
-						con0.close()
-						try:
-							os.remove(db0_path)
-						except Exception:
-							pass
-						print(f'📦 [0.zip] Базу оновлено! Нових ID: {added}')
 					elif status == 'retry_1h':
 						print(
 							f'⚠️ [0.zip] {err_msg}. '
