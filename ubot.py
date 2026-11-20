@@ -1933,7 +1933,13 @@ async def main():
 			
 			global need_restart
 			need_restart = True
-			await client.disconnect()
+			try:
+				await asyncio.wait_for(client.disconnect(), timeout=1.5)
+			except Exception:
+				pass
+			
+			os.execl(sys.executable, sys.executable, os.path.abspath(__file__), *sys.argv[1:])
+
 			return
 		
 		########################################################################
