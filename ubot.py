@@ -299,7 +299,7 @@ async def main():
 			`date` int(11) unsigned NOT NULL DEFAULT '0',
 			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
-			`profit` int(11) unsigned NOT NULL DEFAULT '0',
+			`profit` int(11) unsigned NOT NULL DEFAULT '1',
 			`until_int` int(11) unsigned NOT NULL DEFAULT '0',
 			`until_str` varchar(11) NOT NULL DEFAULT '0',
 			UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
@@ -309,7 +309,7 @@ async def main():
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_users` (
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
-			`profit` int(11) unsigned NOT NULL DEFAULT '0',
+			`profit` int(11) unsigned NOT NULL DEFAULT '1',
 			UNIQUE KEY `user_id` (`user_id`)
 			);''');
 			con.commit()
@@ -343,9 +343,9 @@ async def main():
 			d.execute('DELETE FROM `tg_users_url` WHERE `when_int` < %s', (restart_timestamp,))
 			del_urls = d.rowcount
 			
-			d.execute('UPDATE `tg_bio_users` SET `profit`=0 WHERE `profit`=1')
-			d.execute('DELETE FROM `tg_bio_attack` WHERE `user_id` < 100')
-			d.execute('DELETE FROM `tg_bio_users` WHERE `user_id` < 100')
+			d.execute('UPDATE `tg_bio_users` SET `profit`=1 WHERE `profit`!=1')
+			#d.execute('DELETE FROM `tg_bio_attack` WHERE `user_id` < 100')
+			#d.execute('DELETE FROM `tg_bio_users` WHERE `user_id` < 100')
 			
 			con.commit()
 			
@@ -366,13 +366,13 @@ async def main():
 			c.execute('''CREATE TABLE IF NOT EXISTS avocado (
 			user_id	INTEGER NOT NULL DEFAULT 0 UNIQUE,
 			when_int	INTEGER NOT NULL DEFAULT 0,
-			bio_int	INTEGER NOT NULL DEFAULT 0,
+			bio_int	INTEGER NOT NULL DEFAULT 1,
 			expr_int	INTEGER NOT NULL DEFAULT 0,
 			expr_str	VARCHAR NOT NULL DEFAULT 0
 			)''');
 			conn.commit()
 			
-			c.execute("""UPDATE avocado SET bio_int = 0 WHERE bio_int = 1 
+			c.execute("""UPDATE avocado SET bio_int = 1 WHERE bio_int =!1 
 			AND expr_int < %d""" % int(time.time()))
 			conn.commit()
 			
@@ -2208,6 +2208,239 @@ async def main():
 		
 		########################################################################
 		
+		async def auto_pull():
+			repo_dir = os.path.dirname(os.path.abspath(__file__))
+			if not os.path.isdir(os.path.join(repo_dir, '.git')):
+				return
+			
+			await asyncio.sleep(random.uniform(60, 180))
+			loop = asyncio.get_running_loop()
+			err_notified = False
+			
+			while True:
+				try:
+					proc = await loop.run_in_executor(
+						None,
+						lambda: subprocess.run(
+							['git', 'pull'],
+							cwd=repo_dir,
+							capture_output=True,
+							text=True,
+							timeout=30
+						)
+					)
+					out_s = (proc.stdout or '').strip()
+					err_s = (proc.stderr or '').strip()
+					
+					if proc.returncode != 0:
+						if not err_notified:
+							err_notified = True
+							msg_err = (
+								f'⚠️ [{my_id}] Помилка автооновлення '
+								f'(локальні зміни або конфлікт git):\n'
+								f'{(err_s or out_s)[:300]}'
+							)
+							print(msg_err)
+							if is_termux and termux_api:
+								safe_t = msg_err.replace("'", '"')
+								os.system(
+									f"termux-notification "
+									f"--title '{my_id} git pull' "
+									f"--content '{safe_t[:180]}'"
+								)
+							else:
+								try:
+									await client.send_message(
+										'me',
+										f'⚠️ <b>Помилка git pull</b> '
+										f'(<code>{my_id}</code>):\n'
+										f'<code>{(err_s or out_s)[:400]}</code>',
+										parse_mode='html'
+									)
+								except Exception:
+									pass
+					else:
+						err_notified = False
+						if (
+							out_s
+							and 'Already up to date' not in out_s
+							and 'Уже актуально' not in out_s
+						):
+							print(f'📥 [auto_pull] Оновлено:\n{out_s[:300]}')
+				except Exception as e:
+					print(f'⚠️ [auto_pull] Виняток: {e}')
+				
+				await asyncio.sleep(random.uniform(1800, 2700))
+		
+		########################################################################
+		
+		async def auto_sync_0zip():
+			if not db_sqlite3 or not bio_0_url:
+				return
+			
+			import urllib.error
+			import urllib.request
+			import zipfile
+			from email.utils import parsedate_to_datetime
+			
+			work_dir = '.'
+			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
+				work_dir = r"D:\Misc\projects\Python"
+			elif is_termux and default_directory:
+				work_dir = default_directory
+			
+			zip_path = os.path.join(work_dir, '0.zip')
+			db0_path = os.path.join(work_dir, '0.sqlite')
+			
+			def check_and_fetch():
+				has_zip = os.path.exists(zip_path)
+				has_db0 = os.path.exists(db0_path)
+				need_dl = not has_zip and not has_db0
+				
+				r_ts = None
+				r_size = None
+				try:
+					req = urllib.request.Request(
+						bio_0_url,
+						method='HEAD',
+						headers={'User-Agent': 'Mozilla/5.0'}
+					)
+					with urllib.request.urlopen(req, timeout=20) as resp:
+						if resp.status >= 400:
+							return 'retry_1h', f'HTTP {resp.status}'
+						ctype = (resp.headers.get('Content-Type') or '').lower()
+						if 'text/html' in ctype:
+							return 'retry_1h', 'HTML замість архіву (HEAD)'
+						lm = resp.headers.get('Last-Modified')
+						cl = resp.headers.get('Content-Length')
+						if lm:
+							r_ts = int(parsedate_to_datetime(lm).timestamp())
+						if cl and cl.isdigit():
+							r_size = int(cl)
+				except urllib.error.HTTPError as e:
+					return 'retry_1h', f'HTTP {e.code}'
+				except Exception as e:
+					return 'retry_1h', f'Мережа/DNS: {e}'
+				
+				if not need_dl and has_zip:
+					l_ts = int(os.path.getmtime(zip_path))
+					l_size = os.path.getsize(zip_path)
+					now_s = int(time.time())
+					
+					cond_date = (
+						r_ts is not None
+						and r_ts > l_ts
+						and r_ts < (now_s - 3600)
+					)
+					cond_size = (
+						r_size is not None
+						and r_size > l_size
+					)
+					if cond_date or cond_size:
+						need_dl = True
+				
+				if not need_dl:
+					return 'ok', None
+				
+				tmp_zip = zip_path + '.tmp'
+				try:
+					req_get = urllib.request.Request(
+						bio_0_url,
+						headers={'User-Agent': 'Mozilla/5.0'}
+					)
+					with urllib.request.urlopen(req_get, timeout=60) as resp:
+						if resp.status >= 400:
+							return 'retry_1h', f'GET HTTP {resp.status}'
+						ctype = (resp.headers.get('Content-Type') or '').lower()
+						if 'text/html' in ctype:
+							return 'retry_1h', 'HTML замість архіву (GET)'
+						lm_get = resp.headers.get('Last-Modified')
+						if lm_get:
+							r_ts = int(
+								parsedate_to_datetime(lm_get).timestamp()
+							)
+						with open(tmp_zip, 'wb') as out_f:
+							shutil.copyfileobj(resp, out_f)
+					
+					if not zipfile.is_zipfile(tmp_zip):
+						try:
+							os.remove(tmp_zip)
+						except Exception:
+							pass
+						return 'retry_1h', 'Отримано не ZIP-файл'
+					
+					os.replace(tmp_zip, zip_path)
+					if r_ts:
+						os.utime(zip_path, (r_ts, r_ts))
+					
+					with zipfile.ZipFile(zip_path, 'r') as zf:
+						if '0.sqlite' not in zf.namelist():
+							return 'retry_1h', '0.sqlite відсутній у 0.zip'
+						zf.extract('0.sqlite', work_dir)
+					
+					return 'updated', None
+				except Exception as e:
+					if os.path.exists(tmp_zip):
+						try:
+							os.remove(tmp_zip)
+						except Exception:
+							pass
+					return 'retry_1h', f'Збій завантаження: {e}'
+			
+			await asyncio.sleep(random.uniform(15, 45))
+			loop = asyncio.get_running_loop()
+			
+			while True:
+				try:
+					status, err_msg = await loop.run_in_executor(
+						None, check_and_fetch
+					)
+					if status == 'updated' and os.path.exists(db0_path):
+						added = 0
+						con0 = sqlite3.connect(db0_path)
+						cur0 = con0.cursor()
+						cur0.execute(
+							"SELECT user_id, when_int FROM avocado "
+							"WHERE user_id >= 100"
+						)
+						now_s = int(time.time())
+						for uid_0, wh_0 in cur0.fetchall():
+							u_i = int(uid_0)
+							if u_i in (my_id, 6333102398, 1124824021):
+								continue
+							w_i = int(wh_0 or now_s)
+							c.execute(
+								"""INSERT OR IGNORE INTO avocado
+								(user_id, when_int, bio_int,
+								expr_int, expr_str)
+								VALUES (?, ?, 1, 0, '0')""",
+								(u_i, w_i)
+							)
+							if c.rowcount > 0:
+								added += 1
+						conn.commit()
+						con0.close()
+						try:
+							os.remove(db0_path)
+						except Exception:
+							pass
+						print(f'📦 [0.zip] Базу оновлено! Нових ID: {added}')
+					elif status == 'retry_1h':
+						print(
+							f'⚠️ [0.zip] {err_msg}. '
+							f'Повторна спроба через 1 год...'
+						)
+						await asyncio.sleep(random.uniform(3500, 3700))
+						continue
+				except Exception as e:
+					print(f'⚠️ [0.zip] Помилка: {e}. Повтор через 1 год...')
+					await asyncio.sleep(random.uniform(3500, 3700))
+					continue
+				
+				await asyncio.sleep(random.uniform(5 * 3600, 7 * 3600))
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(incoming=True, pattern='.ping'))
 		async def cmd_ping_in(event):
 			c = event.chat_id
@@ -2239,6 +2472,9 @@ async def main():
 			await client.delete_messages(event.chat_id, [event.id, m.id])
 		
 		########################################################################
+		
+		asyncio.create_task(auto_pull())
+		asyncio.create_task(auto_sync_0zip())
 		
 		if config.get("farm") and ch_id < 0:
 			await ферма()
