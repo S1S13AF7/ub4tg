@@ -138,7 +138,8 @@ letal = 1       # рівень летальності = дні	(оновитьс
 a_h = bool(config.get('a_h', False))# автолікування (вакцина)
 pt_time = int(time.time()) # час останньої фіксації патогенів
 fever_until = 0 # timestamp закінчення гарячки (0 = здоровий)
-spy_mode = bool(config.get('spy_mode', False)) # «тихий» режим
+mlab_req = {"chat_id": 0, "msg_id": 0, "ts": 0}	# запит .п / мл
+spy_mode = bool(config.get('spy_mode', False))	# «тихий» режим
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
 
 ################################################################################
@@ -1249,10 +1250,11 @@ async def main():
 		@client.on(events.NewMessage(incoming=True, pattern=lab_pattern))
 		@client.on(events.MessageEdited(incoming=True, pattern=lab_pattern))
 		async def parse_my_lab(event):
-			global ostalos_pt, max_pt, kvala, letal, pt_time, fever_until
+			global ostalos_pt, max_pt, kvala, letal, pt_time, fever_until, mlab_req
 			m = event.message
 			if m.fwd_from:
-				s = m.fwd_from.from_id.user_id if isinstance(m.fwd_from.from_id, types.PeerUser) else None
+				s = m.fwd_from.from_id.user_id if isinstance(m.fwd_from.from_id, 
+				types.PeerUser) else None
 				msg_ts = int(m.fwd_from.date.timestamp())
 			else:
 				s = m.sender_id
@@ -1261,7 +1263,7 @@ async def main():
 			if s != 6333102398 or msg_ts < restart_timestamp or not m.entities:
 				return
 			
-			h = utils.sanitize_parse_mode('html').unparse(m.raw_text,m.entities)
+			h = utils.sanitize_parse_mode('html').unparse(m.raw_text, m.entities)
 			ids = re.findall(r'tg://openmessage\?user_id=(\d+)', h)
 			if not ids or int(ids[0]) != my_id:
 				return
@@ -1299,7 +1301,7 @@ async def main():
 			if fv_m:
 				fever_until = msg_ts + (int(fv_m.group(1)) + 1) * 60
 			elif fv_less:
-				fever_until = msg_ts + 90 # 1.5 хв запасу, якщо залишилось менше хвилини
+				fever_until = msg_ts + 90
 			elif '🌡' not in t and event.is_private and not m.fwd_from:
 				fever_until = 0
 			
@@ -1307,7 +1309,45 @@ async def main():
 				save_mlab(updates)
 				fv_info = f' | ⏳ Гарячка: {max(0, (fever_until - int(time.time())) // 60)} хв' if fever_until > time.time() else ''
 				print(f'🔬 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.{fv_info}')
+			
+			# Якщо був активний запит .п / .мл і ця лаба новіша за нього — редагуємо
+			if (
+				event.is_private
+				and not m.fwd_from
+				and mlab_req["msg_id"] > 0
+				and msg_ts >= mlab_req["ts"]
+			):
+				target_chat = mlab_req["chat_id"]
+				target_msg = mlab_req["msg_id"]
+				mlab_req["msg_id"] = 0
 				
+				pt_line = re.search(r'🧪\s*(?:Pathogens|Свободных патогенов):\s*([^\n]+)', t)
+				xp_line = re.search(r'☢️\s*(?:Bio-experience|Био-опыт):\s*([^\n]+)', t)
+				res_line = re.search(r'🧬\s*(?:Bio-resource|Био-ресурс):\s*([^\n]+)', t)
+				
+				lines = []
+				if pt_line:
+					lines.append(f'🧪 {pt_line.group(1).strip()}')
+				if xp_line:
+					lines.append(f'☣️ {xp_line.group(1).strip()}')
+				if res_line:
+					lines.append(f'🧬 {res_line.group(1).strip()}')
+				
+				if fv_m:
+					lines.append(f'🌡 Гарячка: {fv_m.group(1)} хв')
+				elif fv_less:
+					lines.append('🌡 Гарячка: < 1 хв')
+				else:
+					lines.append('✅ ok')
+				
+				if lines:
+					try:
+						await client.edit_message(target_chat, target_msg, 
+						'\n'.join(lines))
+					except Exception as e:
+						#print(f'⚠️ Не вдалося відредагувати .п: {e}')
+						pass
+		
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
 		pattern=(
 			r'(?s).*(?:🤒\s*(?:The laboratory is in fever|Лаборатория в горячке)|'
@@ -1379,48 +1419,24 @@ async def main():
 		async def cmd_mlab(event):
 			if event.chat_id == 6333102398 or event.chat_id in irises:
 				return
+			global mlab_req
+			mlab_req = {
+				"chat_id": event.chat_id,
+				"msg_id": event.id,
+				"ts": int(event.date.timestamp())
+			}
 			if spy_mode:
 				return
 			try:
-				async with client.conversation(6333102398, exclusive=False) as conv:
-					await conv.send_message('/Lab')
-					resp = await conv.get_response(timeout=15)
-				
-				if not resp or not resp.raw_text:
-					await event.edit('❌ Не вдалося отримати дані лаби.')
-					return
-				
-				t = resp.raw_text
-				pt_m = re.search(r'🧪\s*(?:Pathogens|Свободных патогенов):\s*([^\n]+)', t)
-				xp_m = re.search(r'☢️\s*(?:Bio-experience|Био-опыт):\s*([^\n]+)', t)
-				res_m = re.search(r'🧬\s*(?:Bio-resource|Био-ресурс):\s*([^\n]+)', t)
-				fv_m = re.search(r'🌡\s*(?:You have a fever\. Time left:|У тебя горячка\. Осталось)\s*(\d+)\s*(?:min|мин)', t)
-				fv_less = re.search(r'🌡.*(?:less than a minute|меньше минуты)', t, re.IGNORECASE)
-				
-				lines = []
-				if pt_m:
-					lines.append(f'🧪 {pt_m.group(1).strip()}')
-				if xp_m:
-					lines.append(f'☣️ {xp_m.group(1).strip()}')
-				if res_m:
-					lines.append(f'🧬 {res_m.group(1).strip()}')
-				
-				if fv_m:
-					lines.append(f'🌡 Гарячка: {fv_m.group(1)} хв')
-				elif fv_less:
-					lines.append('🌡 Гарячка: < 1 хв')
-				else:
-					lines.append('✅ ok')
-				
-				if not lines:
-					await event.edit('❌ Не розпізнано формат лаби.')
-					return
-				
-				await event.edit('\n'.join(lines))
-			except asyncio.TimeoutError:
-				await event.edit('⏳ Бот не відповів вчасно.')
+				await client.send_message(6333102398, '/Lab')
 			except Exception as e:
-				await event.edit(f'❌ Помилка: {e}')
+				mlab_req["msg_id"] = 0
+				try:
+					err_t=f'❌ Помилка: {e}'
+					await event.edit(err_t)
+					print(err_t)
+				except Exception:
+					pass
 		
 		########################################################################
 		
