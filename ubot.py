@@ -75,7 +75,8 @@ def save_config():
 		'spy_mode': bool(config.get('spy_mode', False)),
 		'wakelock': bool(config.get('wakelock', False)),
 		'farm': bool(config.get('farm', True)),
-		'mine': bool(config.get('mine', True))
+		'mine': bool(config.get('mine', True)),
+		'a_h': bool(config.get('a_h', False))
 	}
 	# Дописуємо в кінець усі інші ключі, які вже були в конфігу (старі або кастомні)
 	for k, v in config.items():
@@ -134,6 +135,7 @@ ostalos_pt= 10	# поточні патогени (на старті припус
 max_pt = 10     # макс. запас патогенів (оновиться з лаби)
 kvala = 1       # рівень кваліфікації 1..60 (оновиться з лаби)
 letal = 1       # рівень летальності = дні	(оновиться з лаби)
+a_h = bool(config.get('a_h', False))# автолікування (вакцина)
 pt_time = int(time.time()) # час останньої фіксації патогенів
 fever_until = 0 # timestamp закінчення гарячки (0 = здоровий)
 spy_mode = bool(config.get('spy_mode', False)) # «тихий» режим
@@ -1306,7 +1308,7 @@ async def main():
 				fv_info = f' | ⏳ Гарячка: {max(0, (fever_until - int(time.time())) // 60)} хв' if fever_until > time.time() else ''
 				print(f'🔬 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.{fv_info}')
 		
-		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
+				@client.on(events.NewMessage(incoming=True, from_users=6333102398,
 		pattern=(
 			r'(?s).*(?:🤒\s*(?:The laboratory is in fever|Лаборатория в горячке)|'
 			r'💉\s*(?:Fever cured|Горячка вылечена)|'
@@ -1314,7 +1316,6 @@ async def main():
 			r'🧪\s*(?:No pathogens available|Нет доступных патогенов)|'
 			r'👑\s*(?:The operation to infect|Операция по заражению))'
 		)))
-		
 		async def track_fever(event):
 			global fever_until, ostalos_pt, pt_time
 			m = event.message
@@ -1339,15 +1340,37 @@ async def main():
 			if '🤒' in t:
 				if re.search(r'(?:less than a minute|меньше минуты)', t, re.IGNORECASE):
 					fever_until = msg_ts + 90
-					print('🤒 Спіймали гарячку (менше хвилини)! Спимо ~1.5 хв.')
 				else:
 					mins_m = re.search(r'(\d+)\s*(?:min|мин)', t)
 					mins_left = int(mins_m.group(1)) if mins_m else 10
 					fever_until = msg_ts + (mins_left + 1) * 60
-					print(f'🤒 Спіймали гарячку! Спимо ~{mins_left + 1} хв.')
+				
+				cur_pt = get_pt()
+				min_need = min(max_pt // 2, 10)
+				if not spy_mode and a_h and cur_pt > min_need:
+					print(f'🤒 Гарячка! Патів {cur_pt} > {min_need} — купую вакцину (.хил)...')
+					await asyncio.sleep(random.uniform(1.5, 3.5))
+					try:
+						ah = await message_q(
+							text='.хил',
+							user_id=6333102398,
+							mark_read=True,
+							delete=False
+						)
+						if ah and ah.raw_text:
+							ah_t = ah.raw_text
+							print(f'💊 Відповідь на .хил: {ah_t}')
+							if any(x in ah_t.lower() for x in ('💉', 'cured', 
+							'вылечен', 'успешно', 'не обнаружена', 'no fever')):
+								fever_until = 0
+								return
+					except Exception as e:
+						print(f'⚠️ Помилка при автолікуванні (.хил): {e}')
+				
+				wait_m = max(1, (fever_until - int(time.time())) // 60)
+				print(f'🤒 Спіймали гарячку! Спимо ~{wait_m} хв.')
 			else:
 				fever_until = 0
-				#print('💉 Гарячки немає, можна працювати.')
 		
 		########################################################################
 		
@@ -1356,7 +1379,8 @@ async def main():
 		async def cmd_mlab(event):
 			if event.chat_id == 6333102398 or event.chat_id in irises:
 				return
-			
+			if spy_mode:
+				return
 			try:
 				async with client.conversation(6333102398, exclusive=False) as conv:
 					await conv.send_message('/Lab')
@@ -1403,6 +1427,8 @@ async def main():
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:bf_?stop|стоп)$'))
 		async def cmd_bf_stop(event):
 			if not is_allowed_chat(event):
+				return
+			if spy_mode:
 				return
 			global bf_run
 			if bf_run:
@@ -1664,8 +1690,9 @@ async def main():
 			if not is_allowed_chat(event):
 				return
 			global scn_run
-			if scn_run:
-				await event.edit('⏳ Скан уже триває...')
+			if scn_run and not spy_mode:
+				if not spy_mode:
+					await event.edit('⏳ Скан уже триває...')
 				return
 			
 			raw_arg = (event.pattern_match.group(1) or "@avocado_group").strip()
@@ -1687,16 +1714,26 @@ async def main():
 			try:
 				target = await client.get_entity(target_ref)
 			except Exception as e:
-				await event.edit(f'❌ Не вдалося знайти чат <code>{arg}</code>: {e}', parse_mode='html')
+				wtf=f'❌ Не вдалося знайти чат <code>{arg}</code>: {e}'
+				if not spy_mode:
+					await event.edit(wtf, parse_mode='html')
+				else:
+					print(wtf)
 				return
 			
 			if getattr(target, 'first_name', None) is not None and getattr(target, 'id', 0) != 6333102398:
-				await event.edit('❌ Приватні чати з користувачами не скануються.')
+				e='❌ Приватні чати з користувачами не скануються.'
+				if not spy_mode:
+					await event.edit(e)
+				else:
+					print(e)
 				return
 			
 			scn_run = True
 			title = getattr(target, 'title', None) or getattr(target, 'username', str(target.id))
-			await event.edit(f'🔍 Сканую <b>{title}</b>...', parse_mode='html')
+			if not spy_mode:
+				await event.edit(f'🔍 Сканую <b>{title}</b>...',
+				parse_mode='html')
 			
 			found = set()
 			checked = 0
@@ -1743,9 +1780,14 @@ async def main():
 						tf.write("\n".join(dump_lines))
 					res_msg += f'\n💾 Дамп: <code>{fname}</code>'
 				
-				await event.edit(res_msg, parse_mode='html')
+				if not spy_mode:
+					await event.edit(res_msg, parse_mode='html')
+				print(res_msg)
 			except Exception as e:
-				await event.edit(f'❌ Помилка скану: {e}')
+				e=f'❌ Помилка скану: {e}'
+				if not spy_mode:
+					await event.edit(f'❌ Помилка скану: {e}')
+				print(e)
 			finally:
 				scn_run = False
 		
@@ -2449,7 +2491,7 @@ async def main():
 		asyncio.create_task(auto_sync_0zip())
 		
 		if not spy_mode and config.get("farm") and ch_id < 0:
-			await ферма()
+			asyncio.create_task(ферма())
 		
 		########################################################################
 		
