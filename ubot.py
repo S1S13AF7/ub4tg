@@ -651,6 +651,7 @@ async def main():
 						
 						txt = _send(u_api_url, body, headers)
 					
+					txt = txt.lstrip('\ufeff \t\r\n')
 					return json.loads(txt)
 				except Exception as e:
 					print(f'⚠️ [uapi:{method}] Помилка запиту: {e}')
