@@ -28,6 +28,7 @@ chts_file = "chts.json"		# чати де дови+"чіти"+.send
 dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
 mlab_file = "mlab.json"		# параметри моєї лаби (квала та макс. патогенів)
 uapi_file = "uapi.json"		# локальний конфіг для взаємодії з ub-API (http)
+u_api_url = "http://localhost/tg/cb.php"     # <--- пряме посилання на ub-cb
 bio_0_url = "https://misc.pp.ua/files/0.zip" # <--- пряме посилання на 0.zip
 inviteURL = "https://t.me/+kIo5ZwN0XesyMGEy" # <--- пряме посилання на ch_id
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
@@ -65,6 +66,7 @@ def save_config():
 		'api_id': int(config.get('api_id', 0)),
 		'api_hash': str(config.get('api_hash', '')),
 		'inviteURL': str(config.get('inviteURL') or inviteURL).strip(),
+		'u_api_url': str(config.get('u_api_url') or u_api_url).strip(),
 		'db_sqlite3': bool(config.get('db_sqlite3', True)),
 		'db_pymysql': bool(config.get('db_pymysql', False)),
 		'mysql': config.get('mysql') if isinstance(config.get('mysql'), dict) else {
@@ -92,6 +94,7 @@ if not os.path.exists(CONFIG_PATH):
 		json.dump({
 			"api_id": 123456,
 			"api_hash": "your_api_hash",
+			"u_api_url": u_api_url,
 			"inviteURL": inviteURL,
 			"db_pymysql": False,
 			"mysql": {
@@ -131,6 +134,7 @@ f_run = False
 m_run = False
 bf_run = False
 scn_run = False
+uapi_ok = False
 need_restart = False
 last_bz_time=0	# Коли дивились "бж"
 ostalos_pt= 10	# поточні патогени (на старті припускаємо 10)
@@ -160,6 +164,32 @@ def load_uapi_conf(filepath=uapi_file):
 	full_path = os.path.join(base_dir, filepath)
 	data = {}
 	need_save = False
+	
+	if os.path.isfile(full_path):
+		try:
+			with open(full_path, "r", encoding="utf-8-sig") as f:
+				raw = json.load(f)
+				if isinstance(raw, dict):
+					data = raw
+		except Exception:
+			data = {}
+			need_save = True
+	else:
+		need_save = True
+	
+	secret = str(data.get("secret", ""))
+	if not re.match(r"^[a-zA-Z0-9]{8,30}$", secret):
+		data["secret"] = gen_uapi_secret()
+		need_save = True
+	
+	if "hub_url" in data:
+		del data["hub_url"]
+		need_save = True
+	
+	if need_save:
+		save_uapi_conf(data, full_path)
+	
+	return data
 	
 	if os.path.isfile(full_path):
 		try:
@@ -248,7 +278,7 @@ def save_mlab(updates: dict):
 ################################################################################
 
 async def main():
-	global db_pymysql, ch_id, mine, my_secret
+	global db_pymysql, ch_id, mine, my_secret, uapi_ok
 	async with TelegramClient(sessdb, api_id, api_hash, timeout=300) as client:
 		client.parse_mode="HTML"
 		print('User-Bot started')
@@ -372,6 +402,15 @@ async def main():
 			`f_name` text NOT NULL,
 			PRIMARY KEY (`user_id`)
 			);''');
+			con.commit()
+			d.execute('''CREATE TABLE IF NOT EXISTS `userbot_bind` (
+			`platform` enum('vk','tg') NOT NULL DEFAULT 'tg',
+			`id_user` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+			`code` varchar(8) NOT NULL DEFAULT '',
+			`date` int(11) UNSIGNED NOT NULL DEFAULT 0,
+			`id_chat` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+			PRIMARY KEY (`platform`,`id_user`,`code`)
+			) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;''')
 			con.commit()
 			
 			####################################################################
@@ -538,10 +577,65 @@ async def main():
 			if os.path.exists(init_db0):
 				import_0sqlite(
 					init_db0,
-					remove_after=os.path.exists(os.path.join(init_work_dir, '0.zip'))
+					remove_after=os.path.exists(os.path.join(init_work_dir, 
+					'0.zip'))
 				)
+					
+		########################################################################
+		
+		is_local_api = bool(re.match(
+			r'^https?://(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|'
+			r'192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(?::\d+)?(?:/|$)',
+			u_api_url,
+			re.IGNORECASE
+		))
+		
+		if u_api_url and (not is_local_api or db_pymysql):
+			uapi_ok = True
+		
+		async def uapi_call(method: str, obj: dict = None, force: bool = False):
+			global uapi_ok
+			if not u_api_url or (not uapi_ok and not force):
+				return None
 			
-			####################################################################
+			payload = {
+				"user_id": int(my_id),
+				"method": str(method),
+				"secret": str(my_secret),
+				"object": obj if isinstance(obj, dict) else {}
+			}
+			
+			def _do_post():
+				import urllib.request
+				body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
+				req = urllib.request.Request(
+					u_api_url,
+					data=body,
+					method='POST',
+					headers={'Content-Type': 'application/json; charset=utf-8'}
+				)
+				try:
+					with urllib.request.urlopen(req, timeout=5) as resp:
+						return json.loads(resp.read().decode('utf-8'))
+				except Exception:
+					return None
+			
+			loop = asyncio.get_running_loop()
+			res = await loop.run_in_executor(None, _do_post)
+			if isinstance(res, dict) and 'response' in res:
+				return res.get('response')
+			return None
+		
+		async def uapi_init_ping():
+			global uapi_ok
+			if not uapi_ok:
+				return
+			if await uapi_call('ping', force=True) == 'ok':
+				print(f'🌐 [uapi] Ping OK ({u_api_url})')
+			else:
+				uapi_ok = False
+		
+		asyncio.create_task(uapi_init_ping())
 		
 		########################################################################
 		
