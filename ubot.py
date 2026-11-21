@@ -1150,7 +1150,7 @@ async def main():
 				return
 			
 			# ================================================================
-			# ВАРІАНТ Б: Рівно 1 ID (нападник зі сповіщення або невідомий формат)
+			# ВАРІАНТ Б: Рівно 1 ID (організатор атаки або невідомий формат)
 			# ================================================================
 			uid_single = ids[0]
 			if uid_single == my_id:
@@ -1158,7 +1158,15 @@ async def main():
 			
 			save_unknown_victim(uid_single)
 			
-			if is_pm:
+			is_organizer = bool(re.search(
+				r'(?:Organizer|Организатор)\s*:', t, re.IGNORECASE
+			))
+			is_incoming_attack = is_organizer or bool(re.search(
+				r'(?:You are infected|You lost|Вы заражены|Вы потеряли)',
+				t, re.IGNORECASE
+			))
+			
+			if is_pm and not is_incoming_attack:
 				p_bio, p_days, p_rem, p_vir = parse_details(h, t)
 				if any(x is not None for x in (p_bio, p_days, p_rem)):
 					bio = p_bio if p_bio is not None else 1
@@ -1229,13 +1237,13 @@ async def main():
 					)
 				else:
 					print(f'➕ Зібрано гравця @{uid_single} в базу.')
+			elif is_organizer:
+				print(f'➕ Організатор атаки @{uid_single} — додано в базу.')
 			
 			if db_sqlite3:
 				conn.commit()
 			if db_pymysql:
 				con.commit()
-		
-		
 		
 		bz_aliases = r'^(?:[\./!]{1,2})?(?:victims?|бж|жертвы|био(?:ежа|жертвы|доход|зараженные))(?:\s+\d+)?$'
 		@client.on(events.NewMessage(outgoing=True, pattern=re.compile(bz_aliases, re.IGNORECASE)))
@@ -1808,6 +1816,106 @@ async def main():
 				print(t)
 			finally:
 				scn_run = False
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.reset$'))
+		async def cmd_reset(event):
+			if not is_allowed_chat(event):
+				return
+			global last_bz_time
+			
+			if not db_sqlite3:
+				if not spy_mode:
+					await event.edit('❌ SQLite вимкнено в конфігу.')
+				else:
+					print('❌ SQLite вимкнено в конфігу.')
+				return
+			
+			if not spy_mode:
+				await event.edit('🔄 Скидаю антил у базі на дату рестарту...')
+			
+			try:
+				c.execute(
+					"""UPDATE avocado
+					SET bio_int = 1, expr_int = ?, expr_str = ?""",
+					(restart_timestamp, restart_date_str)
+				)
+				reset_cnt = c.rowcount
+				conn.commit()
+				
+				if db_pymysql:
+					try:
+						d.execute(
+							"""UPDATE `tg_bio_attack`
+							SET `profit` = 1, `until_int` = %s, `until_str` = %s
+							WHERE `who_id` = %s""",
+							(restart_timestamp, restart_date_str, my_id)
+						)
+						con.commit()
+					except Exception as e:
+						print(f'⚠️ Помилка MySQL при .reset: {e}')
+				
+				if spy_mode:
+					print(f'🔄 [spy_mode] .reset: скинуто записів у БД: {reset_cnt}')
+					return
+				
+				await event.edit(
+					f'✅ Скинуто записів: <b>{reset_cnt}</b>\n'
+					f'📑 Запитую /бж і гортаю сторінки...',
+					parse_mode='html'
+				)
+				
+				pages_done = 0
+				async with client.conversation(6333102398, exclusive=False) as conv:
+					last_bz_time = time.time()
+					await conv.send_message('/бж')
+					msg = await conv.get_response(timeout=15)
+					
+					while msg and msg.raw_text:
+						pages_done += 1
+						prev_text = msg.raw_text
+						
+						if not msg.buttons:
+							break
+						
+						next_btn = None
+						for row in msg.buttons:
+							for btn in row:
+								b_txt = (btn.text or '').strip()
+								if any(x in b_txt for x in ('Next', 'Впер', '→', '➡', '▶', '»')):
+									next_btn = btn
+									break
+							if next_btn:
+								break
+						
+						if not next_btn:
+							break
+						
+						await asyncio.sleep(random.uniform(1.2, 2.2))
+						await next_btn.click()
+						await asyncio.sleep(random.uniform(1.2, 2.0))
+						
+						updated_msg = await client.get_messages(6333102398, ids=msg.id)
+						if not updated_msg or updated_msg.raw_text == prev_text:
+							break
+						msg = updated_msg
+				
+				res_txt = (
+					f'✅ <b>.reset завершено!</b>\n'
+					f'🗄 Оновлено записів: <code>{reset_cnt}</code>\n'
+					f'📄 Опрацьовано сторінок /бж: <code>{pages_done}</code>'
+				)
+				print(f'🔄 .reset: скинуто {reset_cnt}, сторінок /бж: {pages_done}')
+				await event.edit(res_txt, parse_mode='html')
+				
+			except Exception as e:
+				print(f'⚠️ Помилка в cmd_reset: {e}')
+				if not spy_mode:
+					try:
+						await event.edit(f'❌ Помилка: {e}')
+					except Exception:
+						pass
 		
 		########################################################################
 		
