@@ -8,6 +8,7 @@ import random
 import re
 import shutil
 import sqlite3
+import string
 import subprocess
 import sys
 import time
@@ -26,6 +27,7 @@ CONFIG_PATH = "conf.json"	# main config file
 chts_file = "chts.json"		# чати де дови+"чіти"+.send
 dovs_file = "dovs.json"		# "дови" ("ДОВірені юзерИ")
 mlab_file = "mlab.json"		# параметри моєї лаби (квала та макс. патогенів)
+uapi_file = "uapi.json"		# локальний конфіг для взаємодії з ub-API (http)
 bio_0_url = "https://misc.pp.ua/files/0.zip" # <--- пряме посилання на 0.zip
 inviteURL = "https://t.me/+kIo5ZwN0XesyMGEy" # <--- пряме посилання на ch_id
 is_termux = os.environ.get('TERMUX_APP__PACKAGE_NAME') or os.environ.get('TERMUX_APK_RELEASE')
@@ -145,6 +147,53 @@ save_config() # Вирівнює порядок ключів у файлі та 
 ################################################################################
 
 irises = [707693258,5137994780,5226378684,5434504334,5443619563,8611067852]
+
+################################################################################
+
+def gen_uapi_secret():
+	chars = string.ascii_letters + string.digits
+	length = random.randint(10, 15)
+	return "".join(random.choice(chars) for _ in range(length))
+
+def load_uapi_conf(filepath=uapi_file):
+	base_dir = os.path.dirname(os.path.abspath(__file__))
+	full_path = os.path.join(base_dir, filepath)
+	data = {}
+	need_save = False
+	
+	if os.path.isfile(full_path):
+		try:
+			with open(full_path, "r", encoding="utf-8-sig") as f:
+				raw = json.load(f)
+				if isinstance(raw, dict):
+					data = raw
+		except Exception:
+			data = {}
+			need_save = True
+	else:
+		need_save = True
+	
+	secret = str(data.get("secret", ""))
+	if not re.match(r"^[a-zA-Z0-9]{8,30}$", secret):
+		data["secret"] = gen_uapi_secret()
+		need_save = True
+	
+	if "hub_url" not in data:
+		data["hub_url"] = ""
+		need_save = True
+	
+	if need_save:
+		save_uapi_conf(data, full_path)
+	
+	return data
+
+def save_uapi_conf(data, full_path=None):
+	if not full_path:
+		base_dir = os.path.dirname(os.path.abspath(__file__))
+		full_path = os.path.join(base_dir, uapi_file)
+	
+	with open(full_path, "w", encoding="utf-8") as f:
+		json.dump(data, f, ensure_ascii=False, indent="\t")
 
 ################################################################################
 
