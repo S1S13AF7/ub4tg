@@ -355,6 +355,8 @@ async def main():
 			`f_name` text CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
 			`f_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			`m_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
+			`secret` varchar(50) NOT NULL DEFAULT '',
+			`trusted` tinyint(1) UNSIGNED NOT NULL DEFAULT '0',
 			PRIMARY KEY (`user_id`)
 			);''');
 			con.commit()
@@ -385,6 +387,21 @@ async def main():
 			PRIMARY KEY (`user_id`)
 			);''');
 			con.commit()
+			try:
+				d.execute(
+					"ALTER TABLE `tg_bot_users` "
+					"ADD COLUMN `secret` varchar(50) NOT NULL DEFAULT '';"
+				)
+			except Exception:
+				pass			
+			try:
+				d.execute(
+					"ALTER TABLE `tg_bot_users` "
+					"ADD COLUMN `trusted` tinyint(1) UNSIGNED NOT NULL DEFAULT '0';"
+				)
+			except Exception:
+				pass
+			####################################################################
 			try:
 				d.execute('''INSERT INTO `tg_bot_users` 
 				(`user_id`, `reg_int`, `f_name`) 
