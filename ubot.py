@@ -195,8 +195,9 @@ def save_uapi_conf(data, full_path=None):
 	with open(full_path, "w", encoding="utf-8") as f:
 		json.dump(data, f, ensure_ascii=False, indent="\t")
 
+uapi_conf = load_uapi_conf() # загрузка conf
+my_secret = str(uapi_conf.get('secret', ''))
 ################################################################################
-
 chts = []
 if ch_id < 0:
 	chts.append(ch_id)
@@ -341,7 +342,7 @@ async def main():
 			`f_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			`m_time` int(11) UNSIGNED NOT NULL DEFAULT '0',
 			`secret` varchar(50) NOT NULL DEFAULT '',
-			`trusted` tinyint(1) UNSIGNED NOT NULL DEFAULT '0',
+			`trusted` enum('0','1') NOT NULL DEFAULT '0',
 			PRIMARY KEY (`user_id`)
 			);''');
 			con.commit()
@@ -378,24 +379,52 @@ async def main():
 					"ADD COLUMN `secret` varchar(50) NOT NULL DEFAULT '';"
 				)
 			except Exception:
-				pass			
+				pass
+			
 			try:
 				d.execute(
 					"ALTER TABLE `tg_bot_users` "
-					"ADD COLUMN `trusted` tinyint(1) UNSIGNED NOT NULL DEFAULT '0';"
+					"ADD COLUMN `trusted` enum('0','1') NOT NULL DEFAULT '0';"
 				)
 			except Exception:
 				pass
+			
 			####################################################################
+			
+			#uapi_conf = load_uapi_conf()
+			#my_secret = str(uapi_conf.get('secret', ''))
+			
 			try:
-				d.execute('''INSERT INTO `tg_bot_users` 
-				(`user_id`, `reg_int`, `f_name`) 
-				VALUES (%s,%s,%s) 
-				ON DUPLICATE KEY UPDATE 
-				f_name=VALUES(f_name);''',
-				(int(my_id),int(time.time()),str(me.first_name))); con.commit()
+				d.execute(
+					'''INSERT INTO `tg_bot_users`
+					(`user_id`, `reg_int`, `f_name`, `secret`, `trusted`)
+					VALUES (%s, %s, %s, %s, '1')
+					ON DUPLICATE KEY UPDATE
+						`f_name` = VALUES(`f_name`),
+						`trusted` = '1',
+						`secret` = IF(
+							CHAR_LENGTH(`secret`) >= 8,
+							`secret`,
+							VALUES(`secret`)
+						);''',
+					(int(my_id),int(time.time()),str(me.first_name),my_secret)
+				)
+				con.commit()
+				
+				d.execute(
+					"SELECT `secret` FROM `tg_bot_users` WHERE `user_id` = %s",
+					(int(my_id),)
+				)
+				row_sec = d.fetchone()
+				if row_sec and len(str(row_sec.get('secret', ''))) >= 8:
+					db_sec = str(row_sec['secret'])
+					if db_sec != my_secret:
+						uapi_conf['secret'] = db_sec
+						save_uapi_conf(uapi_conf)
 			except Exception as e:
 				print(f'⚠️ Помилка запису в tg_bot_users: {e}')
+			
+			####################################################################
 			
 			#restart_timestamp = 1794601985 # 13.11.2026 (перезапуск)
 			
