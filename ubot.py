@@ -136,7 +136,7 @@ kvala = 1       # рівень кваліфікації 1..60 (оновитьс�
 letal = 1       # рівень летальності = дні	(оновиться з лаби)
 pt_time = int(time.time()) # час останньої фіксації патогенів
 fever_until = 0 # timestamp закінчення гарячки (0 = здоровий)
-
+spy_mode = bool(config.get('spy_mode', False)) # «тихий» режим
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
 
 ################################################################################
@@ -1415,6 +1415,8 @@ async def main():
 		async def cmd_bf_lite(event):
 			if not is_allowed_chat(event):
 				return
+			if spy_mode:
+				return
 			global bf_run, last_bz_time, fever_until
 			
 			if not db_sqlite3:
@@ -1512,7 +1514,8 @@ async def main():
 		async def cmd_btop(event):
 			if not is_allowed_chat(event):
 				return
-				
+			if spy_mode:
+				return
 			global bf_run, last_bz_time
 			
 			if not db_sqlite3:
