@@ -1307,8 +1307,8 @@ async def main():
 				save_mlab(updates)
 				fv_info = f' | ⏳ Гарячка: {max(0, (fever_until - int(time.time())) // 60)} хв' if fever_until > time.time() else ''
 				print(f'🔬 Лаба оновлена: {ostalos_pt}/{max_pt} патів | Квала: {kvala} ({61 - kvala} хв) | Летал: {letal} дн.{fv_info}')
-		
-				@client.on(events.NewMessage(incoming=True, from_users=6333102398,
+				
+		@client.on(events.NewMessage(incoming=True, from_users=6333102398,
 		pattern=(
 			r'(?s).*(?:🤒\s*(?:The laboratory is in fever|Лаборатория в горячке)|'
 			r'💉\s*(?:Fever cured|Горячка вылечена)|'
@@ -1690,9 +1690,11 @@ async def main():
 			if not is_allowed_chat(event):
 				return
 			global scn_run
-			if scn_run and not spy_mode:
+			if scn_run:
 				if not spy_mode:
 					await event.edit('⏳ Скан уже триває...')
+				else:
+					print('⏳ Скан уже триває...')
 				return
 			
 			raw_arg = (event.pattern_match.group(1) or "@avocado_group").strip()
@@ -1722,11 +1724,11 @@ async def main():
 				return
 			
 			if getattr(target, 'first_name', None) is not None and getattr(target, 'id', 0) != 6333102398:
-				e='❌ Приватні чати з користувачами не скануються.'
+				err_txt='❌ Приватні чати з користувачами не скануються.'
 				if not spy_mode:
-					await event.edit(e)
+					await event.edit(err_txt)
 				else:
-					print(e)
+					print(err_txt)
 				return
 			
 			scn_run = True
