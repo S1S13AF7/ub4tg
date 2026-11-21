@@ -1448,7 +1448,7 @@ async def main():
 			except Exception as e:
 				mlab_req["msg_id"] = 0
 				err_t=f'❌ Помилка: {e}'
-				await safe_edit(err_t)
+				await safe_edit(event, err_t)
 		
 		########################################################################
 		
@@ -1461,9 +1461,9 @@ async def main():
 			global bf_run
 			if bf_run:
 				bf_run = False
-				await safe_edit('🛑 Зупиняю цикл жралки...')
+				await safe_edit(event, '🛑 Зупиняю цикл жралки...')
 			else:
-				await safe_edit('💤 Жралка і так не запущена.')
+				await safe_edit(event, '💤 Жралка і так не запущена.')
 		
 		@client.on(events.NewMessage(outgoing=True, pattern=r'^\.(?:bf|biofuck|жрать)$'))
 		async def cmd_bf_lite(event):
@@ -1474,15 +1474,15 @@ async def main():
 			global bf_run, last_bz_time, fever_until
 			
 			if not db_sqlite3:
-				await safe_edit('❌ SQLite вимкнено в конфігу.')
+				await safe_edit(event, '❌ SQLite вимкнено в конфігу.')
 				return
 			
 			if bf_run:
-				await safe_edit('⏳ Цикл жралки вже працює... (зупинка: <code>.стоп</code>)')
+				await safe_edit(event, '⏳ Цикл жралки вже працює... (зупинка: <code>.стоп</code>)')
 				return
 			
 			bf_run = True
-			await safe_edit('♻️ Запущено циклічну жралку! (зупинка: <code>.стоп</code>)')
+			await safe_edit(event, '♻️ Запущено циклічну жралку! (зупинка: <code>.стоп</code>)')
 			
 			try:
 				while bf_run:
@@ -1573,22 +1573,22 @@ async def main():
 			global bf_run, last_bz_time
 			
 			if not db_sqlite3:
-				await safe_edit('❌ SQLite вимкнено в конфігу.')
+				await safe_edit(event, '❌ SQLite вимкнено в конфігу.')
 				return
 			if bf_run:
-				await safe_edit('⏳ Зараз працює циклічна жралка (<code>.стоп</code>).')
+				await safe_edit(event, '⏳ Зараз працює циклічна жралка (<code>.стоп</code>).')
 				return
 			if fever_until > int(time.time()):
-				await safe_edit(f'🤒 Зараз гарячка ще ~{(fever_until - int(time.time())) // 60 + 1} хв.')
+				await safe_edit(event, f'🤒 Зараз гарячка ще ~{(fever_until - int(time.time())) // 60 + 1} хв.')
 				return
 			
 			cur_pt = get_pt()
 			if cur_pt <= 1:
-				await safe_edit(f'🛑 Мало патогенів ({cur_pt}/{max_pt} шт.).')
+				await safe_edit(event, f'🛑 Мало патогенів ({cur_pt}/{max_pt} шт.).')
 				return
 			
 			bf_run = True
-			await safe_edit('🔍 Збираю 1-шу та 2-гу сторінки Биоб...')
+			await safe_edit(event, '🔍 Збираю 1-шу та 2-гу сторінки Биоб...')
 			
 			try:
 				pages_html = []
@@ -1618,7 +1618,7 @@ async def main():
 										pages_html.append(h2)
 				
 				if not pages_html:
-					await safe_edit('❌ Не вдалося отримати топ біо-досвіду.')
+					await safe_edit(event, '❌ Не вдалося отримати топ біо-досвіду.')
 					return
 				
 				# Парсимо всі рядки з 1-ї та 2-ї сторінок по порядку
@@ -1675,10 +1675,10 @@ async def main():
 						break
 				
 				if not valid_targets:
-					await safe_edit('🤷 У топі немає підходящих цілей (у всіх КД або менший профіт).')
+					await safe_edit(event, '🤷 У топі немає підходящих цілей (у всіх КД або менший профіт).')
 					return
 				
-				await safe_edit(f'🎯 Знайдено {len(valid_targets)} цілей знизу топу. Атакую...')
+				await safe_edit(event, f'🎯 Знайдено {len(valid_targets)} цілей знизу топу. Атакую...')
 				sent_count = 0
 				
 				for uid, plus_val in valid_targets:
@@ -1697,11 +1697,11 @@ async def main():
 				
 				res_txt = f'✅ Простріл топу завершено! Атак: {sent_count} | Залишок патів: ~{get_pt()}/{max_pt}'
 				print(res_txt)
-				await safe_edit(res_txt)
+				await safe_edit(event, res_txt)
 				
 			except Exception as e:
 				print(f'⚠️ Помилка в cmd_btop: {e}')
-				await safe_edit(f'❌ Помилка: {e}')
+				await safe_edit(event, f'❌ Помилка: {e}')
 			finally:
 				bf_run = False
 		
@@ -1714,7 +1714,7 @@ async def main():
 			global scn_run
 			if scn_run:
 				if not spy_mode:
-					await safe_edit('⏳ Скан уже триває...')
+					await safe_edit(event, '⏳ Скан уже триває...')
 				else:
 					print('⏳ Скан уже триває...')
 				return
@@ -1740,7 +1740,7 @@ async def main():
 			except Exception as e:
 				wtf=f'❌ Не вдалося знайти чат <code>{arg}</code>: {e}'
 				if not spy_mode:
-					await safe_edit(wtf, parse_mode='html')
+					await safe_edit(event, wtf, parse_mode='html')
 				else:
 					print(wtf)
 				return
@@ -1748,7 +1748,7 @@ async def main():
 			if getattr(target, 'first_name', None) is not None and getattr(target, 'id', 0) != 6333102398:
 				err_txt='❌ Приватні чати з користувачами не скануються.'
 				if not spy_mode:
-					await safe_edit(err_txt)
+					await safe_edit(event, err_txt)
 				else:
 					print(err_txt)
 				return
@@ -1756,7 +1756,7 @@ async def main():
 			scn_run = True
 			title = getattr(target, 'title', None) or getattr(target, 'username', str(target.id))
 			if not spy_mode:
-				await safe_edit(f'🔍 Сканую <b>{title}</b>...',
+				await safe_edit(event, f'🔍 Сканую <b>{title}</b>...',
 				parse_mode='html')
 			
 			found = set()
@@ -1805,12 +1805,12 @@ async def main():
 					res_msg += f'\n💾 Дамп: <code>{fname}</code>'
 				
 				if not spy_mode:
-					await safe_edit(res_msg, parse_mode='html')
+					await safe_edit(event, res_msg, parse_mode='html')
 				print(res_msg)
 			except Exception as e:
 				t=f'❌ Помилка скану: {e}'
 				if not spy_mode:
-					await safe_edit(t)
+					await safe_edit(event, t)
 				print(t)
 			finally:
 				scn_run = False
@@ -1825,13 +1825,13 @@ async def main():
 			
 			if not db_sqlite3:
 				if not spy_mode:
-					await safe_edit('❌ SQLite вимкнено в конфігу.')
+					await safe_edit(event, '❌ SQLite вимкнено в конфігу.')
 				else:
 					print('❌ SQLite вимкнено в конфігу.')
 				return
 			
 			if not spy_mode:
-				await safe_edit('🔄 Скидаю антил у базі на дату рестарту...')
+				await safe_edit(event, '🔄 Скидаю антил у базі на дату рестарту...')
 			
 			try:
 				c.execute(
@@ -1858,7 +1858,7 @@ async def main():
 					print(f'🔄 [spy_mode] .reset: скинуто записів у БД: {reset_cnt}')
 					return
 				
-				await safe_edit(
+				await safe_edit(event, 
 					f'✅ Скинуто записів: <b>{reset_cnt}</b>\n'
 					f'📑 Запитую /бж і гортаю сторінки...',
 					parse_mode='html'
@@ -1905,13 +1905,13 @@ async def main():
 					f'📄 Опрацьовано сторінок /бж: <code>{pages_done}</code>'
 				)
 				print(f'🔄 .reset: скинуто {reset_cnt}, сторінок /бж: {pages_done}')
-				await safe_edit(res_txt, parse_mode='html')
+				await safe_edit(event, res_txt, parse_mode='html')
 				
 			except Exception as e:
 				print(f'⚠️ Помилка в cmd_reset: {e}')
 				if not spy_mode:
 					try:
-						await safe_edit(f'❌ Помилка: {e}')
+						await safe_edit(event, f'❌ Помилка: {e}')
 					except Exception:
 						pass
 		
@@ -2134,7 +2134,7 @@ async def main():
 				print(Err)
 			if int(c) > 0:
 				pong='Алоу це не чат!' #wtf?!
-				await safe_edit(pong) # ред.
+				await safe_edit(event, pong) # ред.
 				print(pong)
 				return
 			if ch_id < 0:
@@ -2160,7 +2160,7 @@ async def main():
 					pong=f'✅ sv_cheats 1\n💬<code>{c}</code>' # ok?!
 				if c not in chts:
 					pong=f'❎ sv_cheats 0\n💬<code>{c}</code>' # off!
-			await safe_edit(pong) # ред.
+			await safe_edit(event, pong) # ред.
 			print(pong)
 		
 		########################################################################
@@ -2207,7 +2207,7 @@ async def main():
 					if minus:
 						pong=f'❎ -дов @{u}' # ok?!
 				if pong:
-					await safe_edit(pong)
+					await safe_edit(event, pong)
 					print(pong)	#	print
 				
 			if need_save:
@@ -2279,7 +2279,7 @@ async def main():
 				return
 			
 			await asyncio.sleep(random.uniform(0.3,1))
-			await safe_edit(help_message) # ред.
+			await safe_edit(event, help_message) # ред.
 		
 		########################################################################
 		
@@ -2319,7 +2319,7 @@ async def main():
 				return
 			
 			await asyncio.sleep(random.uniform(0.3,1))
-			await safe_edit(help_message) # ред.
+			await safe_edit(event, help_message) # ред.
 		
 		########################################################################
 		
@@ -2334,7 +2334,7 @@ async def main():
 					return
 			
 			if event.out:
-				await safe_edit('⏳ Підтягую git pull...')
+				await safe_edit(event, '⏳ Підтягую git pull...')
 			else:
 				await asyncio.sleep(random.uniform(0.5, 3.0))
 			
@@ -2354,13 +2354,13 @@ async def main():
 			except Exception as e:
 				print(f'[{my_id}] ❌ Помилка git pull: {e}')
 				if event.out:
-					await safe_edit(f'❌ Помилка: {e}')
+					await safe_edit(event, f'❌ Помилка: {e}')
 				return
 			
 			out_text = (proc.stdout or proc.stderr or '').strip()
 			print(f'[{my_id}] git pull: {out_text}')
 			if event.out and not spy_mode:
-				await safe_edit(
+				await safe_edit(event, 
 						f'📥 <b>git pull:</b>\n<code>{out_text[:400]}</code>',
 						parse_mode='html'
 				)
