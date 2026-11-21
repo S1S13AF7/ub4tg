@@ -1802,10 +1802,10 @@ async def main():
 					await event.edit(res_msg, parse_mode='html')
 				print(res_msg)
 			except Exception as e:
-				e=f'❌ Помилка скану: {e}'
+				t=f'❌ Помилка скану: {e}'
 				if not spy_mode:
-					await event.edit(f'❌ Помилка скану: {e}')
-				print(e)
+					await event.edit(t)
+				print(t)
 			finally:
 				scn_run = False
 		
