@@ -373,26 +373,8 @@ async def main():
 			PRIMARY KEY (`user_id`)
 			);''');
 			con.commit()
-			try:
-				d.execute(
-					"ALTER TABLE `tg_bot_users` "
-					"ADD COLUMN `secret` varchar(50) NOT NULL DEFAULT '';"
-				)
-			except Exception:
-				pass
-			
-			try:
-				d.execute(
-					"ALTER TABLE `tg_bot_users` "
-					"ADD COLUMN `trusted` enum('0','1') NOT NULL DEFAULT '0';"
-				)
-			except Exception:
-				pass
 			
 			####################################################################
-			
-			#uapi_conf = load_uapi_conf()
-			#my_secret = str(uapi_conf.get('secret', ''))
 			
 			try:
 				d.execute(
@@ -416,11 +398,16 @@ async def main():
 					(int(my_id),)
 				)
 				row_sec = d.fetchone()
-				if row_sec and len(str(row_sec.get('secret', ''))) >= 8:
-					db_sec = str(row_sec['secret'])
-					if db_sec != my_secret:
+				if row_sec:
+					db_sec = str(row_sec.get('secret', ''))
+					if (
+						re.match(r"^[a-zA-Z0-9]{8,30}$", db_sec)
+						and db_sec != my_secret
+					):
+						my_secret = db_sec
 						uapi_conf['secret'] = db_sec
 						save_uapi_conf(uapi_conf)
+						print(f'🔑 Секрет оновлено з MySQL у {uapi_file}')
 			except Exception as e:
 				print(f'⚠️ Помилка запису в tg_bot_users: {e}')
 			
