@@ -248,7 +248,7 @@ def save_mlab(updates: dict):
 ################################################################################
 
 async def main():
-	global db_pymysql, ch_id, mine
+	global db_pymysql, ch_id, mine, my_secret
 	async with TelegramClient(sessdb, api_id, api_hash, timeout=300) as client:
 		client.parse_mode="HTML"
 		print('User-Bot started')
