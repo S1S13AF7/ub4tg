@@ -2409,33 +2409,30 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(incoming=True, pattern='.ping'))
+		@client.on(events.NewMessage(incoming=True, pattern=r'^.ping$'))
 		async def cmd_ping_in(event):
 			c = event.chat_id
 			m = event.message
 			s = m.sender_id
-			pong='✅ 𝐏𝐎𝐍𝐆!'
-			needsend=False
-			if c in chts:
-				if c==ch_id:
-					needsend=True
-				elif await id_dov(s):
-					needsend=True
-				else:
-					needsend=False
-				if spy_mode:
-					needsend=False
+			pong = '✅ 𝐏𝐎𝐍𝐆!'
+			needsend = False
+			if c in (ch_id, MAINchatID):
+				needsend = True
+			elif c in chts and not spy_mode and await id_dov(s):
+				needsend = True
 			if needsend:
 				m = await event.reply(pong)
-				await asyncio.sleep(random.uniform(2,8))
+				await asyncio.sleep(random.uniform(2, 8))
 				await client.delete_messages(event.chat_id, m.id)
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(outgoing=True, pattern='.ping'))
+		@client.on(events.NewMessage(outgoing=True, pattern=r'^.ping$'))
 		async def cmd_ping(event):
+			if event.chat_id not in (ch_id, MAINchatID):
+				return
 			m = await event.reply('𝐏𝐎𝐍𝐆!')
-			await asyncio.sleep(random.uniform(4,8))
+			await asyncio.sleep(random.uniform(4, 8))
 			await client.delete_messages(event.chat_id, [event.id, m.id])
 		
 		########################################################################
