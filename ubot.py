@@ -2264,11 +2264,12 @@ async def main():
 			
 			out_text = (proc.stdout or proc.stderr or '').strip()
 			print(f'[{my_id}] git pull: {out_text}')
-			if event.out:
-				await event.edit(
+			if event.out and not spy_mode:
+				try:
+					await event.edit(
 					f'📥 <b>git pull:</b>\n<code>{out_text[:400]}</code>',
 					parse_mode='html'
-				)
+					)
 		
 		########################################################################
 		
