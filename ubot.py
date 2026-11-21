@@ -1074,7 +1074,7 @@ async def main():
 					if p_rem is not None:
 						ostalos_pt = p_rem
 						pt_time = when
-						if ostalos_pt in (0, 1):
+						if not spy_mode and ostalos_pt in (0, 1):
 							need_bz = True
 					
 					if db_sqlite3:
@@ -2113,6 +2113,10 @@ async def main():
 			/battle_settings@toadbot
 			/toad_notifications@toadbot
 			'''
+			
+			if event.is_private and not is_allowed_chat(event):
+				return
+			
 			try:
 				await asyncio.sleep(random.uniform(0.3,1))
 				await event.edit(help_message) # ред.
@@ -2152,6 +2156,10 @@ async def main():
 			<code>https://github.com/S1S13AF7/ub4tg</code> – <a 
 			href="https://github.com/S1S13AF7/ub4tg">code</a>;
 			'''
+			
+			if event.is_private and not is_allowed_chat(event):
+				return
+			
 			try:
 				await asyncio.sleep(random.uniform(0.3,1))
 				await event.edit(help_message) # ред.
