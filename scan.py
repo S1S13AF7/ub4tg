@@ -92,8 +92,8 @@ def set_file_dates(filepath: str, ts: int):
 		# Беремо найновіший when з усієї бази (на випадок, якщо в базі вже були новіші записи)
 		c.execute("SELECT MAX(when_int) FROM avocado")
 		row_max = c.fetchone()
-		if row_max and row_max[0]:
-			max_when = max(max_when, int(row_max[0]))
+		if row_max and row_max:
+			max_when = max(max_when, int(row_max))
 		
 		print("🗜️ Оптимізую та стискаю 0.sqlite...")
 		c.execute("VACUUM")
