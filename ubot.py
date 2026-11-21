@@ -607,7 +607,7 @@ async def main():
 						headers=hdrs
 					)
 					with opener.open(req, timeout=7) as resp:
-						return resp.read().decode('utf-8', errors='replace')
+						return resp.read().decode('utf-8-sig', errors='replace')
 				
 				try:
 					txt = _send(u_api_url, body, headers)
