@@ -313,41 +313,26 @@ async def main():
 				save_config()
 
 		if db_pymysql:
-			while True:
-				try:
-					con = pymysql.connect(
-						host=str(mysql_conf.get('host', 'localhost')),
-						user=str(mysql_conf.get('user', 'root')),
-						password=str(mysql_conf.get('password', '')),
-						db=str(mysql_conf.get('db', 'db')),
-						charset='utf8mb4',
-						autocommit=False,
-						cursorclass=pymysql.cursors.DictCursor
-					)
-					d = con.cursor()
-					print('✅ Підключено до MySQL')
-					save_config()
-					break
-				except pymysql.err.OperationalError as e:
-					err_code = e.args[0] if e.args else 0
-					if err_code == 1045:
-						print(f'⚠️ Невірний пароль для MySQL ({mysql_conf.get("user")}@{mysql_conf.get("host")}).')
-						new_pass = input('Введіть правильний пароль (або натисніть Enter, щоб вимкнути MySQL): ').strip()
-						if new_pass:
-							mysql_conf['password'] = new_pass
-							continue
-					print(f'❌ MySQL вимкнено в конфігу (код {err_code}): {e}')
-					db_pymysql = False
-					config['db_pymysql'] = False
-					save_config()
-					break
-				except Exception as e:
-					print(f'❌ Невідома помилка MySQL: {e}')
-					db_pymysql = False
-					config['db_pymysql'] = False
-					save_config()
-					break
-
+			try:
+				import pymysql
+				import pymysql.cursors
+				con = pymysql.connect(
+					host=str(mysql_conf.get('host', 'localhost')),
+					user=str(mysql_conf.get('user', 'root')),
+					password=str(mysql_conf.get('password', '')),
+					db=str(mysql_conf.get('db', 'db')),
+					charset='utf8mb4',
+					autocommit=False,
+					cursorclass=pymysql.cursors.DictCursor
+				)
+				d = con.cursor()
+				print('✅ Підключено до MySQL')
+			except Exception as e:
+				print(f'❌ MySQL недоступний ({e}) — скидаю у False')
+				db_pymysql = False
+				config['db_pymysql'] = False
+				save_config()
+		
 		if db_pymysql:
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bot_users` (
 			`user_id` bigint(20) UNSIGNED NOT NULL DEFAULT '0',
