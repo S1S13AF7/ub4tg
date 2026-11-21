@@ -146,6 +146,7 @@ pt_time = int(time.time()) # час останньої фіксації пато
 fever_until = 0 # timestamp закінчення гарячки (0 = здоровий)
 mlab_req = {"chat_id": 0, "msg_id": 0, "ts": 0}	# запит .п / мл
 spy_mode = bool(config.get('spy_mode', False))	# «тихий» режим
+u_api_url = str(config.get('u_api_url') or u_api_url).strip()
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
 
 ################################################################################
@@ -184,32 +185,6 @@ def load_uapi_conf(filepath=uapi_file):
 	
 	if "hub_url" in data:
 		del data["hub_url"]
-		need_save = True
-	
-	if need_save:
-		save_uapi_conf(data, full_path)
-	
-	return data
-	
-	if os.path.isfile(full_path):
-		try:
-			with open(full_path, "r", encoding="utf-8-sig") as f:
-				raw = json.load(f)
-				if isinstance(raw, dict):
-					data = raw
-		except Exception:
-			data = {}
-			need_save = True
-	else:
-		need_save = True
-	
-	secret = str(data.get("secret", ""))
-	if not re.match(r"^[a-zA-Z0-9]{8,30}$", secret):
-		data["secret"] = gen_uapi_secret()
-		need_save = True
-	
-	if "hub_url" not in data:
-		data["hub_url"] = ""
 		need_save = True
 	
 	if need_save:
@@ -583,15 +558,17 @@ async def main():
 					
 		########################################################################
 		
+				########################################################################
+		
 		is_local_api = bool(re.match(
 			r'^https?://(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|'
 			r'192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(?::\d+)?(?:/|$)',
 			u_api_url,
 			re.IGNORECASE
 		))
+		is_ngrok_api = 'ngrok' in u_api_url.lower()
 		
-		if u_api_url and (not is_local_api or db_pymysql):
-			uapi_ok = True
+		uapi_ok = bool(u_api_url and (not is_local_api or db_pymysql))
 		
 		async def uapi_call(method: str, obj: dict = None, force: bool = False):
 			global uapi_ok
@@ -607,22 +584,88 @@ async def main():
 			
 			def _do_post():
 				import urllib.request
-				body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
-				req = urllib.request.Request(
-					u_api_url,
-					data=body,
-					method='POST',
-					headers={'Content-Type': 'application/json; charset=utf-8'}
+				import urllib.parse
+				import http.cookiejar
+				
+				cj = http.cookiejar.CookieJar()
+				opener = urllib.request.build_opener(
+					urllib.request.HTTPCookieProcessor(cj)
 				)
+				body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
+				headers = {
+					'Content-Type': 'application/json; charset=utf-8',
+					'User-Agent': 'ub4tg-uapi/1.0'
+				}
+				if is_ngrok_api:
+					headers['ngrok-skip-browser-warning'] = '1'
+				
+				def _send(target_url, data_bytes, hdrs):
+					req = urllib.request.Request(
+						target_url,
+						data=data_bytes,
+						method='POST' if data_bytes is not None else 'GET',
+						headers=hdrs
+					)
+					with opener.open(req, timeout=7) as resp:
+						return resp.read().decode('utf-8', errors='replace')
+				
 				try:
-					with urllib.request.urlopen(req, timeout=5) as resp:
-						return json.loads(resp.read().decode('utf-8'))
-				except Exception:
+					txt = _send(u_api_url, body, headers)
+					if is_ngrok_api and txt.lstrip().startswith('<'):
+						print(
+							'⚠️ [uapi] Спіймав заглушку ngrok! '
+							'Пробую пройти перевірку (жмакаю кнопку)...'
+						)
+						act_m = re.search(
+							r'<form[^>]+action=["\']([^"\']*)["\']',
+							txt, re.IGNORECASE
+						)
+						tok_m = re.search(
+							r'name=["\']([^"\']+)["\'][^>]+'
+							r'value=["\']([^"\']+)["\']',
+							txt, re.IGNORECASE
+						)
+						if tok_m:
+							f_url = urllib.parse.urljoin(
+								u_api_url,
+								act_m.group(1) if act_m else ''
+							)
+							f_data = urllib.parse.urlencode(
+								{tok_m.group(1): tok_m.group(2)}
+							).encode('utf-8')
+							f_hdrs = {
+								'Content-Type': (
+									'application/x-www-form-urlencoded'
+								),
+								'User-Agent': 'ub4tg-uapi/1.0',
+								'ngrok-skip-browser-warning': '1'
+							}
+							_send(f_url, f_data, f_hdrs)
+						else:
+							sep = '&' if '?' in u_api_url else '?'
+							bypass_url = (
+								f"{u_api_url}{sep}"
+								f"ngrok-skip-browser-warning=1"
+							)
+							_send(bypass_url, None, headers)
+						
+						txt = _send(u_api_url, body, headers)
+					
+					return json.loads(txt)
+				except Exception as e:
+					print(f'⚠️ [uapi:{method}] Помилка запиту: {e}')
 					return None
 			
 			loop = asyncio.get_running_loop()
 			res = await loop.run_in_executor(None, _do_post)
-			if isinstance(res, dict) and 'response' in res:
+			if isinstance(res, dict):
+				if 'error' in res:
+					err = res['error']
+					print(
+						f"⚠️ [uapi:{method}] Err {err.get('error_code')}: "
+						f"{err.get('error_msg')}"
+					)
+					return None
 				return res.get('response')
 			return None
 		
@@ -634,6 +677,7 @@ async def main():
 				print(f'🌐 [uapi] Ping OK ({u_api_url})')
 			else:
 				uapi_ok = False
+				print(f'⚠️ [uapi] Сервер недоступний ({u_api_url})')
 		
 		asyncio.create_task(uapi_init_ping())
 		
