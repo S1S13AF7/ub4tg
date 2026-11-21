@@ -2267,9 +2267,11 @@ async def main():
 			if event.out and not spy_mode:
 				try:
 					await event.edit(
-					f'📥 <b>git pull:</b>\n<code>{out_text[:400]}</code>',
-					parse_mode='html'
+						f'📥 <b>git pull:</b>\n<code>{out_text[:400]}</code>',
+						parse_mode='html'
 					)
+				except Exception:
+					pass
 		
 		########################################################################
 		
