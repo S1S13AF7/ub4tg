@@ -158,10 +158,16 @@ irises = [707693258,5137994780,5226378684,5434504334,5443619563,8611067852]
 
 ################################################################################
 
-def gen_uapi_secret():
-	chars = string.ascii_letters + string.digits
-	length = random.randint(10, 15)
-	return "".join(random.choice(chars) for _ in range(length))
+def is_valid_secret(val: str) -> bool:
+	return bool(re.match(r'^[a-zA-Z][a-zA-Z0-9]{7,30}$', str(val or '').strip()))
+
+def gen_uapi_secret() -> str:
+	first = random.choice(string.ascii_letters)
+	rest = "".join(
+		random.choice(string.ascii_letters + string.digits)
+		for _ in range(9)
+	)
+	return first + rest
 
 def load_uapi_conf(filepath=uapi_file):
 	base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -178,7 +184,7 @@ def load_uapi_conf(filepath=uapi_file):
 			data = {}
 	
 	secret = str(data.get("secret", ""))
-	if not re.match(r"^[a-zA-Z0-9]{8,30}$", secret):
+	if not is_valid_secret(secret):
 		data["secret"] = ""
 	
 	return data
