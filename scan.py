@@ -9,7 +9,10 @@ from datetime import datetime, timezone
 from telethon import TelegramClient, utils
 
 CONFIG_PATH = "conf.json"
-SESS_NAME = "tl-ub"
+SESS_NAME = (
+	"scan" if os.path.exists("scan.session")
+	else ("tl-scan" if os.path.exists("tl-scan.session") else "tl-ub")
+)
 BOT_ID = 6333102398
 RESTART_TS = 1794601985  # 13.11.2026 20:33:05 UTC
 
@@ -43,7 +46,8 @@ else:
 
 OUT_DB = os.path.join(db_dir, "0.sqlite")
 OUT_ZIP = os.path.join(db_dir, "0.zip")
-SCAN_TXT = os.path.join(txt_dir, "scan.txt")
+SCAN_CHAT_TXT = os.path.join(txt_dir, "scan_chat.txt")
+SCAN_PM_TXT = os.path.join(txt_dir, "scan_pm.txt")
 
 def set_file_dates(filepath: str, ts: int):
 	if not ts or not (ts > 0) or not os.path.exists(filepath):
@@ -226,7 +230,7 @@ async def run_scan():
 		my_id = int(me.id)
 		print(f"✅ Підключено як {my_id}")
 		print(f"🗄 База: {OUT_DB}")
-		print(f"📄 Лог:  {SCAN_TXT}")
+		print(f"📄 Логи: {SCAN_CHAT_TXT} | {SCAN_PM_TXT}")
 		
 		conn = sqlite3.connect(OUT_DB)
 		c = conn.cursor()
@@ -259,15 +263,8 @@ async def run_scan():
 		
 		total_added = 0
 		max_when = 0
-		id_re = re.compile(
-		r'(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)',
-		re.IGNORECASE
-		)
+		id_re = re.compile(r'tg://openmessage\?user_id=(\d+)')
 		
-		with open(SCAN_TXT, "w", encoding="utf-8-sig") as wf:
-			wf.write("")
-		
-		wf = open(SCAN_TXT, "a", encoding="utf-8")
 		try:
 			for chat_ref in CHATS_TO_SCAN:
 				try:
@@ -275,7 +272,13 @@ async def run_scan():
 				except Exception as e:
 					print(f"⚠️ Пропускаю {chat_ref}: {e}")
 					continue
-				
+
+				is_pm_src = int(getattr(entity, "id", 0)) == BOT_ID
+				cur_txt = SCAN_PM_TXT if is_pm_src else SCAN_CHAT_TXT
+				with open(cur_txt, "w", encoding="utf-8-sig") as wf:
+					wf.write("")
+				wf = open(cur_txt, "a", encoding="utf-8")
+
 				title = getattr(entity, "title", None) or str(chat_ref)
 				print(f"🔍 Сканую {title}...")
 				checked = 0
@@ -451,7 +454,8 @@ async def run_scan():
 		
 		if max_when > 0:
 			set_file_dates(OUT_DB, max_when)
-			set_file_dates(SCAN_TXT, max_when)
+			set_file_dates(SCAN_CHAT_TXT, max_when)
+			set_file_dates(SCAN_PM_TXT, max_when)
 		
 		with zipfile.ZipFile(
 			OUT_ZIP, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
