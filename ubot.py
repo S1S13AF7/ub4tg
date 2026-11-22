@@ -728,21 +728,6 @@ async def main():
 				return uapi_ok
 			return False
 		
-		async def uapi_call('ping', {
-								'ts': int(time.time()),
-								'check_auth': 1
-							})
-							if ping_retry:
-								uapi_ok = True
-								print('✅ [uapi] Підключено після отримання секрету')
-							else:
-								uapi_ok = False
-							return uapi_ok
-						return False
-			except Exception as e:
-				print(f'⚠️ Не вдалося отримати секрет від @misc_beta_bot: {e}')
-			return False
-		
 		async def uapi_call(
 			method: str,
 			obj: dict = None,
