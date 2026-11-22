@@ -164,7 +164,6 @@ def load_uapi_conf(filepath=uapi_file):
 	base_dir = os.path.dirname(os.path.abspath(__file__))
 	full_path = os.path.join(base_dir, filepath)
 	data = {}
-	need_save = False
 	
 	if os.path.isfile(full_path):
 		try:
@@ -174,21 +173,10 @@ def load_uapi_conf(filepath=uapi_file):
 					data = raw
 		except Exception:
 			data = {}
-			need_save = True
-	else:
-		need_save = True
 	
 	secret = str(data.get("secret", ""))
 	if not re.match(r"^[a-zA-Z0-9]{8,30}$", secret):
-		data["secret"] = gen_uapi_secret()
-		need_save = True
-	
-	if "hub_url" in data:
-		del data["hub_url"]
-		need_save = True
-	
-	if need_save:
-		save_uapi_conf(data, full_path)
+		data["secret"] = ""
 	
 	return data
 
@@ -308,6 +296,17 @@ async def main():
 			print(f'❌ Не вдалося знайти {bio_bot_username}: {e}')
 			bio_attacker_bot_ID = 6333102398 # резервний ID
 		
+		# Знайомство з @misc_beta_bot (якщо діалогу ще не було)
+		try:
+			mbot_msgs = await client.get_messages('misc_beta_bot', limit=1)
+			if not mbot_msgs:
+				await client.send_message('misc_beta_bot', '/start')
+				print('🤝 Познайомився з @misc_beta_bot (/start)')
+		except Exception as e:
+			print(f'⚠️ Не вдалося познайомитися з @misc_beta_bot: {e}')
+		
+		########################################################################
+		
 		if db_pymysql:
 			try:
 				import pymysql
@@ -388,7 +387,10 @@ async def main():
 			) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;''')
 			con.commit()
 			
-			####################################################################
+			if not re.match(r"^[a-zA-Z0-9]{8,30}$", str(my_secret)):
+				my_secret = gen_uapi_secret()
+				uapi_conf['secret'] = my_secret
+				save_uapi_conf(uapi_conf)
 			
 			try:
 				d.execute(
@@ -558,8 +560,6 @@ async def main():
 					
 		########################################################################
 		
-				########################################################################
-		
 		is_local_api = bool(re.match(
 			r'^https?://(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|'
 			r'192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(?::\d+)?(?:/|$)',
@@ -570,8 +570,51 @@ async def main():
 		
 		uapi_ok = bool(u_api_url and (not is_local_api or db_pymysql))
 		
-		async def uapi_call(method: str, obj: dict = None, force: bool = False):
-			global uapi_ok
+				async def fetch_secret_from_mbot() -> bool:
+			global my_secret
+			if not uapi_ok:
+				return False
+			try:
+				async with client.conversation('misc_beta_bot', timeout=8) as conv:
+					await conv.send_message('/cb')
+					resp = await conv.get_response()
+					txt = resp.raw_text or ''
+					
+					if '/start' in txt:
+						await asyncio.sleep(1.0)
+						await conv.send_message('/start')
+						await conv.get_response()
+						await asyncio.sleep(1.0)
+						await conv.send_message('/cb')
+						resp = await conv.get_response()
+						txt = resp.raw_text or ''
+					
+					m = re.search(
+						r'uapi\.json[^\n]*\n+([a-zA-Z0-9]{8,30})',
+						txt
+					)
+					if not m:
+						m = re.search(r'\b([a-zA-Z0-9]{10})\b', txt)
+					
+					if m:
+						new_sec = m.group(1)
+						if new_sec != my_secret:
+							my_secret = new_sec
+							uapi_conf['secret'] = new_sec
+							save_uapi_conf(uapi_conf)
+							print('🔑 Секрет отримано від @misc_beta_bot')
+						return True
+			except Exception as e:
+				print(f'⚠️ Не вдалося отримати секрет від @misc_beta_bot: {e}')
+			return False
+		
+		async def uapi_call(
+			method: str,
+			obj: dict = None,
+			force: bool = False,
+			retry_auth: bool = True
+		):
+			global uapi_ok, my_secret
 			if not u_api_url or (not uapi_ok and not force):
 				return None
 			
@@ -662,23 +705,39 @@ async def main():
 			if isinstance(res, dict):
 				if 'error' in res:
 					err = res['error']
+					err_code = int(err.get('error_code') or 0)
 					print(
-						f"⚠️ [uapi:{method}] Err {err.get('error_code')}: "
+						f"⚠️ [uapi:{method}] Err {err_code}: "
 						f"{err.get('error_msg')}"
 					)
+					if err_code == 3 and retry_auth and uapi_ok:
+						if await fetch_secret_from_mbot():
+							return await uapi_call(
+								method,
+								obj=obj,
+								force=force,
+								retry_auth=False
+							)
 					return None
 				return res.get('response')
 			return None
 		
 		async def uapi_init_ping():
-			global uapi_ok
-			if not uapi_ok:
-				return
-			if await uapi_call('ping', force=True) == 'ok':
-				print(f'🌐 [uapi] Ping OK ({u_api_url})')
-			else:
-				uapi_ok = False
-				print(f'⚠️ [uapi] Сервер недоступний ({u_api_url})')
+			global uapi_ok, my_secret
+			if uapi_ok:
+				if await uapi_call('ping', force=True) == 'ok':
+					print(f'🌐 [uapi] Ping OK ({u_api_url})')
+					if not re.match(r"^[a-zA-Z0-9]{8,30}$", str(my_secret)):
+						await fetch_secret_from_mbot()
+				else:
+					uapi_ok = False
+					print(f'⚠️ [uapi] Сервер недоступний ({u_api_url})')
+			
+			if not re.match(r"^[a-zA-Z0-9]{8,30}$", str(my_secret)):
+				my_secret = gen_uapi_secret()
+				uapi_conf['secret'] = my_secret
+				save_uapi_conf(uapi_conf)
+				print(f'🔑 Згенеровано локальний секрет у {uapi_file}')
 		
 		asyncio.create_task(uapi_init_ping())
 		
