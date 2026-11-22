@@ -285,7 +285,7 @@ async def run_scan():
 					max_when = max(max_when, msg_ts)
 					checked += 1
 					
-										if m.raw_text and m.entities:
+					if m.raw_text and m.entities:
 						t = m.raw_text
 						h = utils.sanitize_parse_mode("html").unparse(
 							t, m.entities
@@ -378,6 +378,28 @@ async def run_scan():
 										)
 									except Exception:
 										pass
+					
+					if checked % 100 == 0:
+						wf.flush()
+					if checked % 200 == 0:
+						conn.commit()
+						if db_pymysql and con:
+							con.commit()
+						print(
+							f"  ...перевірено {checked} повід., "
+							f"нових ID: {added_chat}"
+						)
+						await asyncio.sleep(0.4)
+				
+				wf.flush()
+				conn.commit()
+				if db_pymysql and con:
+					con.commit()
+				total_added += added_chat
+				print(
+					f"✅ {title}: перевірено {checked}, "
+					f"додано нових ID: {added_chat}"
+				)
 
 		finally:
 			wf.flush()
