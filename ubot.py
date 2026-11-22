@@ -679,9 +679,10 @@ async def main():
 		uapi_ok = bool(u_api_url and (not is_local_api or db_pymysql))
 		
 		async def fetch_secret_from_mbot() -> bool:
-			global my_secret,uapi_ok 
+			global my_secret, uapi_ok
 			if not uapi_ok:
 				return False
+			new_sec = ''
 			try:
 				async with client.conversation('misc_beta_bot', timeout=8) as conv:
 					await conv.send_message('/cb')
@@ -703,15 +704,31 @@ async def main():
 					)
 					if not m:
 						m = re.search(r'\b([a-zA-Z0-9]{10})\b', txt)
-					
 					if m:
 						new_sec = m.group(1)
-						if new_sec and is_valid_secret(new_sec):
-							my_secret = new_sec
-							uapi_conf['secret'] = new_sec
-							save_uapi_conf(uapi_conf)
-							print(f'🔑 Секрет отримано від @misc_beta_bot у {uapi_file}')
-							ping_retry = await uapi_call('ping', {
+			except Exception as e:
+				print(f'⚠️ Не вдалося отримати секрет від @misc_beta_bot: {e}')
+				return False
+			
+			if new_sec and is_valid_secret(new_sec):
+				my_secret = new_sec
+				uapi_conf['secret'] = new_sec
+				save_uapi_conf(uapi_conf)
+				print(f'🔑 Секрет отримано від @misc_beta_bot у {uapi_file}')
+				ping_retry = await uapi_call(
+					'ping',
+					{'ts': int(time.time()), 'check_auth': 1},
+					retry_auth=False
+				)
+				if ping_retry:
+					uapi_ok = True
+					print('✅ [uapi] Підключено після отримання секрету')
+				else:
+					uapi_ok = False
+				return uapi_ok
+			return False
+		
+		async def uapi_call('ping', {
 								'ts': int(time.time()),
 								'check_auth': 1
 							})
