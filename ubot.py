@@ -491,11 +491,12 @@ async def main():
 			`code` varchar(8) NOT NULL DEFAULT '',
 			`date` int(11) UNSIGNED NOT NULL DEFAULT 0,
 			`id_chat` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+			`title` text CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
 			PRIMARY KEY (`platform`,`id_user`,`code`)
 			) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;''')
 			con.commit()
 			
-			if not re.match(r"^[a-zA-Z0-9]{8,30}$", str(my_secret)):
+			if is_valid_secret(db_sec) and db_sec != my_secret:
 				my_secret = gen_uapi_secret()
 				uapi_conf['secret'] = my_secret
 				save_uapi_conf(uapi_conf)
@@ -858,7 +859,7 @@ async def main():
 			if uapi_ok:
 				if await uapi_call('ping', force=True) == 'ok':
 					print(f'🌐 [uapi] Ping OK ({u_api_url})')
-					if not re.match(r"^[a-zA-Z0-9]{8,30}$", str(my_secret)):
+					if not is_valid_secret(my_secret):
 						await fetch_secret_from_mbot()
 				else:
 					uapi_ok = False
