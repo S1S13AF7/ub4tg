@@ -2,11 +2,13 @@
 
 import asyncio
 import calendar
+import hashlib
 import json
 import os
 import random
 import re
 import shutil
+import socket
 import sqlite3
 import string
 import subprocess
@@ -241,6 +243,24 @@ def save_mlab(updates: dict):
 		print(f'⚠️ Помилка збереження {mlab_file}: {e}')
 ################################################################################
 
+import hashlib
+import socket
+
+_lock_dir = os.path.dirname(os.path.abspath(__file__)).lower()
+_lock_port = 20000 + (
+	int(hashlib.md5(_lock_dir.encode('utf-8')).hexdigest()[:8], 16)
+	% 40000
+)
+_instance_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+	_instance_sock.bind(('127.0.0.1', _lock_port))
+except OSError:
+	print(f'⚠️ Копія з {_lock_dir} вже запущена! Вихід...')
+	time.sleep(2)
+	sys.exit(0)
+
+################################################################################
+
 async def main():
 	global db_pymysql, ch_id, mine, my_secret, uapi_ok
 	async with TelegramClient(sessdb, api_id, api_hash, timeout=300) as client:
@@ -329,7 +349,11 @@ async def main():
 					ent = await client.get_entity(target_id)
 					if not getattr(ent, 'left', False):
 						print(f'🚪 Увійшов у чат {target_id} за посиланням')
+						if not spy_mode:
+							await asyncio.sleep(random.uniform(2.0, 4.0))
+							await client.send_message(target_id, 'Код чата')
 						return True
+
 				except Exception:
 					pass
 				print(
@@ -1101,6 +1125,76 @@ async def main():
 		@client.on(events.NewMessage(
 			incoming=True,
 			from_users=irises,
+			pattern=r'(?s).*(?:потрібно бути підписаним на канал|нужно быть подписанным на канал)'
+		))
+		async def iris_sub_channel(event):
+			if event.chat_id not in (ch_id, MAINchatID):
+				return
+			m = event.message
+			target_ch = ''
+			
+			if m.entities:
+				for ent in m.entities:
+					u_url = getattr(ent, 'url', '') or ''
+					um = re.search(
+						r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
+						u_url
+					)
+					if um:
+						target_ch = um.group(1)
+						break
+			
+			if not target_ch and m.buttons:
+				for row in m.buttons:
+					for btn in row:
+						b_url = getattr(btn, 'url', '') or ''
+						um = re.search(
+							r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
+							b_url
+						)
+						if um:
+							target_ch = um.group(1)
+							break
+					if target_ch:
+						break
+			
+			if not target_ch:
+				um = re.search(
+					r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
+					m.raw_text or ''
+				)
+				if um:
+					target_ch = um.group(1)
+			
+			if not target_ch:
+				target_ch = 'iris_cm'
+			
+			try:
+				from telethon.tl.functions.channels import JoinChannelRequest
+				await client(JoinChannelRequest(target_ch))
+				print(f'📢 Підписався на канал Іріса (@{target_ch})')
+				if not spy_mode and config.get("farm"):
+					await asyncio.sleep(random.uniform(2.0, 4.0))
+					await client.send_message(event.chat_id, 'Ферма')
+			except Exception as e:
+				print(f'⚠️ Не вдалося підписатися на @{target_ch}: {e}')
+		
+		########################################################################
+		
+		bind_ok_msgs = {
+			'uk': '✅ Чат збережено',
+			'ru': '✅ Беседа распознана',
+			'be': '✅ Чат захаваны',
+			'en': '✅ Chat bound',
+			'az': '✅ Çat yadda saxlanıldı',
+			'pl': '✅ Czat zapisany',
+			'de': '✅ Chat gespeichert',
+			'default': '✅ Беседа распознана'
+		}
+		
+		@client.on(events.NewMessage(
+			incoming=True,
+			from_users=irises,
 			pattern=r'(?s).*🗓\s*Код\s+(?:беседы|чата|чату)\s*:\s*([0-9a-f]{8})'
 		))
 		async def iris_bind_chat(event):
@@ -1119,20 +1213,48 @@ async def main():
 			chat_abs = abs(int(event.chat_id))
 			msg_ts = int(m.date.timestamp()) if m.date else int(time.time())
 			
-			print(f'🔗 [bind] {my_id} -> {code} : -{chat_abs}')
+			chat_title = ''
+			try:
+				chat_ent = await event.get_chat()
+				chat_title = str(getattr(chat_ent, 'title', '') or '').strip()
+			except Exception:
+				pass
+			
+			print(f'🔗 [bind] {my_id} -> {code} : -{chat_abs} ({chat_title})')
+			
+			saved_ok = False
+			lang_code = str(getattr(me, 'lang_code', '') or '').lower()
 			
 			if db_pymysql:
 				try:
+					con.ping(reconnect=True)
 					d.execute(
 						'''INSERT INTO `userbot_bind`
-						(`platform`, `id_user`, `code`, `date`, `id_chat`)
-						VALUES ('tg', %s, %s, %s, %s)
+						(`platform`, `id_user`, `code`, `date`, `id_chat`, `title`)
+						VALUES ('tg', %s, %s, %s, %s, %s)
 						ON DUPLICATE KEY UPDATE
 							`date` = VALUES(`date`),
-							`id_chat` = VALUES(`id_chat`);''',
-						(int(my_id), code, msg_ts, chat_abs)
+							`id_chat` = VALUES(`id_chat`),
+							`title` = IF(
+								VALUES(`title`) != '',
+								VALUES(`title`),
+								`title`
+							);''',
+						(int(my_id), code, msg_ts, chat_abs, chat_title)
 					)
+					affected = int(d.rowcount or 0)
 					con.commit()
+					
+					if affected > 0:
+						saved_ok = True
+						d.execute(
+							"SELECT `lng_code` FROM `tg_bot_users` "
+							"WHERE `user_id` = %s LIMIT 1",
+							(int(my_id),)
+						)
+						u_row = d.fetchone()
+						if u_row and str(u_row.get('lng_code') or '').strip():
+							lang_code = str(u_row['lng_code']).strip().lower()
 				except Exception as e:
 					print(f'⚠️ [bind] Помилка MySQL: {e}')
 			elif uapi_ok:
@@ -1140,10 +1262,20 @@ async def main():
 					'chat': code,
 					'value': code,
 					'id_chat': -chat_abs,
-					'date': msg_ts
+					'date': msg_ts,
+					'title': chat_title
 				})
-				if res == 'ok':
+				if res:
+					saved_ok = True
 					print(f'✅ [bind] Збережено через API: {code}')
+					if isinstance(res, dict) and res.get('lang'):
+						lang_code = str(res['lang']).strip().lower()
+			
+			if saved_ok and not spy_mode:
+				short_lang = lang_code[:2] if lang_code else 'default'
+				reply_txt = bind_ok_msgs.get(short_lang, bind_ok_msgs['default'])
+				await asyncio.sleep(random.uniform(1.0, 2.5))
+				await client.send_message(event.chat_id, reply_txt)
 		
 		########################################################################
 		
