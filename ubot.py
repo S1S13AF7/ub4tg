@@ -704,8 +704,7 @@ async def main():
 					except Exception:
 						pass
 				return 'retry_1h', f'Збій завантаження: {e}'
-
-
+		
 		if db_sqlite3:
 			sqlite_path = f"{my_id}.sqlite"
 			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
@@ -793,58 +792,9 @@ async def main():
 				except Exception as e:
 					print(f"err optimize: {e}")
 			
-			def import_0sqlite(db0_file: str, remove_after: bool = False):
-				if not os.path.exists(db0_file):
-					return 0
-				added = 0
-				try:
-					con0 = sqlite3.connect(db0_file)
-					cur0 = con0.cursor()
-					cur0.execute(
-						"SELECT user_id, when_int FROM avocado "
-						"WHERE user_id >= 100"
-					)
-					now_s = int(time.time())
-					for uid_0, wh_0 in cur0.fetchall():
-						u_i = int(uid_0)
-						if u_i in (my_id, 6333102398, 1124824021):
-							continue
-						w_i = int(wh_0 or now_s)
-						c.execute(
-							"""INSERT OR IGNORE INTO avocado
-							(user_id, when_int, bio_int, expr_int, expr_str)
-							VALUES (?, ?, 1, ?, ?)""",
-							(u_i, w_i, restart_timestamp, restart_date_str)
-						)
-						if c.rowcount > 0:
-							added += 1
-					conn.commit()
-					con0.close()
-					if remove_after:
-						try:
-							os.remove(db0_file)
-						except Exception:
-							pass
-					if added > 0:
-						print(f'📦 [0.sqlite] Залито нових ID: {added}')
-				except Exception as e:
-					print(f'⚠️ [0.sqlite] Помилка імпорту: {e}')
-				return added
-			
-			# Якщо 0.sqlite вже лежить у робочій папці — заливаємо одразу при старті
-			init_work_dir = '.'
-			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
-				init_work_dir = r"D:\Misc\projects\Python"
-			elif is_termux and default_directory:
-				init_work_dir = default_directory
-			init_db0 = os.path.join(init_work_dir, '0.sqlite')
-			if os.path.exists(init_db0):
-				import_0sqlite(
-					init_db0,
-					remove_after=os.path.exists(os.path.join(init_work_dir, 
-					'0.zip'))
-				)
-					
+			if not just_cloned_0 and os.path.exists(db0_path_0):
+				import_0sqlite(db0_path_0)
+		
 		########################################################################
 		
 		is_local_api = bool(re.match(
@@ -3316,7 +3266,7 @@ async def main():
 						None, check_and_fetch
 					)
 					if status == 'updated' and os.path.exists(db0_path):
-						import_0sqlite(db0_path, remove_after=True)
+						import_0sqlite(db0_path)
 					elif status == 'retry_1h':
 						print(
 							f'⚠️ [0.zip] {err_msg}. '
