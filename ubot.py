@@ -570,7 +570,7 @@ async def main():
 		
 		uapi_ok = bool(u_api_url and (not is_local_api or db_pymysql))
 		
-				async def fetch_secret_from_mbot() -> bool:
+		async def fetch_secret_from_mbot() -> bool:
 			global my_secret
 			if not uapi_ok:
 				return False
