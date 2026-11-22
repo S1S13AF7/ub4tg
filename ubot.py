@@ -699,11 +699,12 @@ async def main():
 						txt = resp.raw_text or ''
 					
 					m = re.search(
-						r'uapi\.json[^\n]*\n+([a-zA-Z0-9]{8,30})',
-						txt
+						r'(?:uapi\.json|secret)[^\n]*\n+`?([a-zA-Z][a-zA-Z0-9]{7,29})`?',
+						txt,
+						re.IGNORECASE
 					)
 					if not m:
-						m = re.search(r'\b([a-zA-Z0-9]{10})\b', txt)
+						m = re.search(r'\b([a-zA-Z][a-zA-Z0-9]{9,29})\b', txt)
 					if m:
 						new_sec = m.group(1)
 			except Exception as e:
