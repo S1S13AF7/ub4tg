@@ -329,7 +329,11 @@ async def main():
 					ent = await client.get_entity(target_id)
 					if not getattr(ent, 'left', False):
 						print(f'🚪 Увійшов у чат {target_id} за посиланням')
+						if not spy_mode:
+							await asyncio.sleep(random.uniform(2.0, 4.0))
+							await client.send_message(target_id, 'Код чата')
 						return True
+
 				except Exception:
 					pass
 				print(
@@ -1201,7 +1205,7 @@ async def main():
 					'id_chat': -chat_abs,
 					'date': msg_ts
 				})
-				if res == 'ok':
+				if res:
 					print(f'✅ [bind] Збережено через API: {code}')
 		
 		########################################################################
