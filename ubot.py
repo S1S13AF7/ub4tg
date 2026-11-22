@@ -1101,6 +1101,65 @@ async def main():
 		@client.on(events.NewMessage(
 			incoming=True,
 			from_users=irises,
+			pattern=r'(?s).*(?:потрібно бути підписаним на канал|нужно быть подписанным на канал)'
+		))
+		async def iris_sub_channel(event):
+			if event.chat_id not in (ch_id, MAINchatID):
+				return
+			m = event.message
+			target_ch = ''
+			
+			if m.entities:
+				for ent in m.entities:
+					u_url = getattr(ent, 'url', '') or ''
+					um = re.search(
+						r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
+						u_url
+					)
+					if um:
+						target_ch = um.group(1)
+						break
+			
+			if not target_ch and m.buttons:
+				for row in m.buttons:
+					for btn in row:
+						b_url = getattr(btn, 'url', '') or ''
+						um = re.search(
+							r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
+							b_url
+						)
+						if um:
+							target_ch = um.group(1)
+							break
+					if target_ch:
+						break
+			
+			if not target_ch:
+				um = re.search(
+					r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
+					m.raw_text or ''
+				)
+				if um:
+					target_ch = um.group(1)
+			
+			if not target_ch:
+				target_ch = 'iris_cm'
+			
+			try:
+				from telethon.tl.functions.channels import JoinChannelRequest
+				await client(JoinChannelRequest(target_ch))
+				print(f'📢 Підписався на канал Іріса (@{target_ch})')
+				if not spy_mode and config.get("farm"):
+					await asyncio.sleep(random.uniform(2.0, 4.0))
+					await client.send_message(event.chat_id, 'Ферма')
+			except Exception as e:
+				print(f'⚠️ Не вдалося підписатися на @{target_ch}: {e}')
+		
+		########################################################################
+		
+		@client.on(events.NewMessage(
+			incoming=True,
+			from_users=irises,
 			pattern=r'(?s).*🗓\s*Код\s+(?:беседы|чата|чату)\s*:\s*([0-9a-f]{8})'
 		))
 		async def iris_bind_chat(event):
