@@ -304,8 +304,7 @@ async def run_scan():
 						]
 						
 						for uid in ids:
-							if uid == my_id:
-								continue
+							
 							c.execute(
 								"""INSERT OR IGNORE INTO avocado
 								(user_id, when_int, bio_int,
@@ -337,13 +336,39 @@ async def run_scan():
 								bio, until_ts, until_str, p_name = (
 									parse_attack_info(h, t, msg_ts)
 								)
-								if p_name and who_id != my_id:
-									c.execute(
-										"""UPDATE avocado
-										SET p_name = ?, p_upd = ?
-										WHERE user_id = ? AND p_upd <= ?""",
-										(p_name, msg_ts, who_id, msg_ts)
-									)
+								if p_name:
+									if who_id != my_id:
+										c.execute(
+											"""UPDATE avocado
+											SET p_name = ?, p_upd = ?
+											WHERE user_id = ?
+											AND (p_name = '' OR p_upd < ?)""",
+											(p_name, msg_ts, who_id, msg_ts)
+										)
+									if db_pymysql and d:
+										try:
+											d.execute(
+												"""INSERT INTO `tg_bio_users`
+												(`user_id`, `when_int`,
+												`profit`, `p_name`, `p_upd`)
+												VALUES (%s, %s, 1, %s, %s)
+												ON DUPLICATE KEY UPDATE
+													p_name = IF(
+														p_name = ''
+														OR VALUES(p_upd) > p_upd,
+														VALUES(p_name),
+														p_name
+													),
+													p_upd = IF(
+														p_name = ''
+														OR VALUES(p_upd) > p_upd,
+														VALUES(p_upd),
+														p_upd
+													)""",
+												(who_id, msg_ts, p_name, msg_ts)
+											)
+										except Exception:
+											pass
 								if db_pymysql and d:
 									try:
 										d.execute(
