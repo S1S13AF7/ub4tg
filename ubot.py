@@ -865,14 +865,14 @@ async def main():
 				if res == 'ok':
 					if first_check or not uapi_ok:
 						uapi_ok = True
-						print(f'🌐 [uapi] Зв\'язок є ({u_api_url})')
+						print(f'🌐 [uapi] ok')
 					
 					if not is_valid_secret(my_secret):
 						await fetch_secret_from_mbot()
 				else:
 					if first_check or uapi_ok:
 						uapi_ok = False
-						print(f'⚠️ [uapi] Зв\'язку нема ({u_api_url})')
+						print(f'⚠️ [uapi] Зв\'язку нема')
 				
 				first_check = False
 				
