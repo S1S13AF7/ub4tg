@@ -1166,6 +1166,23 @@ async def main():
 			from_users=irises,
 			pattern=r'(?s).*🗓\s*Код\s+(?:беседы|чата|чату)\s*:\s*([0-9a-f]{8})'
 		))
+		
+		bind_ok_msgs = {
+			'uk': '✅ Чат збережено',
+			'ru': '✅ Беседа распознана',
+			'be': '✅ Чат захаваны',
+			'en': '✅ Chat bound',
+			'az': '✅ Çat yadda saxlanıldı',
+			'pl': '✅ Czat zapisany',
+			'de': '✅ Chat gespeichert',
+			'default': '✅ Беседа распознана'
+		}
+		
+		@client.on(events.NewMessage(
+			incoming=True,
+			from_users=irises,
+			pattern=r'(?s).*🗓\s*Код\s+(?:беседы|чата|чату)\s*:\s*([0-9a-f]{8})'
+		))
 		async def iris_bind_chat(event):
 			if event.is_private:
 				return
@@ -1182,20 +1199,48 @@ async def main():
 			chat_abs = abs(int(event.chat_id))
 			msg_ts = int(m.date.timestamp()) if m.date else int(time.time())
 			
-			print(f'🔗 [bind] {my_id} -> {code} : -{chat_abs}')
+			chat_title = ''
+			try:
+				chat_ent = await event.get_chat()
+				chat_title = str(getattr(chat_ent, 'title', '') or '').strip()
+			except Exception:
+				pass
+			
+			print(f'🔗 [bind] {my_id} -> {code} : -{chat_abs} ({chat_title})')
+			
+			saved_ok = False
+			lang_code = str(getattr(me, 'lang_code', '') or '').lower()
 			
 			if db_pymysql:
 				try:
+					con.ping(reconnect=True)
 					d.execute(
 						'''INSERT INTO `userbot_bind`
-						(`platform`, `id_user`, `code`, `date`, `id_chat`)
-						VALUES ('tg', %s, %s, %s, %s)
+						(`platform`, `id_user`, `code`, `date`, `id_chat`, `title`)
+						VALUES ('tg', %s, %s, %s, %s, %s)
 						ON DUPLICATE KEY UPDATE
 							`date` = VALUES(`date`),
-							`id_chat` = VALUES(`id_chat`);''',
-						(int(my_id), code, msg_ts, chat_abs)
+							`id_chat` = VALUES(`id_chat`),
+							`title` = IF(
+								VALUES(`title`) != '',
+								VALUES(`title`),
+								`title`
+							);''',
+						(int(my_id), code, msg_ts, chat_abs, chat_title)
 					)
+					affected = int(d.rowcount or 0)
 					con.commit()
+					
+					if affected > 0:
+						saved_ok = True
+						d.execute(
+							"SELECT `lng_code` FROM `tg_bot_users` "
+							"WHERE `user_id` = %s LIMIT 1",
+							(int(my_id),)
+						)
+						u_row = d.fetchone()
+						if u_row and str(u_row.get('lng_code') or '').strip():
+							lang_code = str(u_row['lng_code']).strip().lower()
 				except Exception as e:
 					print(f'⚠️ [bind] Помилка MySQL: {e}')
 			elif uapi_ok:
@@ -1203,10 +1248,20 @@ async def main():
 					'chat': code,
 					'value': code,
 					'id_chat': -chat_abs,
-					'date': msg_ts
+					'date': msg_ts,
+					'title': chat_title
 				})
 				if res:
+					saved_ok = True
 					print(f'✅ [bind] Збережено через API: {code}')
+					if isinstance(res, dict) and res.get('lang'):
+						lang_code = str(res['lang']).strip().lower()
+			
+			if saved_ok and not spy_mode:
+				short_lang = lang_code[:2] if lang_code else 'default'
+				reply_txt = bind_ok_msgs.get(short_lang, bind_ok_msgs['default'])
+				await asyncio.sleep(random.uniform(1.0, 2.5))
+				await client.send_message(event.chat_id, reply_txt)
 		
 		########################################################################
 		
