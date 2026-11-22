@@ -842,13 +842,9 @@ async def main():
 			elif is_termux and default_directory:
 				init_work_dir = default_directory
 			init_db0 = os.path.join(init_work_dir, '0.sqlite')
-			if os.path.exists(init_db0):
-				import_0sqlite(
-					init_db0,
-					remove_after=os.path.exists(os.path.join(init_work_dir, 
-					'0.zip'))
-				)
-					
+			if not just_cloned_0 and os.path.exists(db0_path_0):
+				import_0sqlite(db0_path_0)
+		
 		########################################################################
 		
 		is_local_api = bool(re.match(
