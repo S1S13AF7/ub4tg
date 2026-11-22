@@ -1161,12 +1161,6 @@ async def main():
 		
 		########################################################################
 		
-		@client.on(events.NewMessage(
-			incoming=True,
-			from_users=irises,
-			pattern=r'(?s).*🗓\s*Код\s+(?:беседы|чата|чату)\s*:\s*([0-9a-f]{8})'
-		))
-		
 		bind_ok_msgs = {
 			'uk': '✅ Чат збережено',
 			'ru': '✅ Беседа распознана',
