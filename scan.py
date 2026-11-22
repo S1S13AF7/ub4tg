@@ -259,7 +259,10 @@ async def run_scan():
 		
 		total_added = 0
 		max_when = 0
-		id_re = re.compile(r'tg://openmessage\?user_id=(\d+)')
+		id_re = re.compile(
+		r'(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)',
+		re.IGNORECASE
+		)
 		
 		with open(SCAN_TXT, "w", encoding="utf-8-sig") as wf:
 			wf.write("")
