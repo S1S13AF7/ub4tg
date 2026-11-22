@@ -850,58 +850,7 @@ async def main():
 					return None
 				return res.get('response')
 			return None
-		
-		async def uapi_init_ping():
-			global uapi_ok, my_secret
-			if uapi_ok:
-				if await uapi_call('ping', force=True) == 'ok':
-					print(f'🌐 [uapi] Ping OK ({u_api_url})')
-					if not is_valid_secret(my_secret):
-						await fetch_secret_from_mbot()
-				else:
-					uapi_ok = False
-					print(f'⚠️ [uapi] Сервер недоступний ({u_api_url})')
-			
-			if not is_valid_secret(my_secret):
-				my_secret = gen_uapi_secret()
-				uapi_conf['secret'] = my_secret
-				save_uapi_conf(uapi_conf)
-				print(f'🔑 Згенеровано локальний секрет у {uapi_file}')
-		
-				async def uapi_watchdog():
-			global uapi_ok, my_secret
-			if not u_api_url:
-				return
-			if is_local_api and not db_pymysql:
-				uapi_ok = False
-				return
-			
-			while True:
-				if not is_valid_secret(my_secret):
-					my_secret = gen_uapi_secret()
-					uapi_conf['secret'] = my_secret
-					save_uapi_conf(uapi_conf)
-					print(f'🔑 Згенеровано локальний секрет у {uapi_file}')
 				
-				res = await uapi_call('ping', force=True)
-				if res == 'ok':
-					if not uapi_ok:
-						uapi_ok = True
-						print(f'🌐 [uapi] Зв\'язок відновлено ({u_api_url})')
-					elif res == 'ok':
-						pass
-				else:
-					if uapi_ok:
-						uapi_ok = False
-						print(f'⚠️ [uapi] Сервер офлайн ({u_api_url})')
-				
-				await asyncio.sleep(random.uniform(180, 300))
-		
-		if uapi_ok:
-			print(f'🌐 [uapi] Очікую перевірку ({u_api_url})')
-		uapi_ok = False
-		asyncio.create_task(uapi_watchdog())
-		
 		########################################################################
 		
 		async def id_dov(u:int):
