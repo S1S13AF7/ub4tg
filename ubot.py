@@ -568,7 +568,6 @@ async def main():
 			d.execute('DELETE FROM `tg_users_url` WHERE `when_int` < %s', (restart_timestamp,))
 			del_urls = d.rowcount
 			
-			d.execute('UPDATE `tg_bio_users` SET `profit`=1 WHERE `profit`!=1')
 			d.execute(
 				'UPDATE `tg_bio_attack` SET `until_int`=%s, `until_str`=%s '
 				'WHERE `until_int` < %s',
@@ -1794,6 +1793,59 @@ async def main():
 						pass
 			
 			# ================================================================
+			def save_pathogen(who_uid:int,victim_uid:int,p_vir:str,ts:int):
+				if not p_vir:
+					return
+				if db_sqlite3 and who_uid != my_id:
+					try:
+						c.execute(
+							"""INSERT INTO avocado
+							(user_id, when_int, bio_int,
+							expr_int, expr_str, p_name, p_upd)
+							VALUES (?, ?, 1, ?, ?, ?, ?)
+							ON CONFLICT(user_id) DO UPDATE SET
+								p_name = excluded.p_name,
+								p_upd = excluded.p_upd
+							WHERE excluded.p_upd >= avocado.p_upd""",
+							(
+								who_uid, ts, restart_timestamp,
+								restart_date_str, p_vir, ts
+							)
+						)
+					except Exception:
+						pass
+				if db_pymysql:
+					try:
+						d.execute(
+							"""INSERT INTO `tg_bio_users`
+							(`user_id`, `when_int`, `profit`, `p_name`, `p_upd`)
+							VALUES (%s, %s, 1, %s, %s)
+							ON DUPLICATE KEY UPDATE
+								p_name = IF(VALUES(p_upd) >= p_upd,
+									VALUES(p_name), p_name),
+								p_upd = IF(VALUES(p_upd) >= p_upd,
+									VALUES(p_upd), p_upd)""",
+							(who_uid, ts, p_vir, ts)
+						)
+						if victim_uid >= 100 and victim_uid != who_uid:
+							d.execute(
+								"""INSERT INTO `tg_bio_attack`
+								(`date`, `who_id`, `p_name`, `user_id`,
+								`profit`, `until_int`, `until_str`)
+								VALUES (%s, %s, %s, %s, 1, %s, %s)
+								ON DUPLICATE KEY UPDATE
+									date = IF(VALUES(date) >= date,
+										VALUES(date), date),
+									p_name = IF(VALUES(date) >= date,
+										VALUES(p_name), p_name)""",
+								(
+									ts, who_uid, p_vir, victim_uid,
+									restart_timestamp, restart_date_str
+								)
+							)
+					except Exception as e:
+						print(f'err: {e} (save_pathogen mysql)')
+			# ================================================================
 			# ВАРІАНТ А: 2 і більше ID (нападник + жертва)
 			# ================================================================
 			if len(ids) >= 2:
@@ -1811,7 +1863,9 @@ async def main():
 					return
 				
 				if u2id == my_id and u1id != my_id:
+					_, _, _, p_vir = parse_details(h, t)
 					save_unknown_victim(u1id)
+					save_pathogen(u1id, u2id, p_vir, when)
 					if db_sqlite3:
 						conn.commit()
 					if db_pymysql:
@@ -1894,6 +1948,10 @@ async def main():
 						except Exception as e:
 							print(f'err: {e} (infect mysql my)')
 					
+					save_pathogen(my_id, u2id, p_vir, when)
+					if db_pymysql:
+						con.commit()
+					
 					print(
 						f'☣️ Заражено @{u2id} (+{bio}, {days}д) | '
 						f'Патів: {ostalos_pt}/{max_pt}'
@@ -1903,8 +1961,10 @@ async def main():
 						await asyncio.sleep(random.uniform(1.5, 3.5))
 						await client.send_message(6333102398, '/бж')
 				else:
+					_, _, _, p_vir = parse_details(h, t)
 					save_unknown_victim(u1id)
 					save_unknown_victim(u2id)
+					save_pathogen(u1id, u2id, p_vir, when)
 					if db_sqlite3:
 						conn.commit()
 					if db_pymysql:
