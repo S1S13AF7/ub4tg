@@ -698,14 +698,24 @@ async def main():
 						resp = await conv.get_response()
 						txt = resp.raw_text or ''
 					
+					if 'uapi.json' not in txt and 'secret' not in txt.lower():
+						resp = await conv.get_response()
+						txt = resp.raw_text or ''
+					
 					m = re.search(
 						r'(?:uapi\.json|secret)[^\n]*\n+`?([a-zA-Z][a-zA-Z0-9]{7,29})`?',
 						txt,
 						re.IGNORECASE
 					)
 					if not m:
-						m = re.search(r'\b([a-zA-Z][a-zA-Z0-9]{9,29})\b', txt)
-					if m:
+						for line in reversed(txt.splitlines()):
+							cand = line.strip(' `"\'')
+							if is_valid_secret(cand) and cand.lower() not in (
+								'registered', 'successfully'
+							):
+								new_sec = cand
+								break
+					else:
 						new_sec = m.group(1)
 			except Exception as e:
 				print(f'⚠️ Не вдалося отримати секрет від @misc_beta_bot: {e}')
