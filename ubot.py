@@ -462,6 +462,7 @@ async def main():
 			d.execute('''CREATE TABLE IF NOT EXISTS `tg_bio_attack` (
 			`date` int(11) unsigned NOT NULL DEFAULT '0',
 			`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+			`p_name` varchar(200) CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`profit` int(11) unsigned NOT NULL DEFAULT '1',
 			`until_int` int(11) unsigned NOT NULL DEFAULT '0',
@@ -474,6 +475,8 @@ async def main():
 			`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 			`when_int` int(11) unsigned NOT NULL DEFAULT '0',
 			`profit` int(11) unsigned NOT NULL DEFAULT '1',
+			`p_name` varchar(200) CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
+			`p_upd` int(11) unsigned NOT NULL DEFAULT '0',
 			UNIQUE KEY `user_id` (`user_id`)
 			);''');
 			con.commit()
@@ -495,7 +498,26 @@ async def main():
 			PRIMARY KEY (`platform`,`id_user`,`code`)
 			) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;''')
 			con.commit()
-			
+			try:
+				d.execute(
+					"ALTER TABLE `tg_bio_attack` "
+					"ADD `p_name` varchar(200) CHARACTER SET utf8mb4 "
+					"NOT NULL DEFAULT '' AFTER `user_id`;"
+				)
+				con.commit()
+			except Exception:
+				pass
+			try:
+				d.execute(
+					"ALTER TABLE `tg_bio_users` "
+					"ADD `p_name` varchar(200) CHARACTER SET utf8mb4 "
+					"NOT NULL DEFAULT '' AFTER `profit`, "
+					"ADD `p_upd` int(11) unsigned NOT NULL DEFAULT '0' "
+					"AFTER `p_name`;"
+				)
+				con.commit()
+			except Exception:
+				pass
 			if not is_valid_secret(my_secret):
 				my_secret = gen_uapi_secret()
 				uapi_conf['secret'] = my_secret
@@ -575,7 +597,8 @@ async def main():
 			when_int	INTEGER NOT NULL DEFAULT 0,
 			bio_int	INTEGER NOT NULL DEFAULT 1,
 			expr_int	INTEGER NOT NULL DEFAULT {},
-			expr_str	VARCHAR NOT NULL DEFAULT '{}'
+			expr_str	VARCHAR NOT NULL DEFAULT '{}',
+			p_name	VARCHAR(200) NOT NULL DEFAULT ''
 			)""".format(restart_timestamp, restart_date_str))
 			conn.commit()
 			
