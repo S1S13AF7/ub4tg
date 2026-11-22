@@ -835,13 +835,6 @@ async def main():
 					print(f'⚠️ [0.sqlite] Помилка імпорту: {e}')
 				return added
 			
-			# Якщо 0.sqlite вже лежить у робочій папці — заливаємо одразу при старті
-			init_work_dir = '.'
-			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
-				init_work_dir = r"D:\Misc\projects\Python"
-			elif is_termux and default_directory:
-				init_work_dir = default_directory
-			init_db0 = os.path.join(init_work_dir, '0.sqlite')
 			if not just_cloned_0 and os.path.exists(db0_path_0):
 				import_0sqlite(db0_path_0)
 		
