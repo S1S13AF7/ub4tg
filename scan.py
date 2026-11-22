@@ -90,6 +90,69 @@ restart_date_str = datetime.fromtimestamp(
 	RESTART_TS, tz=timezone.utc
 ).strftime("%d.%m.%Y")
 
+INFECT_VERBS_RE = re.compile(
+	r'(?:infected|заразил[ао]?|подверг(?:ла|ся)?|йобнув|сикди|'
+	r'насрал[ао]?|выебал[ао]?|атаковал[ао]?|инфицировал[ао]?|'
+	r'напугал[ао]?|нокаутировал[ао]?|обманул[ао]?|оглушил[ао]?|'
+	r'поставил[ао]?|рассмешил[ао]?|угостил[ао]?)',
+	re.IGNORECASE
+)
+SKIP_MSG_RE = re.compile(
+	r'(?s).*(?:Active\s+victims|Активные\s+жертвы|'
+	r'(?:🧪\s*)?(?:Pathogens|Свободных патогенов)\s*:|'
+	r'(?:👩🏻‍🔬|👨🏻‍🔬)\s*(?:Qualification|Квалификация)\s*:)',
+	re.IGNORECASE
+)
+BIO_RE = re.compile(
+	r'(?:Profit|Прибыль|Bio-experience gained|'
+	r'верир|потери|приносит|корма):\s*'
+	r'(?:<strong>)?\+?([\d\.,]+k?)(?:</strong>)?',
+	re.IGNORECASE
+)
+DAYS_RE = re.compile(
+	r'(?:Infection duration|Длительность заражения|'
+	r'на|for|ещё)\s*:?\s*(\d{1,3})\s*(?:d|д)',
+	re.IGNORECASE
+)
+VIR_RE = re.compile(r'[«“"]([^»”"\n]{2,180})[»”"]')
+
+def parse_attack_info(html_txt: str, plain_txt: str, msg_ts: int):
+	bio = 1
+	bm = BIO_RE.search(html_txt)
+	if bm:
+		try:
+			rb = bm.group(1).replace(',', '.')
+			if rb.lower().endswith('k'):
+				val = int(float(rb[:-1]) * 1000)
+			else:
+				val = int(float(rb))
+			if val >= 1:
+				bio = val
+		except Exception:
+			pass
+	
+	until_ts = RESTART_TS
+	until_str = restart_date_str
+	dm = DAYS_RE.search(plain_txt)
+	if dm:
+		try:
+			d_val = int(dm.group(1))
+			if 1 <= d_val <= 365:
+				until_ts = msg_ts + (d_val * 86400)
+				until_str = datetime.fromtimestamp(
+					until_ts, tz=timezone.utc
+				).strftime("%d.%m.%Y")
+		except Exception:
+			pass
+	
+	p_name = ''
+	vm = VIR_RE.search(plain_txt)
+	if vm:
+		p_name = vm.group(1).strip()
+	
+	return bio, until_ts, until_str, p_name
+
+
 async def run_scan():
 	global db_pymysql
 	con = None
@@ -109,6 +172,28 @@ async def run_scan():
 			)
 			d = con.cursor()
 			print("✅ Підключено до MySQL")
+			d.execute("""CREATE TABLE IF NOT EXISTS `tg_bio_attack` (
+				`date` int(11) unsigned NOT NULL DEFAULT '0',
+				`who_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+				`p_name` varchar(200) CHARACTER SET utf8mb4
+					NOT NULL DEFAULT '',
+				`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+				`profit` int(11) unsigned NOT NULL DEFAULT '1',
+				`until_int` int(11) unsigned NOT NULL DEFAULT '0',
+				`until_str` varchar(11) NOT NULL DEFAULT '0',
+				UNIQUE KEY `UNIQUE` (`who_id`,`user_id`)
+			);""")
+			con.commit()
+			try:
+				d.execute(
+					"ALTER TABLE `tg_bio_attack` "
+					"ADD `p_name` varchar(200) CHARACTER SET utf8mb4 "
+					"NOT NULL DEFAULT '' AFTER `who_id`;"
+				)
+				con.commit()
+			except Exception:
+				pass
+			
 			d.execute("""CREATE TABLE IF NOT EXISTS `tg_bio_users` (
 				`user_id` bigint(20) unsigned NOT NULL DEFAULT '0',
 				`when_int` int(11) unsigned NOT NULL DEFAULT '0',
@@ -200,9 +285,10 @@ async def run_scan():
 					max_when = max(max_when, msg_ts)
 					checked += 1
 					
-					if m.raw_text and m.entities:
+										if m.raw_text and m.entities:
+						t = m.raw_text
 						h = utils.sanitize_parse_mode("html").unparse(
-							m.raw_text, m.entities
+							t, m.entities
 						)
 						
 						dt_s = m.date.strftime("%d.%m.%Y %H:%M:%S")
@@ -211,9 +297,14 @@ async def run_scan():
 							f"{h}\n\n"
 						)
 						
-						for uid_s in id_re.findall(h):
-							uid = int(uid_s)
-							if uid in (my_id, BOT_ID, 1124824021):
+						ids = [
+							int(x) for x in id_re.findall(h)
+							if int(x) >= 100
+							and int(x) not in (BOT_ID, 1124824021)
+						]
+						
+						for uid in ids:
+							if uid == my_id:
 								continue
 							c.execute(
 								"""INSERT OR IGNORE INTO avocado
@@ -234,28 +325,60 @@ async def run_scan():
 									)
 								except Exception:
 									pass
-					
-					if checked % 100 == 0:
-						wf.flush()
-					if checked % 200 == 0:
-						conn.commit()
-						if db_pymysql and con:
-							con.commit()
-						print(
-							f"  ...перевірено {checked} повід., "
-							f"нових ID: {added_chat}"
-						)
-						await asyncio.sleep(0.4)
-				
-				wf.flush()
-				conn.commit()
-				if db_pymysql and con:
-					con.commit()
-				total_added += added_chat
-				print(
-					f"✅ {title}: перевірено {checked}, "
-					f"додано нових ID: {added_chat}"
-				)
+						
+						if (
+							len(ids) >= 2
+							and not SKIP_MSG_RE.search(t)
+							and INFECT_VERBS_RE.search(t)
+						):
+							who_id = ids[0]
+							victim_id = ids[1]
+							if who_id != victim_id:
+								bio, until_ts, until_str, p_name = (
+									parse_attack_info(h, t, msg_ts)
+								)
+								if p_name and who_id != my_id:
+									c.execute(
+										"""UPDATE avocado
+										SET p_name = ?, p_upd = ?
+										WHERE user_id = ? AND p_upd <= ?""",
+										(p_name, msg_ts, who_id, msg_ts)
+									)
+								if db_pymysql and d:
+									try:
+										d.execute(
+											"""INSERT INTO `tg_bio_attack`
+											(`date`, `who_id`, `p_name`,
+											`user_id`, `profit`,
+											`until_int`, `until_str`)
+											VALUES (%s, %s, %s, %s, %s, %s, %s)
+											ON DUPLICATE KEY UPDATE
+												date = IF(VALUES(date) >= date,
+													VALUES(date), date),
+												p_name = IF(
+													VALUES(p_name) != ''
+													AND VALUES(date) >= date,
+													VALUES(p_name), p_name
+												),
+												profit = IF(VALUES(date) >= date,
+													VALUES(profit), profit),
+												until_int = IF(
+													VALUES(date) >= date,
+													VALUES(until_int), until_int
+												),
+												until_str = IF(
+													VALUES(date) >= date,
+													VALUES(until_str), until_str
+												)""",
+											(
+												msg_ts, who_id, p_name,
+												victim_id, bio,
+												until_ts, until_str
+											)
+										)
+									except Exception:
+										pass
+
 		finally:
 			wf.flush()
 			wf.close()
