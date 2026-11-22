@@ -171,7 +171,7 @@ async def run_scan():
 				password=str(mysql_conf.get("password", "")),
 				db=str(mysql_conf.get("db", "db")),
 				charset="utf8mb4",
-				autocommit=False,
+				autocommit=True,
 				cursorclass=pymysql.cursors.DictCursor
 			)
 			d = con.cursor()
@@ -328,8 +328,8 @@ async def run_scan():
 										VALUES (%s, %s, 1)""",
 										(uid, msg_ts)
 									)
-								except Exception:
-									pass
+								except Exception as e:
+									print(f"⚠️ MySQL err: {e}")
 						
 						if (
 							len(ids) >= 2
@@ -407,8 +407,8 @@ async def run_scan():
 												until_ts, until_str
 											)
 										)
-									except Exception:
-										pass
+									except Exception as e:
+										print(f"⚠️ MySQL err: {e}")
 					
 					if checked % 100 == 0:
 						wf.flush()
