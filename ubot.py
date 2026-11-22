@@ -146,6 +146,7 @@ pt_time = int(time.time()) # час останньої фіксації пато
 fever_until = 0 # timestamp закінчення гарячки (0 = здоровий)
 mlab_req = {"chat_id": 0, "msg_id": 0, "ts": 0}	# запит .п / мл
 spy_mode = bool(config.get('spy_mode', False))	# «тихий» режим
+inviteURL = str(config.get('inviteURL') or inviteURL).strip()
 u_api_url = str(config.get('u_api_url') or u_api_url).strip()
 save_config() # Вирівнює порядок ключів у файлі та прибирає зайве
 
@@ -264,6 +265,83 @@ async def main():
 			ch_id = MAINchatID
 			config['ch_id'] = ch_id
 			save_config()
+
+		async def try_join_invite(link: str) -> bool:
+			if not link:
+				return False
+			m_priv = re.search(
+				r'(?:t\.me/\+|t\.me/joinchat/)([a-zA-Z0-9_-]+)',
+				link
+			)
+			if m_priv:
+				inv_hash = m_priv.group(1)
+				try:
+					from telethon.tl.functions.messages import (
+						CheckChatInviteRequest,
+						ImportChatInviteRequest
+					)
+					info = await client(CheckChatInviteRequest(inv_hash))
+					if hasattr(info, 'chat'):
+						return True
+					await client(ImportChatInviteRequest(inv_hash))
+					return True
+				except Exception as e:
+					if 'USER_ALREADY_PARTICIPANT' in str(e):
+						return True
+					print(f'⚠️ [invite] Не вдалося зайти за інвайтом: {e}')
+					return False
+			
+			m_pub = re.search(
+				r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
+				link
+			)
+			if m_pub:
+				uname = m_pub.group(1)
+				try:
+					from telethon.tl.functions.channels import (
+						JoinChannelRequest
+					)
+					await client(JoinChannelRequest(uname))
+					return True
+				except Exception as e:
+					if 'USER_ALREADY_PARTICIPANT' in str(e):
+						return True
+					print(f'⚠️ [invite] Не вдалося зайти в @{uname}: {e}')
+					return False
+			return False
+		
+		async def ensure_in_chat(target_id: int) -> bool:
+			if not target_id or target_id >= 0:
+				return False
+			try:
+				ent = await client.get_entity(target_id)
+				if not getattr(ent, 'left', False):
+					return True
+			except Exception:
+				pass
+			
+			if not inviteURL:
+				return False
+			
+			joined = await try_join_invite(inviteURL)
+			if joined:
+				try:
+					ent = await client.get_entity(target_id)
+					if not getattr(ent, 'left', False):
+						print(f'🚪 Увійшов у чат {target_id} за посиланням')
+						return True
+				except Exception:
+					pass
+				print(
+					f'⚠️ Посилання спрацювало, але веде не в чат {target_id}'
+				)
+			return False
+		
+		if ch_id < 0:
+			await ensure_in_chat(ch_id)
+		if MAINchatID < 0 and MAINchatID != ch_id:
+			await ensure_in_chat(MAINchatID)
+
 		
 		def is_allowed_chat(event) -> bool:
 			if event.is_private:
@@ -938,6 +1016,18 @@ async def main():
 					await asyncio.sleep(w)
 					continue
 				except Exception as e:
+					err_s = str(e)
+					if (
+						'channel specified is private' in err_s.lower()
+						or 'chat_write_forbidden' in err_s.lower()
+						or 'channelprivateerror' in type(e).__name__.lower()
+					):
+						print(f'⚠️ Немає доступу до чату Ферми ({kuda}). Перевіряю інвайт...')
+						if await ensure_in_chat(kuda):
+							await asyncio.sleep(3)
+							continue
+						print('🛑 Вимикаю Ферму (немає доступу до чату і не вдалося увійти).')
+						break
 					w = random.uniform(60, 180)
 					print(f'⚠️ Помилка у Фермі: {e}. Повтор через {int(w)} сек...')
 					await asyncio.sleep(w)
