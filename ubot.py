@@ -705,7 +705,21 @@ async def main():
 							uapi_conf['secret'] = new_sec
 							save_uapi_conf(uapi_conf)
 							print('🔑 Секрет отримано від @misc_beta_bot')
-						return True
+						if new_sec and is_valid_secret(new_sec) and new_sec != my_secret:
+							my_secret = new_sec
+							uapi_conf['secret'] = new_sec
+							save_uapi_conf(uapi_conf)
+							print(f'🔑 Секрет отримано від @misc_beta_bot у {uapi_file}')
+							ping_retry = await uapi_call('ping', {
+								'ts': int(time.time()),
+								'check_auth': 1
+							})
+							if ping_retry:
+								uapi_ok = True
+								print('✅ [uapi] Підключено після отримання секрету')
+							else:
+								uapi_ok = False
+						return uapi_ok
 			except Exception as e:
 				print(f'⚠️ Не вдалося отримати секрет від @misc_beta_bot: {e}')
 			return False
