@@ -502,9 +502,8 @@ async def main():
 				d.execute(
 					"ALTER TABLE `tg_bio_attack` "
 					"ADD `p_name` varchar(200) CHARACTER SET utf8mb4 "
-					"NOT NULL DEFAULT '' AFTER `user_id`;"
+					"NOT NULL DEFAULT '' AFTER `who_id`;"
 				)
-				con.commit()
 			except Exception:
 				pass
 			try:
@@ -598,9 +597,26 @@ async def main():
 			bio_int	INTEGER NOT NULL DEFAULT 1,
 			expr_int	INTEGER NOT NULL DEFAULT {},
 			expr_str	VARCHAR NOT NULL DEFAULT '{}',
-			p_name	VARCHAR(200) NOT NULL DEFAULT ''
+			p_name	VARCHAR(200) NOT NULL DEFAULT '',
+			p_upd	INTEGER NOT NULL DEFAULT 0
 			)""".format(restart_timestamp, restart_date_str))
 			conn.commit()
+			try:
+				c.execute(
+					"ALTER TABLE avocado "
+					"ADD COLUMN p_name VARCHAR(200) NOT NULL DEFAULT ''"
+				)
+				conn.commit()
+			except Exception:
+				pass
+			try:
+				c.execute(
+					"ALTER TABLE avocado "
+					"ADD COLUMN p_upd INTEGER NOT NULL DEFAULT 0"
+				)
+				conn.commit()
+			except Exception:
+				pass
 			
 			# Зачистка старих записів та сміттєвих ID у SQLite
 			c.execute('DELETE FROM avocado WHERE when_int < ? OR user_id < 100', 
