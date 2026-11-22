@@ -700,12 +700,7 @@ async def main():
 					
 					if m:
 						new_sec = m.group(1)
-						if new_sec != my_secret:
-							my_secret = new_sec
-							uapi_conf['secret'] = new_sec
-							save_uapi_conf(uapi_conf)
-							print('🔑 Секрет отримано від @misc_beta_bot')
-						if new_sec and is_valid_secret(new_sec) and new_sec != my_secret:
+						if new_sec and is_valid_secret(new_sec):
 							my_secret = new_sec
 							uapi_conf['secret'] = new_sec
 							save_uapi_conf(uapi_conf)
@@ -719,7 +714,8 @@ async def main():
 								print('✅ [uapi] Підключено після отримання секрету')
 							else:
 								uapi_ok = False
-						return uapi_ok
+							return uapi_ok
+						return False
 			except Exception as e:
 				print(f'⚠️ Не вдалося отримати секрет від @misc_beta_bot: {e}')
 			return False
