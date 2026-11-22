@@ -1258,9 +1258,13 @@ async def main():
 				except Exception as e:
 					print(f'⚠️ [bind] Помилка MySQL: {e}')
 			elif uapi_ok:
-				res = await uapi_call('ping', 
-				{'ts': int(time.time()), 
-				'check_auth': 1})
+				res = await uapi_call('bind', {
+					'chat': code,
+					'value': code,
+					'id_chat': -chat_abs,
+					'date': msg_ts,
+					'title': chat_title
+				})
 				if res:
 					saved_ok = True
 					print(f'✅ [bind] Збережено через API: {code}')
