@@ -792,9 +792,63 @@ async def main():
 				except Exception as e:
 					print(f"err optimize: {e}")
 			
-			if not just_cloned_0 and os.path.exists(db0_path_0):
-				import_0sqlite(db0_path_0)
-		
+			def import_0sqlite(db0_file: str):
+				if not os.path.exists(db0_file):
+					return 0
+				added = 0
+				try:
+					con0 = sqlite3.connect(db0_file)
+					cur0 = con0.cursor()
+					cur0.execute("SELECT * FROM avocado WHERE user_id >= 100")
+					now_s = int(time.time())
+					for row0 in cur0.fetchall():
+						u_i = int(row0[0])
+						if u_i in (my_id, 6333102398, 1124824021):
+							continue
+						w_i = int(row0[1] or now_s)
+						pn_s = str(row0[5] or '').strip() if len(row0) >= 7 else ''
+						pu_i = int(row0[6] or 0) if len(row0) >= 7 else 0
+						c.execute(
+							"""INSERT OR IGNORE INTO avocado
+							(user_id, when_int, bio_int,
+							expr_int, expr_str, p_name, p_upd)
+							VALUES (?, ?, 1, ?, ?, ?, ?)""",
+							(
+								u_i, w_i, restart_timestamp,
+								restart_date_str, pn_s, pu_i
+							)
+						)
+						if c.rowcount > 0:
+							added += 1
+						elif pn_s and pu_i > 0:
+							c.execute(
+								"""UPDATE avocado
+								SET p_name = ?, p_upd = ?
+								WHERE user_id = ? AND p_upd < ?""",
+								(pn_s, pu_i, u_i, pu_i)
+							)
+					conn.commit()
+					con0.close()
+					if added > 0:
+						print(f'📦 [0.sqlite] Залито нових ID: {added}')
+				except Exception as e:
+					print(f'⚠️ [0.sqlite] Помилка імпорту: {e}')
+				return added
+			
+			# Якщо 0.sqlite вже лежить у робочій папці — заливаємо одразу при старті
+			init_work_dir = '.'
+			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
+				init_work_dir = r"D:\Misc\projects\Python"
+			elif is_termux and default_directory:
+				init_work_dir = default_directory
+			init_db0 = os.path.join(init_work_dir, '0.sqlite')
+			if os.path.exists(init_db0):
+				import_0sqlite(
+					init_db0,
+					remove_after=os.path.exists(os.path.join(init_work_dir, 
+					'0.zip'))
+				)
+					
 		########################################################################
 		
 		is_local_api = bool(re.match(
