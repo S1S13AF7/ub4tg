@@ -580,13 +580,158 @@ async def main():
 			if del_attack or del_users or del_urls:
 				print(f'🧹 MySQL очищено від старих записів (до {restart_timestamp}): атаки={del_attack}, юзери={del_users}, лінки={del_urls}')
 		
-		if db_sqlite3:
-			sqlite_path = f"{my_id}.sqlite" # покласти базу рядом (перевизначимо)?
+		work_dir_0 = '.'
+		if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
+			work_dir_0 = r"D:\Misc\projects\Python"
+		elif is_termux and default_directory:
+			work_dir_0 = default_directory
+		zip_path_0 = os.path.join(work_dir_0, '0.zip')
+		db0_path_0 = os.path.join(work_dir_0, '0.sqlite')
+		
+		def sync_0zip_disk(force_if_missing: bool = False):
+			import urllib.error
+			import urllib.request
+			import zipfile
+			from email.utils import parsedate_to_datetime
 			
+			has_zip = os.path.exists(zip_path_0)
+			has_db0 = os.path.exists(db0_path_0)
+			
+			# Якщо є архів, але немає розпакованого 0.sqlite — розпаковуємо
+			if has_zip and not has_db0:
+				try:
+					if zipfile.is_zipfile(zip_path_0):
+						with zipfile.ZipFile(zip_path_0, 'r') as zf:
+							if '0.sqlite' in zf.namelist():
+								zf.extract('0.sqlite', work_dir_0)
+								has_db0 = True
+				except Exception:
+					pass
+			
+			if force_if_missing and (has_zip or has_db0):
+				return 'ok', None
+			if not bio_0_url:
+				return 'ok', None
+			
+			need_dl = not has_zip and not has_db0
+			r_ts = None
+			r_size = None
+			try:
+				req = urllib.request.Request(
+					bio_0_url,
+					method='HEAD',
+					headers={'User-Agent': 'Mozilla/5.0'}
+				)
+				with urllib.request.urlopen(req, timeout=15) as resp:
+					if resp.status >= 400:
+						return 'retry_1h', f'HTTP {resp.status}'
+					ctype = (resp.headers.get('Content-Type') or '').lower()
+					if 'text/html' in ctype:
+						return 'retry_1h', 'HTML замість архіву (HEAD)'
+					lm = resp.headers.get('Last-Modified')
+					cl = resp.headers.get('Content-Length')
+					if lm:
+						r_ts = int(parsedate_to_datetime(lm).timestamp())
+					if cl and cl.isdigit():
+						r_size = int(cl)
+			except urllib.error.HTTPError as e:
+				return 'retry_1h', f'HTTP {e.code}'
+			except Exception as e:
+				return 'retry_1h', f'Мережа/DNS: {e}'
+			
+			if not need_dl and has_zip:
+				l_ts = int(os.path.getmtime(zip_path_0))
+				l_size = os.path.getsize(zip_path_0)
+				now_s = int(time.time())
+				cond_date = (
+					r_ts is not None
+					and r_ts > l_ts
+					and r_ts < (now_s - 3600)
+				)
+				cond_size = (
+					r_size is not None
+					and r_size > l_size
+				)
+				if cond_date or cond_size:
+					need_dl = True
+			if not need_dl:
+				return 'ok', None
+			
+			tmp_zip = zip_path_0 + '.tmp'
+			try:
+				req_get = urllib.request.Request(
+					bio_0_url,
+					headers={'User-Agent': 'Mozilla/5.0'}
+				)
+				with urllib.request.urlopen(req_get, timeout=60) as resp:
+					if resp.status >= 400:
+						return 'retry_1h', f'GET HTTP {resp.status}'
+					ctype = (resp.headers.get('Content-Type') or '').lower()
+					if 'text/html' in ctype:
+						return 'retry_1h', 'HTML замість архіву (GET)'
+					lm_get = resp.headers.get('Last-Modified')
+					if lm_get:
+						r_ts = int(parsedate_to_datetime(lm_get).timestamp())
+					with open(tmp_zip, 'wb') as out_f:
+						shutil.copyfileobj(resp, out_f)
+				
+				if not zipfile.is_zipfile(tmp_zip):
+					try:
+						os.remove(tmp_zip)
+					except Exception:
+						pass
+					return 'retry_1h', 'Отримано не ZIP-файл'
+				
+				if os.path.exists(zip_path_0):
+					try:
+						os.remove(zip_path_0)
+					except Exception:
+						pass
+				os.replace(tmp_zip, zip_path_0)
+				if r_ts:
+					os.utime(zip_path_0, (r_ts, r_ts))
+				
+				with zipfile.ZipFile(zip_path_0, 'r') as zf:
+					if '0.sqlite' not in zf.namelist():
+						return 'retry_1h', '0.sqlite відсутній у 0.zip'
+					zf.extract('0.sqlite', work_dir_0)
+				
+				return 'updated', None
+			except Exception as e:
+				if os.path.exists(tmp_zip):
+					try:
+						os.remove(tmp_zip)
+					except Exception:
+						pass
+				return 'retry_1h', f'Збій завантаження: {e}'
+
+
+		if db_sqlite3:
+			sqlite_path = f"{my_id}.sqlite"
 			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
 				sqlite_path = rf"D:\Misc\projects\Python\{my_id}.sqlite"
 			elif is_termux:
 				sqlite_path = f"{default_directory}/{my_id}.sqlite"
+			
+			# 1. Якщо немає ні 0.sqlite, ні 0.zip — пробуємо скачати
+			if not os.path.exists(db0_path_0) and not os.path.exists(zip_path_0):
+				print('📥 [0.zip] Локальної нульової бази нема, перевіряю сервер...')
+				sync_0zip_disk(force_if_missing=True)
+			elif os.path.exists(zip_path_0) and not os.path.exists(db0_path_0):
+				sync_0zip_disk(force_if_missing=True)
+			
+			# 2. Якщо є 0.sqlite, але немає своєї {my_id}.sqlite — копіюємо!
+			just_cloned_0 = False
+			if os.path.exists(db0_path_0) and not os.path.exists(sqlite_path):
+				try:
+					shutil.copy2(db0_path_0, sqlite_path)
+					just_cloned_0 = True
+					print(f'📋 [0.sqlite] Скопійовано як {os.path.basename(sqlite_path)}')
+				except Exception as e:
+					print(f'⚠️ [0.sqlite] Не вдалося скопіювати: {e}')
+			
+			conn = sqlite3.connect(sqlite_path)
+			c = conn.cursor()
 			
 			conn = sqlite3.connect(sqlite_path)
 			c = conn.cursor()
@@ -651,58 +796,9 @@ async def main():
 				except Exception as e:
 					print(f"err optimize: {e}")
 			
-			def import_0sqlite(db0_file: str, remove_after: bool = False):
-				if not os.path.exists(db0_file):
-					return 0
-				added = 0
-				try:
-					con0 = sqlite3.connect(db0_file)
-					cur0 = con0.cursor()
-					cur0.execute(
-						"SELECT user_id, when_int FROM avocado "
-						"WHERE user_id >= 100"
-					)
-					now_s = int(time.time())
-					for uid_0, wh_0 in cur0.fetchall():
-						u_i = int(uid_0)
-						if u_i in (my_id, 6333102398, 1124824021):
-							continue
-						w_i = int(wh_0 or now_s)
-						c.execute(
-							"""INSERT OR IGNORE INTO avocado
-							(user_id, when_int, bio_int, expr_int, expr_str)
-							VALUES (?, ?, 1, ?, ?)""",
-							(u_i, w_i, restart_timestamp, restart_date_str)
-						)
-						if c.rowcount > 0:
-							added += 1
-					conn.commit()
-					con0.close()
-					if remove_after:
-						try:
-							os.remove(db0_file)
-						except Exception:
-							pass
-					if added > 0:
-						print(f'📦 [0.sqlite] Залито нових ID: {added}')
-				except Exception as e:
-					print(f'⚠️ [0.sqlite] Помилка імпорту: {e}')
-				return added
-			
-			# Якщо 0.sqlite вже лежить у робочій папці — заливаємо одразу при старті
-			init_work_dir = '.'
-			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
-				init_work_dir = r"D:\Misc\projects\Python"
-			elif is_termux and default_directory:
-				init_work_dir = default_directory
-			init_db0 = os.path.join(init_work_dir, '0.sqlite')
-			if os.path.exists(init_db0):
-				import_0sqlite(
-					init_db0,
-					remove_after=os.path.exists(os.path.join(init_work_dir, 
-					'0.zip'))
-				)
-					
+						if not just_cloned_0 and os.path.exists(db0_path_0):
+				import_0sqlite(db0_path_0)
+		
 		########################################################################
 		
 		is_local_api = bool(re.match(
