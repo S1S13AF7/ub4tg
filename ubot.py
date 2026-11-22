@@ -496,7 +496,7 @@ async def main():
 			) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;''')
 			con.commit()
 			
-			if is_valid_secret(db_sec) and db_sec != my_secret:
+			if not is_valid_secret(my_secret):
 				my_secret = gen_uapi_secret()
 				uapi_conf['secret'] = my_secret
 				save_uapi_conf(uapi_conf)
@@ -525,10 +525,7 @@ async def main():
 				row_sec = d.fetchone()
 				if row_sec:
 					db_sec = str(row_sec.get('secret', ''))
-					if (
-						re.match(r"^[a-zA-Z0-9]{8,30}$", db_sec)
-						and db_sec != my_secret
-					):
+					if is_valid_secret(db_sec) and db_sec != my_secret:
 						my_secret = db_sec
 						uapi_conf['secret'] = db_sec
 						save_uapi_conf(uapi_conf)
@@ -865,7 +862,7 @@ async def main():
 					uapi_ok = False
 					print(f'⚠️ [uapi] Сервер недоступний ({u_api_url})')
 			
-			if not re.match(r"^[a-zA-Z0-9]{8,30}$", str(my_secret)):
+			if not is_valid_secret(my_secret):
 				my_secret = gen_uapi_secret()
 				uapi_conf['secret'] = my_secret
 				save_uapi_conf(uapi_conf)
