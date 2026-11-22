@@ -1,6 +1,8 @@
 # requirements.txt
 
 aiogram==2.25.2
-#asyncio
+emoji
 pymysql
-#emoji
+pywin32; sys_platform == 'win32'
+qrcode
+Telethon
