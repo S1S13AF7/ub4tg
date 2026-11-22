@@ -423,6 +423,7 @@ async def run_scan():
 						await asyncio.sleep(0.4)
 				
 				wf.flush()
+				wf.close()
 				conn.commit()
 				if db_pymysql and con:
 					con.commit()
@@ -433,8 +434,10 @@ async def run_scan():
 				)
 
 		finally:
-			wf.flush()
-			wf.close()
+			
+			if wf and not wf.closed: 
+				wf.flush(); 
+				wf.close()
 			if con:
 				try:
 					con.close()
