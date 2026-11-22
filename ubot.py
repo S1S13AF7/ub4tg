@@ -1008,6 +1008,55 @@ async def main():
 		
 		########################################################################
 		
+		@client.on(events.NewMessage(
+			incoming=True,
+			from_users=irises,
+			pattern=r'(?s).*🗓\s*Код\s+(?:беседы|чата|чату)\s*:\s*([0-9a-f]{8})'
+		))
+		async def iris_bind_chat(event):
+			if event.is_private:
+				return
+			m = event.message
+			code_m = re.search(
+				r'🗓\s*Код\s+(?:беседы|чата|чату)\s*:\s*([0-9a-f]{8})',
+				m.raw_text,
+				re.IGNORECASE
+			)
+			if not code_m:
+				return
+			
+			code = code_m.group(1).lower()
+			chat_abs = abs(int(event.chat_id))
+			msg_ts = int(m.date.timestamp()) if m.date else int(time.time())
+			
+			print(f'🔗 [bind] {my_id} -> {code} : -{chat_abs}')
+			
+			if db_pymysql:
+				try:
+					d.execute(
+						'''INSERT INTO `userbot_bind`
+						(`platform`, `id_user`, `code`, `date`, `id_chat`)
+						VALUES ('tg', %s, %s, %s, %s)
+						ON DUPLICATE KEY UPDATE
+							`date` = VALUES(`date`),
+							`id_chat` = VALUES(`id_chat`);''',
+						(int(my_id), code, msg_ts, chat_abs)
+					)
+					con.commit()
+				except Exception as e:
+					print(f'⚠️ [bind] Помилка MySQL: {e}')
+			elif uapi_ok:
+				res = await uapi_call('bind', {
+					'chat': code,
+					'value': code,
+					'id_chat': -chat_abs,
+					'date': msg_ts
+				})
+				if res == 'ok':
+					print(f'✅ [bind] Збережено через API: {code}')
+		
+		########################################################################
+		
 		@client.on(events.NewMessage(incoming=True,from_users=6333102398,
 		pattern=r'🎉 New laboratory level'))
 		async def New_level(event):
