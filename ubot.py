@@ -859,19 +859,22 @@ async def main():
 				uapi_ok = False
 				return
 			
+			first_check = True
 			while True:
 				res = await uapi_call('ping', force=True)
 				if res == 'ok':
-					if not uapi_ok:
+					if first_check or not uapi_ok:
 						uapi_ok = True
-						print(f'🌐 [uapi] Зв\'язок відновлено ({u_api_url})')
+						print(f'🌐 [uapi] Зв\'язок є ({u_api_url})')
 					
 					if not is_valid_secret(my_secret):
 						await fetch_secret_from_mbot()
 				else:
-					if uapi_ok:
+					if first_check or uapi_ok:
 						uapi_ok = False
-						print(f'⚠️ [uapi] Сервер офлайн ({u_api_url})')
+						print(f'⚠️ [uapi] Зв\'язку нема ({u_api_url})')
+				
+				first_check = False
 				
 				if not is_valid_secret(my_secret):
 					my_secret = gen_uapi_secret()
@@ -881,8 +884,6 @@ async def main():
 				
 				await asyncio.sleep(random.uniform(180, 300))
 		
-		if uapi_ok:
-			print(f'🌐 [uapi] Очікую перевірку ({u_api_url})')
 		uapi_ok = False
 		asyncio.create_task(uapi_watchdog())
 		
