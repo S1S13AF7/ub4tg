@@ -851,7 +851,7 @@ async def main():
 				return res.get('response')
 			return None
 		
-				async def uapi_watchdog():
+		async def uapi_watchdog():
 			global uapi_ok, my_secret
 			if not u_api_url:
 				return
