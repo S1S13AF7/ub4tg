@@ -217,6 +217,40 @@ try:
 except Exception:
 	with open(dovs_file, "w", encoding="utf-8") as write_file:
 		json.dump(dovs, write_file, ensure_ascii=False, indent='\t')
+################################################################################
+if is_termux and default_directory:
+	noeb_file = f'{default_directory}/noeb.json'
+elif os.name == 'nt' and os.path.abspath(os.getcwd()).lower().startswith(
+	r'd:\misc\projects\python'
+):
+	noeb_file = r'D:\Misc\projects\Python\noeb.json'
+else:
+	noeb_file = 'noeb.json'
+
+noeb = [
+	707693258, 5137994780, 5226378684,
+	5434504334, 5443619563, 6333102398,
+	7959200286, 1124824021
+]
+try:
+	with open(noeb_file, 'r', encoding='utf-8') as read_file:
+		loaded_noeb = json.load(read_file)
+		if isinstance(loaded_noeb, list):
+			for x_id in loaded_noeb:
+				if int(x_id) not in noeb:
+					noeb.append(int(x_id))
+except Exception:
+	with open(noeb_file, 'w', encoding='utf-8') as write_file:
+		json.dump(noeb, write_file, ensure_ascii=False, indent='\t')
+
+def save_noeb():
+	try:
+		with open(noeb_file, 'w', encoding='utf-8') as write_file:
+			json.dump(noeb, write_file, ensure_ascii=False, indent='\t')
+	except Exception:
+		pass
+
+################################################################################
 
 mlab = {"kvala": 1, "max_pt": 10, "letal": 1}
 try:
@@ -1683,6 +1717,66 @@ async def main():
 			r'👩🏻‍🔬\s*(?:Qualification|Квалификация))'
 		)
 		
+		NO_LAB_PAT = (
+			r'(?:has\s+no\s+laboratory|has\s+not\s+registered|'
+			r'cannot\s+infect|can\'t\s+infect|unable\s+to\s+infect|'
+			r'player\s+not\s+found|user\s+not\s+found|invalid\s+target|'
+			r'is\s+a\s+bot|юзер\s+не\s+знайдений|нет\s+лаборатории|'
+			r'не\s+зарегистрирован|не\s+является\s+игроком|'
+			r'нельзя\s+заразить|невозможно\s+заразить|'
+			r'недоступен\s+для\s+заражения|игрок\s+не\s+найден|'
+			r'пользователь\s+не\s+найден|объект\s+не\s+найден|'
+			r'нельзя\s+заражать\s+ботов)'
+		)
+		NO_LAB_RE = re.compile(NO_LAB_PAT, re.IGNORECASE)
+		
+		@client.on(events.NewMessage(
+			incoming=True, from_users=6333102398, pattern=NO_LAB_RE
+		))
+		async def avocado_404(event):
+			m = event.message
+			t = m.raw_text or ''
+			if 'самого себя' in t.lower() or 'yourself' in t.lower():
+				return
+			if not m.entities:
+				return
+			h = utils.sanitize_parse_mode('html').unparse(t, m.entities)
+			r_ent = re.findall(r'tg://openmessage\?user_id=(\d+)', h)
+			if not r_ent:
+				return
+			bad_uid = int(r_ent[0])
+			if bad_uid == my_id or bad_uid in noeb:
+				return
+			
+			noeb.append(bad_uid)
+			save_noeb()
+			
+			if db_sqlite3:
+				try:
+					c.execute(
+						"DELETE FROM avocado WHERE user_id = ?",
+						(bad_uid,)
+					)
+					conn.commit()
+				except Exception as e:
+					print(f'err: {e} (delete sqlite 404)')
+			
+			if db_pymysql:
+				try:
+					d.execute(
+						"DELETE FROM `tg_bio_users` WHERE `user_id` = %s",
+						(bad_uid,)
+					)
+					d.execute(
+						"DELETE FROM `tg_bio_attack` WHERE `user_id` = %s",
+						(bad_uid,)
+					)
+					con.commit()
+				except Exception as e:
+					print(f'err: {e} (delete mysql 404)')
+			
+			print(f'🗑️ Видалено неігровий ID @{bad_uid} із баз та додано в noeb.')
+		
 		@client.on(events.NewMessage(incoming=True, from_users=6333102398))
 		async def infect_router(event):
 			global last_bz_time, ostalos_pt, pt_time, letal
@@ -1692,6 +1786,8 @@ async def main():
 				return
 			
 			t = m.raw_text
+			if NO_LAB_RE.search(t):
+				return
 			if re.search(skip_router_re, t, re.IGNORECASE):
 				return
 			
@@ -1768,8 +1864,8 @@ async def main():
 				
 				return p_bio, p_days, p_rem, p_vir
 			
-			def save_unknown_victim(uid:int):
-				if uid == my_id or uid < 100:
+			def save_unknown_victim(uid: int):
+				if uid < 10000 or uid in noeb:
 					return
 				if db_sqlite3:
 					try:
