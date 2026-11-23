@@ -1079,20 +1079,20 @@ async def main():
 			while True:
 				res = await uapi_call('ping', force=True)
 				if res == 'ok':
-				if first_check or not uapi_ok:
-					uapi_ok = True
-					print(f'🌐 [uapi] ok')
-					if noeb_need_fetch:
-						noeb_need_fetch = False
-						res_n = await uapi_call('noeb', {})
-						if isinstance(res_n, dict):
-							srv_list = res_n.get('noeb')
-							if isinstance(srv_list, list):
-								for x_id in srv_list:
-									xi = int(x_id)
-									if xi > 0 and xi not in noeb:
-										noeb.append(xi)
-						save_noeb()
+					if first_check or not uapi_ok:
+						uapi_ok = True
+						print(f'🌐 [uapi] ok')
+						if noeb_need_fetch:
+							noeb_need_fetch = False
+							res_n = await uapi_call('noeb', {})
+							if isinstance(res_n, dict):
+								srv_list = res_n.get('noeb')
+								if isinstance(srv_list, list):
+									for x_id in srv_list:
+										xi = int(x_id)
+										if xi > 0 and xi not in noeb:
+											noeb.append(xi)
+							save_noeb()
 					
 					if not is_valid_secret(my_secret):
 						await fetch_secret_from_mbot()
