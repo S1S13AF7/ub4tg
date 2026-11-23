@@ -1750,6 +1750,19 @@ async def main():
 			
 			noeb.append(bad_uid)
 			save_noeb()
+			if uapi_ok:
+				res_n, err_n = await uapi_call('noeb', {'noeb': noeb})
+				if not err_n and isinstance(res_n, dict):
+					srv_diff = res_n.get('noeb')
+					if isinstance(srv_diff, list) and srv_diff:
+						changed_n = False
+						for x_id in srv_diff:
+							xi = int(x_id)
+							if xi > 0 and xi not in noeb:
+								noeb.append(xi)
+								changed_n = True
+						if changed_n:
+							save_noeb()
 			
 			if db_sqlite3:
 				try:
