@@ -227,21 +227,14 @@ elif os.name == 'nt' and os.path.abspath(os.getcwd()).lower().startswith(
 else:
 	noeb_file = 'noeb.json'
 
-noeb = [
-	707693258, 5137994780, 5226378684,
-	5434504334, 5443619563, 6333102398,
-	7959200286, 1124824021
-]
-try:
-	with open(noeb_file, 'r', encoding='utf-8') as read_file:
-		loaded_noeb = json.load(read_file)
-		if isinstance(loaded_noeb, list):
-			for x_id in loaded_noeb:
-				if int(x_id) not in noeb:
-					noeb.append(int(x_id))
-except Exception:
-	with open(noeb_file, 'w', encoding='utf-8') as write_file:
-		json.dump(noeb, write_file, ensure_ascii=False, indent='\t')
+noeb =[] # нема
+noeb_need_fetch = False
+
+found_noeb_path = None
+for cand_n in (noeb_file, 'noeb.json'):
+	if os.path.exists(cand_n):
+		found_noeb_path = cand_n
+		break
 
 def save_noeb():
 	try:
@@ -249,6 +242,21 @@ def save_noeb():
 			json.dump(noeb, write_file, ensure_ascii=False, indent='\t')
 	except Exception:
 		pass
+
+if found_noeb_path:
+	try:
+		with open(found_noeb_path, 'r', encoding='utf-8') as read_file:
+			loaded_noeb = json.load(read_file)
+			if isinstance(loaded_noeb, list):
+				for x_id in loaded_noeb:
+					if int(x_id) not in noeb:
+						noeb.append(int(x_id))
+		if found_noeb_path != noeb_file:
+			save_noeb()
+	except Exception:
+		save_noeb()
+else:
+	noeb_need_fetch = True
 
 ################################################################################
 
@@ -1059,7 +1067,7 @@ async def main():
 			return None
 		
 		async def uapi_watchdog():
-			global uapi_ok, my_secret
+			global uapi_ok, my_secret,noeb_need_fetch
 			if not u_api_url:
 				return
 			if is_local_api and not db_pymysql:
@@ -1067,12 +1075,24 @@ async def main():
 				return
 			
 			first_check = True
+			
 			while True:
 				res = await uapi_call('ping', force=True)
 				if res == 'ok':
 					if first_check or not uapi_ok:
-						uapi_ok = True
-						print(f'🌐 [uapi] ok')
+					uapi_ok = True
+					print(f'🌐 [uapi] ok')
+					if noeb_need_fetch:
+						noeb_need_fetch = False
+						res_n = await uapi_call('noeb', {})
+						if isinstance(res_n, dict):
+							srv_list = res_n.get('noeb')
+							if isinstance(srv_list, list):
+								for x_id in srv_list:
+									xi = int(x_id)
+									if xi > 0 and xi not in noeb:
+										noeb.append(xi)
+						save_noeb()
 					
 					if not is_valid_secret(my_secret):
 						await fetch_secret_from_mbot()
@@ -1751,18 +1771,7 @@ async def main():
 			noeb.append(bad_uid)
 			save_noeb()
 			if uapi_ok:
-				res_n, err_n = await uapi_call('noeb', {'noeb': noeb})
-				if not err_n and isinstance(res_n, dict):
-					srv_diff = res_n.get('noeb')
-					if isinstance(srv_diff, list) and srv_diff:
-						changed_n = False
-						for x_id in srv_diff:
-							xi = int(x_id)
-							if xi > 0 and xi not in noeb:
-								noeb.append(xi)
-								changed_n = True
-						if changed_n:
-							save_noeb()
+				await uapi_call('noeb', {'noeb': bad_uid})
 			
 			if db_sqlite3:
 				try:
