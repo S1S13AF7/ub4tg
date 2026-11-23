@@ -1079,7 +1079,7 @@ async def main():
 			while True:
 				res = await uapi_call('ping', force=True)
 				if res == 'ok':
-					if first_check or not uapi_ok:
+				if first_check or not uapi_ok:
 					uapi_ok = True
 					print(f'🌐 [uapi] ok')
 					if noeb_need_fetch:
