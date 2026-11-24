@@ -2607,7 +2607,8 @@ async def main():
 						break
 				
 				if not valid_targets:
-					await safe_edit(event, '🤷 У топі немає підходящих цілей.')
+					await safe_edit(event, f'🤷 Нема цілей (p:{len(pages_html)}, 
+					c:{len(candidates_ordered)}).')
 					return
 				
 				await safe_edit(event, f'🎯 Знайдено {len(valid_targets)} цілей знизу топу. Атакую...')
