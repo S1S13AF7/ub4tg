@@ -2535,7 +2535,7 @@ async def main():
 							next_btn = None
 							for row in msg1.buttons:
 								for btn in row:
-									if btn.text.strip() == '2':
+									if btn.text.strip().startswith('2'):
 										next_btn = btn
 										break
 								if next_btn:
@@ -2554,11 +2554,10 @@ async def main():
 					return
 				
 				# Парсимо всі рядки з 1-ї та 2-ї сторінок по порядку
-				row_pattern = re.compile(
-					r'<a href="tg://openmessage\?user_id=(\d+)"[^>]*>[^<]+</a>\s*\|\s*[\d\s]+\s*\|\s*\+(\d+)',
+				any_id_pattern = re.compile(
+					r'tg://(?:openmessage\?user_id=|user\?id=)(\d+)',
 					re.IGNORECASE
 				)
-				any_id_pattern = re.compile(r'tg://openmessage\?user_id=(\d+)', re.IGNORECASE)
 				
 				now_ts = int(time.time())
 				candidates_ordered = [] # від 1-го до останнього місця
@@ -2567,18 +2566,45 @@ async def main():
 				for h_page in pages_html:
 					for uid_s in any_id_pattern.findall(h_page):
 						uid_i = int(uid_s)
-						if uid_i not in (6333102398, 1124824021):
-							c.execute("""INSERT OR IGNORE INTO avocado 
-							(user_id, when_int, bio_int, expr_int, expr_str) 
-							VALUES (?, ?, 1, ?, ?)""",
-							(uid_i, now_ts,restart_timestamp,restart_date_str))
+						if (
+							uid_i >= 100
+							and uid_i not in (6333102398, 1124824021)
+							and uid_i not in noeb
+						):
+							c.execute(
+								"""INSERT OR IGNORE INTO avocado
+								(user_id, when_int, bio_int,
+								expr_int, expr_str)
+								VALUES (?, ?, 1, ?, ?)""",
+								(
+									uid_i, now_ts,
+									restart_timestamp,
+									restart_date_str
+								)
+							)
 					
 					# Відбираємо рядки без ⏳ і з активним +X
-					for m_row in row_pattern.finditer(h_page):
-						uid = int(m_row.group(1))
-						plus_val = int(m_row.group(2))
-						if uid in seen_ids or uid < 100 or uid == my_id:
+					for line in h_page.splitlines():
+						if '⏳' in line or '|' not in line:
 							continue
+						m_uid = any_id_pattern.search(line)
+						if not m_uid:
+							continue
+						uid = int(m_uid.group(1))
+						if (
+							uid in seen_ids
+							or uid < 100
+							or uid == my_id
+							or uid in noeb
+						):
+							continue
+						clean_line = re.sub(r'<[^>]+>', '', line)
+						parts = clean_line.split('|')
+						tail = parts[-1] if len(parts) >= 2 else clean_line
+						m_plus = re.search(r'\+(\d+)', tail)
+						if not m_plus:
+							continue
+						plus_val = int(m_plus.group(1))
 						seen_ids.add(uid)
 						candidates_ordered.append((uid, plus_val))
 				
@@ -2607,7 +2633,20 @@ async def main():
 						break
 				
 				if not valid_targets:
-					await safe_edit(event, '🤷 У топі немає підходящих цілей.')
+					first_ln = (
+						pages_html[0].splitlines()[0]
+						if pages_html else ''
+					)
+					print(
+						f'[btop] pages={len(pages_html)} '
+						f'cand={len(candidates_ordered)} '
+						f'first={first_ln[:50]}'
+					)
+					await safe_edit(
+						event,
+						f'🤷 У топі немає підходящих цілей '
+						f'(p:{len(pages_html)}, c:{len(candidates_ordered)}).'
+					)
 					return
 				
 				await safe_edit(event, f'🎯 Знайдено {len(valid_targets)} цілей знизу топу. Атакую...')
