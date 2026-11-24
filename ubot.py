@@ -2596,10 +2596,6 @@ async def main():
 					valid_targets.append((uid, plus_val))
 					if len(valid_targets) >= need_limit:
 						break
-					
-					valid_targets.append((uid, plus_val))
-					if len(valid_targets) >= need_limit:
-						break
 				
 				if not valid_targets:
 					await safe_edit(
