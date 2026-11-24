@@ -2591,16 +2591,11 @@ async def main():
 				need_limit = max(1, get_pt() - 1)
 				
 				for uid, plus_val in candidates_ordered:
-					c.execute("SELECT bio_int, expr_int FROM avocado WHERE user_id = ?", (uid,))
-					row_db = c.fetchone()
-					if row_db:
-						old_bio, expr_int = map(int, row_db)
-						# Якщо активний наш антил — пропускаємо
-						if expr_int > now_ts:
-							continue
-						# б'ємо тільки якщо плюс у топі
-						if old_bio > 1 and plus_val < 1:
-							continue
+					if uid in noeb:
+						continue
+					valid_targets.append((uid, plus_val))
+					if len(valid_targets) >= need_limit:
+						break
 					
 					valid_targets.append((uid, plus_val))
 					if len(valid_targets) >= need_limit:
