@@ -2555,7 +2555,7 @@ async def main():
 				
 				# Парсимо всі рядки з 1-ї та 2-ї сторінок по порядку
 				row_pattern = re.compile(
-					r'<a href="tg://openmessage\?user_id=(\d+)"[^>]*>[^<]+</a>\s*\|\s*[\d\s]+\s*\|\s*\+(\d+)',
+					r'tg://openmessage\?user_id=(\d+)[^\n]*?\|\s*\+(\d+)',
 					re.IGNORECASE
 				)
 				any_id_pattern = re.compile(r'tg://openmessage\?user_id=(\d+)', re.IGNORECASE)
