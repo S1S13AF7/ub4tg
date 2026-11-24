@@ -2447,7 +2447,7 @@ async def main():
 					
 					c.execute("""
 						SELECT user_id, bio_int FROM avocado 
-						WHERE user_id >= 100
+						WHERE user_id >= 10000
 						AND user_id NOT IN (?, 6333102398, 1124824021) 
 						AND (expr_int = 0 OR expr_int < ? OR bio_int < 5)
 						ORDER BY when_int ASC 
@@ -2598,8 +2598,8 @@ async def main():
 						# Якщо активний наш антил — пропускаємо
 						if expr_int > now_ts:
 							continue
-						# Якщо вже заражали раніше — б'ємо тільки якщо плюс у топі двозначний (>= 10)
-						if old_bio > 1 and plus_val < 10:
+						# б'ємо тільки якщо плюс у топі
+						if old_bio > 1 and plus_val < 1:
 							continue
 					
 					valid_targets.append((uid, plus_val))
@@ -2607,7 +2607,7 @@ async def main():
 						break
 				
 				if not valid_targets:
-					await safe_edit(event, '🤷 У топі немає підходящих цілей (у всіх КД або менший профіт).')
+					await safe_edit(event, '🤷 У топі немає підходящих цілей.')
 					return
 				
 				await safe_edit(event, f'🎯 Знайдено {len(valid_targets)} цілей знизу топу. Атакую...')
@@ -2706,7 +2706,7 @@ async def main():
 							dump_lines.append(f"=== MSG ID: {m.id} | {m.date.strftime('%d.%m.%Y %H:%M:%S')} UTC ===\n{h}\n")
 						for uid_s in re.findall(r'tg://openmessage\?user_id=(\d+)', h):
 							u_id = int(uid_s)
-							if u_id >= 100 and u_id not in (my_id, 6333102398, 1124824021):
+							if u_id >= 100 and u_id not in noeb:
 								found.add(u_id)
 								if db_sqlite3:
 									c.execute("""INSERT OR IGNORE INTO avocado 
