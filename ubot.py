@@ -1114,6 +1114,37 @@ async def main():
 				return res.get('response')
 			return None
 		
+		async def add_noeb(bad_uid: int) -> bool:
+			try:
+				bad_uid = int(bad_uid)
+			except Exception:
+				return False
+			
+			if bad_uid < 100 or bad_uid in noeb:
+				return False
+			
+			noeb.append(bad_uid)
+			
+			if uapi_ok:
+				try:
+					await uapi_call('noeb', {'noeb': bad_uid})
+					res_d = await uapi_call('noeb', {'noeb': noeb})
+					if isinstance(res_d, dict):
+						srv_delta = res_d.get('noeb')
+						if isinstance(srv_delta, list):
+							for raw_x in srv_delta:
+								try:
+									xi = int(raw_x)
+									if xi >= 100 and xi not in noeb:
+										noeb.append(xi)
+								except Exception:
+									pass
+				except Exception:
+					pass
+			
+			save_noeb()
+			return True
+		
 		async def uapi_watchdog():
 			global uapi_ok, my_secret,noeb_need_fetch
 			if not u_api_url:
@@ -1816,11 +1847,10 @@ async def main():
 			if bad_uid < 100:
 				return
 			
-			if bad_uid not in noeb:
-				noeb.append(bad_uid)
-				save_noeb()
-				if uapi_ok:
-					await uapi_call('noeb', {'noeb': bad_uid})
+			await add_noeb(bad_uid)
+			
+			if uapi_ok:
+				await uapi_call('noeb', {'noeb': bad_uid})
 			
 			if db_sqlite3:
 				try:
