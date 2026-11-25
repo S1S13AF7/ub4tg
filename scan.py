@@ -71,12 +71,51 @@ for cand_n in (NOEB_PATH, "noeb.json"):
 		except Exception:
 			pass
 
-def save_noeb():
+def add_noeb(bad_uid: int) -> bool:
+	global noeb
 	try:
-		with open(NOEB_PATH, "w", encoding="utf-8") as nf:
-			json.dump(noeb, nf, ensure_ascii=False, indent="\t")
+		bad_uid = int(bad_uid)
 	except Exception:
-		pass
+		return False
+	
+	if bad_uid < 100 or bad_uid in noeb:
+		return False
+	noeb.append(bad_uid)
+
+def add_noeb(bad_uid: int) -> bool:
+	global noeb
+	try:
+		bad_uid = int(bad_uid)
+	except Exception:
+		return False
+	
+	if not (100 < bad_uid < 10000) or bad_uid in noeb:
+		return False
+	
+	noeb.append(bad_uid)
+	return True
+
+def save_noeb(items=None):
+	global noeb
+	if not items:
+		return
+	
+	added = 0
+	for raw_x in items:
+		try:
+			xi = int(raw_x)
+			if 100 < xi < 10000 and xi not in noeb:
+				noeb.append(xi)
+				added += 1
+		except Exception:
+			pass
+	
+	if added > 0:
+		try:
+			with open(NOEB_PATH, "w", encoding="utf-8") as nf:
+				json.dump(noeb, nf, ensure_ascii=False, indent="\t")
+		except Exception:
+			pass
 
 def set_file_dates(filepath: str, ts: int):
 	if not ts or not (ts > 0) or not os.path.exists(filepath):
@@ -350,15 +389,18 @@ async def run_scan():
 						]
 						
 						if NO_LAB_RE.search(t):
+							t_low = t.lower()
+							bad_ids = [x for x in ids if x != my_id]
 							if (
-								'самого себя' not in t.lower()
-								and 'yourself' not in t.lower()
-								and ids
+								'самого себя' not in t_low
+								and 'yourself' not in t_low
+								and bad_ids
 							):
-								bad_uid = ids[0]
+								bad_uid = bad_ids[0]
+								add_noeb(bad_uid)
 								if bad_uid not in noeb:
-									noeb.append(bad_uid)
-									save_noeb()
+									add_noeb(bad_uid)
+									
 								c.execute(
 									"DELETE FROM avocado WHERE user_id = ?",
 									(bad_uid,)
