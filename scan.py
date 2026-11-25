@@ -78,17 +78,6 @@ def add_noeb(bad_uid: int) -> bool:
 	except Exception:
 		return False
 	
-	if bad_uid < 100 or bad_uid in noeb:
-		return False
-	noeb.append(bad_uid)
-
-def add_noeb(bad_uid: int) -> bool:
-	global noeb
-	try:
-		bad_uid = int(bad_uid)
-	except Exception:
-		return False
-	
 	if not (100 < bad_uid < 10000) or bad_uid in noeb:
 		return False
 	
@@ -397,7 +386,6 @@ async def run_scan():
 								and bad_ids
 							):
 								bad_uid = bad_ids[0]
-								add_noeb(bad_uid)
 								if bad_uid not in noeb:
 									add_noeb(bad_uid)
 									
@@ -564,6 +552,7 @@ async def run_scan():
 		print("🗜️ Оптимізую та стискаю 0.sqlite...")
 		c.execute("VACUUM")
 		c.execute("PRAGMA optimize")
+		save_noeb()
 		conn.commit()
 		conn.close()
 		
