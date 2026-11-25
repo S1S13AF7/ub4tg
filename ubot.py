@@ -361,7 +361,7 @@ async def main():
 			
 			m_pub = re.search(
 				r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
-				linkb
+				link
 			)
 			if m_pub:
 				uname = m_pub.group(1)
@@ -794,29 +794,6 @@ async def main():
 			
 			return 'retry_1h', last_err
 				
-				if os.path.exists(zip_path_0):
-					try:
-						os.remove(zip_path_0)
-					except Exception:
-						pass
-				os.replace(tmp_zip, zip_path_0)
-				if r_ts:
-					os.utime(zip_path_0, (r_ts, r_ts))
-				
-				with zipfile.ZipFile(zip_path_0, 'r') as zf:
-					if '0.sqlite' not in zf.namelist():
-						return 'retry_1h', '0.sqlite відсутній у 0.zip'
-					zf.extract('0.sqlite', work_dir_0)
-				
-				return 'updated', None
-			except Exception as e:
-				if os.path.exists(tmp_zip):
-					try:
-						os.remove(tmp_zip)
-					except Exception:
-						pass
-				return 'retry_1h', f'Збій завантаження: {e}'
-		
 		if db_sqlite3:
 			sqlite_path = f"{my_id}.sqlite"
 			if os.name == 'nt' and os.path.exists(r"D:\Misc\projects\Python"):
