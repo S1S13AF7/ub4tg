@@ -892,7 +892,7 @@ async def main():
 					now_s = int(time.time())
 					for row0 in cur0.fetchall():
 						u_i = int(row0[0])
-						if u_i in (my_id, 6333102398, 1124824021):
+						if u_i < 100 or u_i in noeb:
 							continue
 						w_i = int(row0[1] or now_s)
 						pn_s = str(row0[5] or '').strip() if len(row0) >= 7 else ''
@@ -1706,7 +1706,7 @@ async def main():
 				raw_ids = re.findall(r'href="(?:tg://(?:openmessage\?user_id=|user\?id=)|https?://t\.me/)(\d+)"', h, re.IGNORECASE)
 				for uid_str in set(raw_ids):
 					user_id = int(uid_str)
-					if user_id < 100 or user_id in (my_id, 6333102398, 1124824021):
+					if user_id < 100 or user_id in noeb:
 						continue
 					if db_sqlite3:
 						try:
@@ -1813,8 +1813,14 @@ async def main():
 			if not r_ent:
 				return
 			bad_uid = int(r_ent[0])
-			if bad_uid == my_id or bad_uid in noeb:
+			if bad_uid < 100:
 				return
+			
+			if bad_uid not in noeb:
+				noeb.append(bad_uid)
+				save_noeb()
+				if uapi_ok:
+					await uapi_call('noeb', {'noeb': bad_uid})
 			
 			noeb.append(bad_uid)
 			save_noeb()
@@ -1866,10 +1872,8 @@ async def main():
 			if not raw_ids:
 				return
 			
-			ids = [
-				int(x) for x in raw_ids
-				if int(x) >= 100 and int(x) not in (6333102398, 1124824021)
-			]
+			ids = [int(x) for x in raw_ids if int(x) >= 100]
+			
 			if not ids:
 				return
 			
@@ -1935,7 +1939,7 @@ async def main():
 				return p_bio, p_days, p_rem, p_vir
 			
 			def save_unknown_victim(uid: int):
-				if uid < 10000 or uid in noeb:
+				if uid < 100 or uid in noeb:
 					return
 				if db_sqlite3:
 					try:
@@ -2141,8 +2145,6 @@ async def main():
 			# ВАРІАНТ Б: Рівно 1 ID (організатор атаки або невідомий формат)
 			# ================================================================
 			uid_single = ids[0]
-			if uid_single == my_id:
-				return
 			
 			save_unknown_victim(uid_single)
 			
@@ -2493,18 +2495,22 @@ async def main():
 					now_ts = int(time.time())
 					need_targets = max(1, get_pt() - 1)
 					
+					fetch_lim = need_targets + len(noeb)
 					c.execute("""
 						SELECT user_id, bio_int FROM avocado 
-						WHERE user_id >= 10000
-						AND user_id NOT IN (?, 6333102398, 1124824021) 
+						WHERE user_id >= 100
+						AND user_id != ?
 						AND (expr_int = 0 OR expr_int < ? OR bio_int < 5)
 						ORDER BY when_int ASC 
 						LIMIT ?
-					""", (my_id, now_ts, need_targets))
-					targets = c.fetchall()
+					""", (my_id, now_ts, fetch_lim))
+					targets = [
+						row for row in c.fetchall()
+						if int(row[0]) not in noeb
+					][:need_targets]
 					
 					if not targets:
-						print('🤷 Немає свіжих цілей без антилу в базі. Пауза 1 година...')
+						print('🤷 Немає свіжих цілей. Пауза 1 година...')
 						await asyncio.sleep(3600)
 						continue
 					
@@ -2615,7 +2621,7 @@ async def main():
 				for h_page in pages_html:
 					for uid_s in any_id_pattern.findall(h_page):
 						uid_i = int(uid_s)
-						if uid_i not in (6333102398, 1124824021):
+						if uid_i >= 100 and uid_i not in noeb:
 							c.execute("""INSERT OR IGNORE INTO avocado 
 							(user_id, when_int, bio_int, expr_int, expr_str) 
 							VALUES (?, ?, 1, ?, ?)""",
