@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 import re
+import shutil
 import sqlite3
 import zipfile
 from datetime import datetime, timezone
@@ -29,15 +30,20 @@ is_termux = bool(
 scr_dir = os.path.dirname(os.path.abspath(__file__))
 cur_dir = os.path.abspath(os.getcwd())
 
+is_win_py_sub = bool(
+	os.name == "nt"
+	and (
+		scr_dir.lower().startswith(r"d:\misc\projects\python")
+		or cur_dir.lower().startswith(r"d:\misc\projects\python")
+	)
+)
+
 if is_termux and os.access("/sdcard", os.W_OK):
 	db_dir = "/sdcard/ub4tg"
 	os.makedirs(db_dir, exist_ok=True)
 	txt_dir = db_dir
 	CONFIG_PATH = os.path.join(db_dir, "conf.json")
-elif os.name == "nt" and (
-	scr_dir.lower().startswith(r"d:\misc\projects\python")
-	or cur_dir.lower().startswith(r"d:\misc\projects\python")
-):
+elif is_win_py_sub:
 	db_dir = r"D:\Misc\projects\Python"
 	txt_dir = scr_dir
 else:
@@ -456,17 +462,18 @@ async def run_scan():
 		conn.close()
 		
 		if max_when > 0:
-			set_file_dates(OUT_DB, max_when)
-			set_file_dates(SCAN_CHAT_TXT, max_when)
-			set_file_dates(SCAN_PM_TXT, max_when)
-		
-		with zipfile.ZipFile(
-			OUT_ZIP, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
-		) as zf:
-			zf.write(OUT_DB, arcname="0.sqlite")
-		
-		if max_when > 0:
 			set_file_dates(OUT_ZIP, max_when)
+		
+		local_tg_dir = r"D:\Misc\projects\localhost\tg"
+		if is_win_py_sub and os.path.isdir(local_tg_dir):
+			dst_zip = os.path.join(local_tg_dir, "0.zip")
+			try:
+				shutil.copy2(OUT_ZIP, dst_zip)
+				if max_when > 0:
+					set_file_dates(dst_zip, max_when)
+				print(f"📋 Скопійовано 0.zip у {local_tg_dir}")
+			except Exception as e:
+				print(f"⚠️ Не вдалося скопіювати 0.zip у {local_tg_dir}: {e}")
 		
 		dt_latest = (
 			datetime.fromtimestamp(max_when, tz=timezone.utc).strftime(
