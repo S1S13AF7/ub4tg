@@ -70,9 +70,9 @@ for cand_n in (NOEB_PATH, "noeb.json"):
 			break
 		except Exception:
 			pass
-
+noeb_dirty = False
 def add_noeb(bad_uid: int) -> bool:
-	global noeb
+	global noeb, noeb_dirty
 	try:
 		bad_uid = int(bad_uid)
 	except Exception:
@@ -82,29 +82,22 @@ def add_noeb(bad_uid: int) -> bool:
 		return False
 	
 	noeb.append(bad_uid)
+	noeb_dirty = True
 	return True
 
 def save_noeb(items=None):
-	global noeb
-	if not items:
-		return
-	
-	added = 0
-	for raw_x in items:
-		try:
-			xi = int(raw_x)
-			if 100 < xi < 10000 and xi not in noeb:
-				noeb.append(xi)
-				added += 1
-		except Exception:
-			pass
-	
-	if added > 0:
-		try:
-			with open(NOEB_PATH, "w", encoding="utf-8") as nf:
-				json.dump(noeb, nf, ensure_ascii=False, indent="\t")
-		except Exception:
-			pass
+    global noeb, noeb_dirty
+    if items:
+        for raw_x in items:
+            add_noeb(raw_x)
+    
+    if noeb_dirty:
+        try:
+            with open(NOEB_PATH, "w", encoding="utf-8") as nf:
+                json.dump(noeb, nf, ensure_ascii=False, indent="\t")
+            noeb_dirty = False
+        except Exception:
+            pass
 
 def set_file_dates(filepath: str, ts: int):
 	if not ts or not (ts > 0) or not os.path.exists(filepath):
