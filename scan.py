@@ -52,8 +52,31 @@ else:
 
 OUT_DB = os.path.join(db_dir, "0.sqlite")
 OUT_ZIP = os.path.join(db_dir, "0.zip")
+NOEB_PATH = os.path.join(db_dir, "noeb.json")
 SCAN_CHAT_TXT = os.path.join(txt_dir, "scan_chat.txt")
 SCAN_PM_TXT = os.path.join(txt_dir, "scan_pm.txt")
+
+noeb = []
+for cand_n in (NOEB_PATH, "noeb.json"):
+	if os.path.exists(cand_n):
+		try:
+			with open(cand_n, "r", encoding="utf-8") as nf:
+				raw_noeb = json.load(nf)
+				if isinstance(raw_noeb, list):
+					for x_id in raw_noeb:
+						xi = int(x_id)
+						if xi >= 100 and xi not in noeb:
+							noeb.append(xi)
+			break
+		except Exception:
+			pass
+
+def save_noeb():
+	try:
+		with open(NOEB_PATH, "w", encoding="utf-8") as nf:
+			json.dump(noeb, nf, ensure_ascii=False, indent="\t")
+	except Exception:
+		pass
 
 def set_file_dates(filepath: str, ts: int):
 	if not ts or not (ts > 0) or not os.path.exists(filepath):
@@ -125,6 +148,18 @@ DAYS_RE = re.compile(
 	re.IGNORECASE
 )
 VIR_RE = re.compile(r'[«“"]([^»”"\n]{2,180})[»”"]')
+NO_LAB_RE = re.compile(
+	r'(?:has\s+no\s+laboratory|has\s+not\s+registered|'
+	r'cannot\s+infect|can\'t\s+infect|unable\s+to\s+infect|'
+	r'player\s+not\s+found|user\s+not\s+found|invalid\s+target|'
+	r'is\s+a\s+bot|юзер\s+не\s+знайдений|нет\s+лаборатории|'
+	r'не\s+зарегистрирован|не\s+является\s+игроком|'
+	r'нельзя\s+заразить|невозможно\s+заразить|'
+	r'недоступен\s+для\s+заражения|игрок\s+не\s+найден|'
+	r'пользователь\s+не\s+найден|объект\s+не\s+найден|'
+	r'нельзя\s+заражать\s+ботов)',
+	re.IGNORECASE
+)
 
 def parse_attack_info(html_txt: str, plain_txt: str, msg_ts: int):
 	bio = 1
@@ -312,11 +347,41 @@ async def run_scan():
 						ids = [
 							int(x) for x in id_re.findall(h)
 							if int(x) >= 100
-							and int(x) not in (BOT_ID, 1124824021)
 						]
 						
+						if NO_LAB_RE.search(t):
+							if (
+								'самого себя' not in t.lower()
+								and 'yourself' not in t.lower()
+								and ids
+							):
+								bad_uid = ids[0]
+								if bad_uid not in noeb:
+									noeb.append(bad_uid)
+									save_noeb()
+								c.execute(
+									"DELETE FROM avocado WHERE user_id = ?",
+									(bad_uid,)
+								)
+								if db_pymysql and d:
+									try:
+										d.execute(
+											"DELETE FROM `tg_bio_users` "
+											"WHERE `user_id` = %s",
+											(bad_uid,)
+										)
+										d.execute(
+											"DELETE FROM `tg_bio_attack` "
+											"WHERE `user_id` = %s",
+											(bad_uid,)
+										)
+									except Exception as e:
+										print(f"⚠️ MySQL err: {e}")
+							continue
+						
 						for uid in ids:
-							
+							if uid in noeb:
+								continue
 							c.execute(
 								"""INSERT OR IGNORE INTO avocado
 								(user_id, when_int, bio_int,
@@ -349,14 +414,13 @@ async def run_scan():
 									parse_attack_info(h, t, msg_ts)
 								)
 								if p_name:
-									if who_id != my_id:
-										c.execute(
-											"""UPDATE avocado
-											SET p_name = ?, p_upd = ?
-											WHERE user_id = ?
-											AND (p_name = '' OR p_upd < ?)""",
-											(p_name, msg_ts, who_id, msg_ts)
-										)
+									c.execute(
+										"""UPDATE avocado
+										SET p_name = ?, p_upd = ?
+										WHERE user_id = ?
+										AND (p_name = '' OR p_upd < ?)""",
+										(p_name, msg_ts, who_id, msg_ts)
+									)
 									if db_pymysql and d:
 										try:
 											d.execute(
