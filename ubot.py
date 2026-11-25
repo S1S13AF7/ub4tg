@@ -361,7 +361,7 @@ async def main():
 			
 			m_pub = re.search(
 				r'(?:https?://)?t\.me/([a-zA-Z0-9_]{4,})',
-				link
+				linkb
 			)
 			if m_pub:
 				uname = m_pub.group(1)
@@ -629,46 +629,56 @@ async def main():
 		zip_path_0 = os.path.join(work_dir_0, '0.zip')
 		db0_path_0 = os.path.join(work_dir_0, '0.sqlite')
 		
-		def sync_0zip_disk(force_if_missing: bool = False):
+		def get_0zip_candidates() -> list:
+			urls = []
+			if uapi_ok and u_api_url:
+				if re.search(r'/cb\.php(?:[?#]|$)', u_api_url, re.IGNORECASE):
+					uapi_zip = re.sub(
+						r'/cb\.php(?=[?#]|$)',
+						'/0.zip',
+						u_api_url,
+						count=1,
+						flags=re.IGNORECASE
+					)
+				else:
+					uapi_zip = u_api_url.rstrip('/') + '/0.zip'
+				if uapi_zip not in urls:
+					urls.append(uapi_zip)
+			if bio_0_url and bio_0_url not in urls:
+				urls.append(bio_0_url)
+			return urls
+		
+		def _try_fetch_0zip(
+			target_url: str,
+			zip_path: str,
+			work_dir: str,
+			need_dl: bool
+		):
 			import urllib.error
 			import urllib.request
 			import zipfile
 			from email.utils import parsedate_to_datetime
 			
-			has_zip = os.path.exists(zip_path_0)
-			has_db0 = os.path.exists(db0_path_0)
+			has_zip = os.path.exists(zip_path)
+			is_ng = 'ngrok' in target_url.lower()
+			req_hdrs = {'User-Agent': 'Mozilla/5.0'}
+			if is_ng:
+				req_hdrs['ngrok-skip-browser-warning'] = '1'
 			
-			# Якщо є архів, але немає розпакованого 0.sqlite — розпаковуємо
-			if has_zip and not has_db0:
-				try:
-					if zipfile.is_zipfile(zip_path_0):
-						with zipfile.ZipFile(zip_path_0, 'r') as zf:
-							if '0.sqlite' in zf.namelist():
-								zf.extract('0.sqlite', work_dir_0)
-								has_db0 = True
-				except Exception:
-					pass
-			
-			if force_if_missing and (has_zip or has_db0):
-				return 'ok', None
-			if not bio_0_url:
-				return 'ok', None
-			
-			need_dl = not has_zip and not has_db0
 			r_ts = None
 			r_size = None
 			try:
 				req = urllib.request.Request(
-					bio_0_url,
+					target_url,
 					method='HEAD',
-					headers={'User-Agent': 'Mozilla/5.0'}
+					headers=req_hdrs
 				)
 				with urllib.request.urlopen(req, timeout=15) as resp:
 					if resp.status >= 400:
-						return 'retry_1h', f'HTTP {resp.status}'
+						return 'retry', f'HTTP {resp.status}'
 					ctype = (resp.headers.get('Content-Type') or '').lower()
 					if 'text/html' in ctype:
-						return 'retry_1h', 'HTML замість архіву (HEAD)'
+						return 'retry', 'HTML замість архіву (HEAD)'
 					lm = resp.headers.get('Last-Modified')
 					cl = resp.headers.get('Content-Length')
 					if lm:
@@ -676,13 +686,13 @@ async def main():
 					if cl and cl.isdigit():
 						r_size = int(cl)
 			except urllib.error.HTTPError as e:
-				return 'retry_1h', f'HTTP {e.code}'
+				return 'retry', f'HTTP {e.code}'
 			except Exception as e:
-				return 'retry_1h', f'Мережа/DNS: {e}'
+				return 'retry', f'Мережа/DNS: {e}'
 			
 			if not need_dl and has_zip:
-				l_ts = int(os.path.getmtime(zip_path_0))
-				l_size = os.path.getsize(zip_path_0)
+				l_ts = int(os.path.getmtime(zip_path))
+				l_size = os.path.getsize(zip_path)
 				now_s = int(time.time())
 				cond_date = (
 					r_ts is not None
@@ -695,21 +705,22 @@ async def main():
 				)
 				if cond_date or cond_size:
 					need_dl = True
+			
 			if not need_dl:
 				return 'ok', None
 			
-			tmp_zip = zip_path_0 + '.tmp'
+			tmp_zip = zip_path + '.tmp'
 			try:
 				req_get = urllib.request.Request(
-					bio_0_url,
-					headers={'User-Agent': 'Mozilla/5.0'}
+					target_url,
+					headers=req_hdrs
 				)
 				with urllib.request.urlopen(req_get, timeout=60) as resp:
 					if resp.status >= 400:
-						return 'retry_1h', f'GET HTTP {resp.status}'
+						return 'retry', f'GET HTTP {resp.status}'
 					ctype = (resp.headers.get('Content-Type') or '').lower()
 					if 'text/html' in ctype:
-						return 'retry_1h', 'HTML замість архіву (GET)'
+						return 'retry', 'HTML замість архіву (GET)'
 					lm_get = resp.headers.get('Last-Modified')
 					if lm_get:
 						r_ts = int(parsedate_to_datetime(lm_get).timestamp())
@@ -721,7 +732,67 @@ async def main():
 						os.remove(tmp_zip)
 					except Exception:
 						pass
-					return 'retry_1h', 'Отримано не ZIP-файл'
+					return 'retry', 'Отримано не ZIP-файл'
+				
+				if os.path.exists(zip_path):
+					try:
+						os.remove(zip_path)
+					except Exception:
+						pass
+				os.replace(tmp_zip, zip_path)
+				if r_ts:
+					os.utime(zip_path, (r_ts, r_ts))
+				
+				with zipfile.ZipFile(zip_path, 'r') as zf:
+					if '0.sqlite' not in zf.namelist():
+						return 'retry', '0.sqlite відсутній у 0.zip'
+					zf.extract('0.sqlite', work_dir)
+				
+				return 'updated', None
+			except Exception as e:
+				if os.path.exists(tmp_zip):
+					try:
+						os.remove(tmp_zip)
+					except Exception:
+						pass
+				return 'retry', f'Збій завантаження: {e}'
+		
+		def sync_0zip_disk(force_if_missing: bool = False):
+			import zipfile
+			
+			has_zip = os.path.exists(zip_path_0)
+			has_db0 = os.path.exists(db0_path_0)
+			
+			if has_zip and not has_db0:
+				try:
+					if zipfile.is_zipfile(zip_path_0):
+						with zipfile.ZipFile(zip_path_0, 'r') as zf:
+							if '0.sqlite' in zf.namelist():
+								zf.extract('0.sqlite', work_dir_0)
+								has_db0 = True
+				except Exception:
+					pass
+			
+			if force_if_missing and (has_zip or has_db0):
+				return 'ok', None
+			
+			candidates = get_0zip_candidates()
+			if not candidates:
+				return 'ok', None
+			
+			need_dl = not has_zip and not has_db0
+			last_err = None
+			for idx, cand_url in enumerate(candidates):
+				st, err = _try_fetch_0zip(
+					cand_url, zip_path_0, work_dir_0, need_dl
+				)
+				if st in ('ok', 'updated'):
+					if st == 'updated' and idx == 0 and len(candidates) > 1:
+						print('📦 [0.zip] Оновлено напряму через uapi!')
+					return st, None
+				last_err = err
+			
+			return 'retry_1h', last_err
 				
 				if os.path.exists(zip_path_0):
 					try:
@@ -3384,95 +3455,22 @@ async def main():
 				has_db0 = os.path.exists(db0_path)
 				need_dl = not has_zip and not has_db0
 				
-				r_ts = None
-				r_size = None
-				try:
-					req = urllib.request.Request(
-						bio_0_url,
-						method='HEAD',
-						headers={'User-Agent': 'Mozilla/5.0'}
-					)
-					with urllib.request.urlopen(req, timeout=20) as resp:
-						if resp.status >= 400:
-							return 'retry_1h', f'HTTP {resp.status}'
-						ctype = (resp.headers.get('Content-Type') or '').lower()
-						if 'text/html' in ctype:
-							return 'retry_1h', 'HTML замість архіву (HEAD)'
-						lm = resp.headers.get('Last-Modified')
-						cl = resp.headers.get('Content-Length')
-						if lm:
-							r_ts = int(parsedate_to_datetime(lm).timestamp())
-						if cl and cl.isdigit():
-							r_size = int(cl)
-				except urllib.error.HTTPError as e:
-					return 'retry_1h', f'HTTP {e.code}'
-				except Exception as e:
-					return 'retry_1h', f'Мережа/DNS: {e}'
-				
-				if not need_dl and has_zip:
-					l_ts = int(os.path.getmtime(zip_path))
-					l_size = os.path.getsize(zip_path)
-					now_s = int(time.time())
-					
-					cond_date = (
-						r_ts is not None
-						and r_ts > l_ts
-						and r_ts < (now_s - 3600)
-					)
-					cond_size = (
-						r_size is not None
-						and r_size > l_size
-					)
-					if cond_date or cond_size:
-						need_dl = True
-				
-				if not need_dl:
+				candidates = get_0zip_candidates()
+				if not candidates:
 					return 'ok', None
 				
-				tmp_zip = zip_path + '.tmp'
-				try:
-					req_get = urllib.request.Request(
-						bio_0_url,
-						headers={'User-Agent': 'Mozilla/5.0'}
+				last_err = None
+				for idx, cand_url in enumerate(candidates):
+					st, err = _try_fetch_0zip(
+						cand_url, zip_path, work_dir, need_dl
 					)
-					with urllib.request.urlopen(req_get, timeout=60) as resp:
-						if resp.status >= 400:
-							return 'retry_1h', f'GET HTTP {resp.status}'
-						ctype = (resp.headers.get('Content-Type') or '').lower()
-						if 'text/html' in ctype:
-							return 'retry_1h', 'HTML замість архіву (GET)'
-						lm_get = resp.headers.get('Last-Modified')
-						if lm_get:
-							r_ts = int(
-								parsedate_to_datetime(lm_get).timestamp()
-							)
-						with open(tmp_zip, 'wb') as out_f:
-							shutil.copyfileobj(resp, out_f)
-					
-					if not zipfile.is_zipfile(tmp_zip):
-						try:
-							os.remove(tmp_zip)
-						except Exception:
-							pass
-						return 'retry_1h', 'Отримано не ZIP-файл'
-					
-					os.replace(tmp_zip, zip_path)
-					if r_ts:
-						os.utime(zip_path, (r_ts, r_ts))
-					
-					with zipfile.ZipFile(zip_path, 'r') as zf:
-						if '0.sqlite' not in zf.namelist():
-							return 'retry_1h', '0.sqlite відсутній у 0.zip'
-						zf.extract('0.sqlite', work_dir)
-					
-					return 'updated', None
-				except Exception as e:
-					if os.path.exists(tmp_zip):
-						try:
-							os.remove(tmp_zip)
-						except Exception:
-							pass
-					return 'retry_1h', f'Збій завантаження: {e}'
+					if st in ('ok', 'updated'):
+						if st == 'updated' and idx == 0 and len(candidates) > 1:
+							print('📦 [0.zip] Оновлено напряму через uapi!')
+						return st, None
+					last_err = err
+				
+				return 'retry_1h', last_err
 			
 			await asyncio.sleep(random.uniform(15, 45))
 			loop = asyncio.get_running_loop()
