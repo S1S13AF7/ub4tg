@@ -462,6 +462,16 @@ async def run_scan():
 		conn.close()
 		
 		if max_when > 0:
+			set_file_dates(OUT_DB, max_when)
+			set_file_dates(SCAN_CHAT_TXT, max_when)
+			set_file_dates(SCAN_PM_TXT, max_when)
+		
+		with zipfile.ZipFile(
+			OUT_ZIP, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+		) as zf:
+			zf.write(OUT_DB, arcname="0.sqlite")
+		
+		if max_when > 0:
 			set_file_dates(OUT_ZIP, max_when)
 		
 		local_tg_dir = r"D:\Misc\projects\localhost\tg"
