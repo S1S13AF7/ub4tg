@@ -1822,11 +1822,6 @@ async def main():
 				if uapi_ok:
 					await uapi_call('noeb', {'noeb': bad_uid})
 			
-			noeb.append(bad_uid)
-			save_noeb()
-			if uapi_ok:
-				await uapi_call('noeb', {'noeb': bad_uid})
-			
 			if db_sqlite3:
 				try:
 					c.execute(
