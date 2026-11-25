@@ -2141,6 +2141,11 @@ async def main():
 			# ================================================================
 			uid_single = ids[0]
 			
+			if uid_single == my_id:
+				return
+			
+			save_unknown_victim(uid_single)
+			
 			save_unknown_victim(uid_single)
 			
 			is_organizer = bool(re.search(
