@@ -1127,7 +1127,6 @@ async def main():
 			
 			if uapi_ok:
 				try:
-					await uapi_call('noeb', {'noeb': bad_uid})
 					res_d = await uapi_call('noeb', {'noeb': noeb})
 					if isinstance(res_d, dict):
 						srv_delta = res_d.get('noeb')
