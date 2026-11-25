@@ -2146,8 +2146,6 @@ async def main():
 			
 			save_unknown_victim(uid_single)
 			
-			save_unknown_victim(uid_single)
-			
 			is_organizer = bool(re.search(
 				r'(?:Organizer|Организатор)\s*:', t, re.IGNORECASE
 			))
