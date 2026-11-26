@@ -33,6 +33,29 @@ def flush_log():
 	except Exception as e:
 		print(f"⚠️ Помилка запису {LOG_PATH}: {e}")
 
+def derive_remote_file_url(sync_url: str, filename: str) -> str:
+	parts = urllib.parse.urlsplit(sync_url)
+	base_dir = os.path.dirname(parts.path).rstrip("/")
+	new_path = f"{base_dir}/{filename}"
+	return urllib.parse.urlunsplit((parts.scheme, parts.netloc, new_path, "", ""))
+
+def fetch_remote_log(log_url: str) -> str:
+	try:
+		req = urllib.request.Request(
+			log_url,
+			headers={
+				"User-Agent": "push0/1.0",
+				"Cache-Control": "no-cache"
+			}
+		)
+		with urllib.request.urlopen(req, timeout=15) as resp:
+			if resp.status == 200:
+				return resp.read().decode("utf-8", errors="replace").strip()
+	except Exception:
+		pass
+	return ""
+
+
 def load_push_conf() -> dict:
 	conf = {
 		"sync_url": DEFAULT_SYNC_URL,
@@ -208,6 +231,7 @@ def main():
 		req_url = f"{sync_url}{sep}url={encoded_url}"
 		log_msg("🚀 Надсилаю запит синхронізації на сервер...")
 		
+		remote_log_url = derive_remote_file_url(sync_url, "0.log")
 		req = urllib.request.Request(
 			req_url,
 			headers={"User-Agent": "push0/1.0"}
@@ -215,11 +239,24 @@ def main():
 		try:
 			with urllib.request.urlopen(req, timeout=65) as resp:
 				body = resp.read().decode("utf-8", errors="replace")
-				log_msg(f"✅ Відповідь сервера: {parse_xhtml_status(body)}")
+				if resp.status == 200:
+					r_log = fetch_remote_log(remote_log_url)
+					if r_log:
+						log_msg(f"✅ Лог сервера (0.log):\n{r_log}")
+					else:
+						log_msg(f"✅ Відповідь сервера: {parse_xhtml_status(body)}")
+				else:
+					log_msg(f"✅ Відповідь сервера ({resp.status}): {parse_xhtml_status(body)}")
 		except urllib.error.HTTPError as e:
 			body = e.read().decode("utf-8", errors="replace")
 			info = parse_xhtml_status(body)
-			if e.code == 422:
+			if e.code >= 500:
+				r_log = fetch_remote_log(remote_log_url)
+				if r_log:
+					log_msg(f"❌ HTTP {e.code} | Лог сервера (0.log):\n{r_log}")
+				else:
+					log_msg(f"⚠️ HTTP {e.code}: {info}")
+			elif e.code == 422:
 				log_msg(f"ℹ️ Сервер: {info}")
 			else:
 				log_msg(f"⚠️ HTTP {e.code}: {info}")
